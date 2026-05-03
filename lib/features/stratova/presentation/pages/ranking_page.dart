@@ -37,45 +37,14 @@ class RankingPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 32),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveSectionWrap(
           children: [
-            SizedBox(
-              width: 820,
-              child: GlassPanel(
-                padding: EdgeInsets.zero,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('#')),
-                    DataColumn(label: Text('Equipo')),
-                    DataColumn(label: Text('Puntaje')),
-                    DataColumn(label: Text('Rentabilidad')),
-                    DataColumn(label: Text('Market Share')),
-                    DataColumn(label: Text('Eficiencia')),
-                  ],
-                  rows: rankingData.map((team) {
-                    final isCurrent = team.team == 'Equipo Alpha';
-                    return DataRow(
-                      cells: [
-                        DataCell(Text('${team.rank}')),
-                        DataCell(
-                            Text(isCurrent ? '${team.team} · TU' : team.team)),
-                        DataCell(Text(team.score.toStringAsFixed(1))),
-                        DataCell(
-                            Text('${team.profitability.toStringAsFixed(1)}%')),
-                        DataCell(
-                            Text('${team.marketShare.toStringAsFixed(1)}%')),
-                        DataCell(
-                            Text('${team.efficiency.toStringAsFixed(1)}%')),
-                      ],
-                    );
-                  }).toList(growable: false),
-                ),
-              ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: const _RankingTablePanel(),
             ),
-            SizedBox(
-              width: 420,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 children: [
                   GlassPanel(
@@ -127,6 +96,83 @@ class RankingPage extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _RankingTablePanel extends StatelessWidget {
+  const _RankingTablePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 760) {
+        return Column(
+          children: rankingData.map((team) {
+            final isCurrent = team.team == 'Equipo Alpha';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GlassPanel(
+                padding: const EdgeInsets.all(16),
+                backgroundColor: isCurrent
+                    ? StratovaColors.accentSoft
+                    : StratovaColors.glass,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '#${team.rank} ${isCurrent ? '${team.team} · TU' : team.team}',
+                      softWrap: true,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    MobileInfoRow(
+                        label: 'Puntaje', value: team.score.toStringAsFixed(1)),
+                    MobileInfoRow(
+                        label: 'Rentabilidad',
+                        value: '${team.profitability.toStringAsFixed(1)}%'),
+                    MobileInfoRow(
+                        label: 'Market Share',
+                        value: '${team.marketShare.toStringAsFixed(1)}%'),
+                    MobileInfoRow(
+                        label: 'Eficiencia',
+                        value: '${team.efficiency.toStringAsFixed(1)}%'),
+                  ],
+                ),
+              ),
+            );
+          }).toList(growable: false),
+        );
+      }
+
+      return GlassPanel(
+        padding: EdgeInsets.zero,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('#')),
+            DataColumn(label: Text('Equipo')),
+            DataColumn(label: Text('Puntaje')),
+            DataColumn(label: Text('Rentabilidad')),
+            DataColumn(label: Text('Market Share')),
+            DataColumn(label: Text('Eficiencia')),
+          ],
+          rows: rankingData.map((team) {
+            final isCurrent = team.team == 'Equipo Alpha';
+            return DataRow(
+              cells: [
+                DataCell(Text('${team.rank}')),
+                DataCell(Text(isCurrent ? '${team.team} · TU' : team.team)),
+                DataCell(Text(team.score.toStringAsFixed(1))),
+                DataCell(Text('${team.profitability.toStringAsFixed(1)}%')),
+                DataCell(Text('${team.marketShare.toStringAsFixed(1)}%')),
+                DataCell(Text('${team.efficiency.toStringAsFixed(1)}%')),
+              ],
+            );
+          }).toList(growable: false),
+        ),
+      );
+    });
   }
 }
 

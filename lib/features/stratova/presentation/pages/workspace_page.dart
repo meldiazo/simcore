@@ -31,8 +31,8 @@ class WorkspacePage extends StatelessWidget {
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              SizedBox(
-                width: 620,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -69,25 +69,31 @@ class WorkspacePage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    RichText(
-                      text: TextSpan(
-                        style: Theme.of(context)
-                            .textTheme
-                            .displaySmall
-                            ?.copyWith(fontSize: 46),
-                        children: [
-                          const TextSpan(text: 'Cierre en '),
-                          TextSpan(
-                            text: currentCycle.timeRemaining,
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 46,
-                              fontWeight: FontWeight.w700,
-                              color: StratovaColors.accent,
+                    LayoutBuilder(builder: (context, constraints) {
+                      final headlineSize =
+                          constraints.maxWidth < 380 ? 32.0 : 46.0;
+
+                      return RichText(
+                        softWrap: true,
+                        text: TextSpan(
+                          style: Theme.of(context)
+                              .textTheme
+                              .displaySmall
+                              ?.copyWith(fontSize: headlineSize, height: 1.08),
+                          children: [
+                            const TextSpan(text: 'Cierre en '),
+                            TextSpan(
+                              text: currentCycle.timeRemaining,
+                              style: GoogleFonts.jetBrainsMono(
+                                fontSize: headlineSize,
+                                fontWeight: FontWeight.w700,
+                                color: StratovaColors.accent,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 14),
                     Text(
                       'El motor de simulacion procesara las estrategias al finalizar. Tu equipo ha completado $completedModules de ${decisionModules.length} modulos obligatorios.',
@@ -99,8 +105,8 @@ class WorkspacePage extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
-                width: 340,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 340),
                 child: GlassPanel(
                   backgroundColor: Colors.white.withValues(alpha: 0.56),
                   child: Column(
@@ -141,12 +147,10 @@ class WorkspacePage extends StatelessWidget {
                 .map((metric) => KpiCard(metric: metric))
                 .toList(growable: false)),
         const SizedBox(height: 28),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveSectionWrap(
           children: [
-            SizedBox(
-              width: 820,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -159,8 +163,8 @@ class WorkspacePage extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: 420,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,42 +209,37 @@ class WorkspacePage extends StatelessWidget {
         const SizedBox(height: 28),
         const SectionLabel('Resumen por Modulo'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveWrap(
           children: decisionModules.map((module) {
-            return SizedBox(
-              width: 300,
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(module.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700, fontSize: 16)),
-                        ),
-                        StatusBadge(status: module.status),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ...module.summary.map((line) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(line,
-                              style: const TextStyle(
-                                  color: StratovaColors.textSecondary)),
-                        )),
-                    const SizedBox(height: 12),
-                    MetricBar(
-                      label: 'Progreso',
-                      value: module.progress.toDouble(),
-                      max: 100,
-                      trailing: '${module.progress}%',
-                    ),
-                  ],
-                ),
+            return GlassPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(module.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16)),
+                      ),
+                      StatusBadge(status: module.status),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...module.summary.map((line) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(line,
+                            style: const TextStyle(
+                                color: StratovaColors.textSecondary)),
+                      )),
+                  const SizedBox(height: 12),
+                  MetricBar(
+                    label: 'Progreso',
+                    value: module.progress.toDouble(),
+                    max: 100,
+                    trailing: '${module.progress}%',
+                  ),
+                ],
               ),
             );
           }).toList(growable: false),

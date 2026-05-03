@@ -15,190 +15,204 @@ class _FinancePageState extends State<FinancePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 20,
-      runSpacing: 20,
-      children: [
-        SizedBox(
-          width: showAiPanel ? 930 : 1260,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PageIntro(
-                title: 'Finanzas y Flujo de Caja',
-                subtitle:
-                    'Proyecciones interactivas, VPN y estado de resultados.',
-                trailing: showAiPanel
-                    ? null
-                    : OutlinedButton.icon(
-                        onPressed: () => setState(() => showAiPanel = true),
-                        icon: const Icon(Icons.smart_toy_outlined),
-                        label: const Text('Mostrar Asesor xAI'),
-                      ),
-              ),
-              const SizedBox(height: 24),
-              ResponsiveWrap(
-                children: const [
-                  KpiCard(
-                      metric: KpiMetric(
-                          title: 'Valor Actual Neto',
-                          value: 1.25,
-                          unit: 'M\$',
-                          delta: 12.5,
-                          trendUp: true,
-                          state: 'success')),
-                  KpiCard(
-                      metric: KpiMetric(
-                          title: 'T.I.R.',
-                          value: 24.5,
-                          unit: '%',
-                          delta: 2.1,
-                          trendUp: true,
-                          state: 'success')),
-                  KpiCard(
-                      metric: KpiMetric(
-                          title: 'Payback',
-                          value: 2.8,
-                          unit: 'A',
-                          delta: 0,
-                          trendUp: false,
-                          state: 'warning')),
-                  KpiCard(
-                      metric: KpiMetric(
-                          title: 'WACC Acumulado',
-                          value: 10.5,
-                          unit: '%',
-                          delta: 0,
-                          trendUp: true,
-                          state: 'neutral')),
-                ],
-              ),
-              const SizedBox(height: 24),
-              GlassPanel(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(22),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Estado de Resultados Pro-Forma',
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700)),
-                                SizedBox(height: 6),
-                                Text(
-                                    'Celdas calculadas automaticamente desde Mercado y RRHH.'),
-                              ],
-                            ),
-                          ),
-                          FilledButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text('Correr Simulacion Montecarlo'),
-                          ),
-                        ],
+    return LayoutBuilder(builder: (context, constraints) {
+      final availableWidth = constraints.maxWidth;
+      final useTwoColumns = availableWidth >= 980 && showAiPanel;
+      final content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PageIntro(
+            title: 'Finanzas y Flujo de Caja',
+            subtitle: 'Proyecciones interactivas, VPN y estado de resultados.',
+            trailing: showAiPanel
+                ? null
+                : OutlinedButton.icon(
+                    onPressed: () => setState(() => showAiPanel = true),
+                    icon: const Icon(Icons.smart_toy_outlined),
+                    label: const Text('Mostrar Asesor xAI'),
+                  ),
+          ),
+          const SizedBox(height: 24),
+          ResponsiveWrap(
+            itemWidth: 260,
+            children: const [
+              KpiCard(
+                  metric: KpiMetric(
+                      title: 'Valor Actual Neto',
+                      value: 1.25,
+                      unit: 'M\$',
+                      delta: 12.5,
+                      trendUp: true,
+                      state: 'success')),
+              KpiCard(
+                  metric: KpiMetric(
+                      title: 'T.I.R.',
+                      value: 24.5,
+                      unit: '%',
+                      delta: 2.1,
+                      trendUp: true,
+                      state: 'success')),
+              KpiCard(
+                  metric: KpiMetric(
+                      title: 'Payback',
+                      value: 2.8,
+                      unit: 'A',
+                      delta: 0,
+                      trendUp: false,
+                      state: 'warning')),
+              KpiCard(
+                  metric: KpiMetric(
+                      title: 'WACC Acumulado',
+                      value: 10.5,
+                      unit: '%',
+                      delta: 0,
+                      trendUp: true,
+                      state: 'neutral')),
+            ],
+          ),
+          const SizedBox(height: 24),
+          GlassPanel(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                Padding(
+                  padding: responsivePanelPadding(availableWidth),
+                  child: ResponsiveHeaderAction(
+                    title: 'Estado de Resultados Pro-Forma',
+                    subtitle:
+                        'Celdas calculadas automaticamente desde Mercado y RRHH.',
+                    action: FilledButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text(
+                        'Correr Simulacion Montecarlo',
+                        softWrap: true,
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    _FinanceTable(),
-                  ],
+                  ),
                 ),
+                _FinanceTable(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          ResponsiveSectionWrap(
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: _ScenarioCard(),
               ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 20,
-                runSpacing: 20,
-                children: [
-                  SizedBox(width: 450, child: _ScenarioCard()),
-                  SizedBox(width: 450, child: _CashflowCard()),
-                ],
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: _CashflowCard(),
               ),
             ],
           ),
-        ),
-        if (showAiPanel)
-          SizedBox(
-            width: 310,
-            child: GlassPanel(
-              borderColor: StratovaColors.accent.withValues(alpha: 0.24),
-              padding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: const BoxDecoration(
-                      border: Border(
-                          bottom: BorderSide(color: StratovaColors.border)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: StratovaColors.accent,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Icon(Icons.smart_toy_outlined,
-                              color: Colors.white),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('xAI Analyst',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w700)),
-                              Text('En linea • Simulando escenarios',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: StratovaColors.accent)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => setState(() => showAiPanel = false),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
-                    ),
+          if (!useTwoColumns && showAiPanel) ...[
+            const SizedBox(height: 24),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child:
+                  _AiPanel(onClose: () => setState(() => showAiPanel = false)),
+            ),
+          ],
+        ],
+      );
+
+      return useTwoColumns
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: content),
+                const SizedBox(width: 20),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 310),
+                  child: _AiPanel(
+                      onClose: () => setState(() => showAiPanel = false)),
+                ),
+              ],
+            )
+          : content;
+    });
+  }
+}
+
+class _AiPanel extends StatelessWidget {
+  const _AiPanel({required this.onClose});
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      borderColor: StratovaColors.accent.withValues(alpha: 0.24),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: StratovaColors.border)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: StratovaColors.accent,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        _ChatBubble(
-                          title: 'Alerta de liquidez',
-                          text:
-                              'Si mantienes el gasto de marketing y no amplias financiamiento, tu caja libre cae debajo del umbral en 1.4 ciclos.',
-                        ),
-                        SizedBox(height: 14),
-                        _ChatBubble(
-                          title: 'Escenario recomendado',
-                          text:
-                              'Reducir dividendos a cero y reprogramar parte de la inversion mejora el VAN ajustado por riesgo en 8.7%.',
-                        ),
-                        SizedBox(height: 14),
-                        _ChatBubble(
-                          title: 'Insight cruzado',
-                          text:
-                              'La proyeccion de demanda del modulo mercado soporta un incremento de produccion, pero requiere capital de trabajo adicional.',
-                        ),
-                      ],
-                    ),
+                  child:
+                      const Icon(Icons.smart_toy_outlined, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('xAI Analyst',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      Text('En linea • Simulando escenarios',
+                          style: TextStyle(
+                              fontSize: 12, color: StratovaColors.accent)),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                IconButton(
+                    onPressed: onClose, icon: const Icon(Icons.close_rounded)),
+              ],
             ),
           ),
-      ],
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _ChatBubble(
+                  title: 'Alerta de liquidez',
+                  text:
+                      'Si mantienes el gasto de marketing y no amplias financiamiento, tu caja libre cae debajo del umbral en 1.4 ciclos.',
+                ),
+                SizedBox(height: 14),
+                _ChatBubble(
+                  title: 'Escenario recomendado',
+                  text:
+                      'Reducir dividendos a cero y reprogramar parte de la inversion mejora el VAN ajustado por riesgo en 8.7%.',
+                ),
+                SizedBox(height: 14),
+                _ChatBubble(
+                  title: 'Insight cruzado',
+                  text:
+                      'La proyeccion de demanda del modulo mercado soporta un incremento de produccion, pero requiere capital de trabajo adicional.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -214,27 +228,107 @@ class _FinanceTable extends StatelessWidget {
       ('EBITDA Operativo', [200000, 300000, 360000, 460000], false),
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Concepto')),
-          DataColumn(label: Text('T1')),
-          DataColumn(label: Text('T2')),
-          DataColumn(label: Text('T3')),
-          DataColumn(label: Text('T4')),
-        ],
-        rows: rows.map((row) {
-          return DataRow(
-            cells: [
-              DataCell(Text(row.$1,
-                  style: const TextStyle(fontWeight: FontWeight.w600))),
-              ...row.$2.map((value) => DataCell(Text('\$${value ~/ 1000}K'))),
-            ],
-          );
-        }).toList(growable: false),
-      ),
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 700) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            constraints.maxWidth < 360 ? 12 : 16,
+            0,
+            constraints.maxWidth < 360 ? 12 : 16,
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: rows.map((row) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GlassPanel(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: StratovaColors.surface,
+                  child: LayoutBuilder(builder: (context, cardConstraints) {
+                    final tileWidth = ((cardConstraints.maxWidth - 10) / 2)
+                        .clamp(110.0, 260.0)
+                        .toDouble();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          row.$1,
+                          softWrap: true,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: row.$2.asMap().entries.map((entry) {
+                            return SizedBox(
+                              width: tileWidth,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border:
+                                      Border.all(color: StratovaColors.border),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('T${entry.key + 1}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12)),
+                                    const SizedBox(height: 6),
+                                    Text('\$${entry.value ~/ 1000}K',
+                                        softWrap: true,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(growable: false),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+        );
+      }
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 20,
+          headingRowHeight: 48,
+          dataRowMinHeight: 52,
+          dataRowMaxHeight: 52,
+          columns: const [
+            DataColumn(label: Text('Concepto')),
+            DataColumn(label: Text('T1')),
+            DataColumn(label: Text('T2')),
+            DataColumn(label: Text('T3')),
+            DataColumn(label: Text('T4')),
+          ],
+          rows: rows.map((row) {
+            return DataRow(
+              cells: [
+                DataCell(Text(row.$1,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
+                ...row.$2.map((value) => DataCell(Text('\$${value ~/ 1000}K'))),
+              ],
+            );
+          }).toList(growable: false),
+        ),
+      );
+    });
   }
 }
 
@@ -281,29 +375,52 @@ class _CashflowCard extends StatelessWidget {
           const SizedBox(height: 18),
           ...cashFlowEntries.map((entry) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Text(entry.month,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  if (constraints.maxWidth < 380) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(entry.month,
                             style:
-                                const TextStyle(fontWeight: FontWeight.w600))),
-                    Expanded(
-                        child:
-                            Text('Operativo \$${entry.operational ~/ 1000}K')),
-                    Expanded(
-                        child:
-                            Text('Inversion \$${entry.investment ~/ 1000}K')),
-                    Expanded(
-                      child: Text(
-                        'Financ. \$${entry.financing ~/ 1000}K',
-                        style: TextStyle(
-                            color: entry.financing < 0
-                                ? StratovaColors.warning
-                                : StratovaColors.textSecondary),
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 6),
+                        Text('Operativo \$${entry.operational ~/ 1000}K'),
+                        Text('Inversion \$${entry.investment ~/ 1000}K'),
+                        Text(
+                          'Financ. \$${entry.financing ~/ 1000}K',
+                          style: TextStyle(
+                              color: entry.financing < 0
+                                  ? StratovaColors.warning
+                                  : StratovaColors.textSecondary),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                          child: Text(entry.month,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600))),
+                      Expanded(
+                          child: Text(
+                              'Operativo \$${entry.operational ~/ 1000}K')),
+                      Expanded(
+                          child:
+                              Text('Inversion \$${entry.investment ~/ 1000}K')),
+                      Expanded(
+                        child: Text(
+                          'Financ. \$${entry.financing ~/ 1000}K',
+                          style: TextStyle(
+                              color: entry.financing < 0
+                                  ? StratovaColors.warning
+                                  : StratovaColors.textSecondary),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
               )),
         ],
       ),

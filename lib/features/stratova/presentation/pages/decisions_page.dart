@@ -123,49 +123,106 @@ class _DecisionsPageState extends State<DecisionsPage> {
           ),
         ),
         const SizedBox(height: 28),
-        Row(
-          children: List.generate(tabs.length, (index) {
+        LayoutBuilder(builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 520;
+          final tabItems = List.generate(tabs.length, (index) {
             final active = index == currentTab;
             final completed =
                 index < currentTab || (index == 1 && auditComplete);
-            return Expanded(
-              child: InkWell(
-                onTap: isSubmitted
-                    ? null
-                    : () => setState(() => currentTab = index),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: completed
-                          ? StratovaColors.success
-                          : active
-                              ? StratovaColors.accent
-                              : StratovaColors.surface,
-                      child: Icon(
-                        completed ? Icons.check_rounded : tabs[index].$2,
-                        color: completed || active
-                            ? Colors.white
-                            : StratovaColors.textTertiary,
+            final item = InkWell(
+              onTap:
+                  isSubmitted ? null : () => setState(() => currentTab = index),
+              child: isCompact
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            active ? StratovaColors.accentSoft : Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: StratovaColors.border),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      tabs[index].$1,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? StratovaColors.textPrimary
-                            : StratovaColors.textSecondary,
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: completed
+                                ? StratovaColors.success
+                                : active
+                                    ? StratovaColors.accent
+                                    : StratovaColors.surface,
+                            child: Icon(
+                              completed ? Icons.check_rounded : tabs[index].$2,
+                              size: 18,
+                              color: completed || active
+                                  ? Colors.white
+                                  : StratovaColors.textTertiary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              tabs[index].$1,
+                              softWrap: true,
+                              style: TextStyle(
+                                fontWeight:
+                                    active ? FontWeight.w700 : FontWeight.w500,
+                                color: active
+                                    ? StratovaColors.textPrimary
+                                    : StratovaColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    )
+                  : Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: completed
+                              ? StratovaColors.success
+                              : active
+                                  ? StratovaColors.accent
+                                  : StratovaColors.surface,
+                          child: Icon(
+                            completed ? Icons.check_rounded : tabs[index].$2,
+                            color: completed || active
+                                ? Colors.white
+                                : StratovaColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          tabs[index].$1,
+                          textAlign: TextAlign.center,
+                          softWrap: true,
+                          style: TextStyle(
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
+                            color: active
+                                ? StratovaColors.textPrimary
+                                : StratovaColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
             );
-          }),
-        ),
+
+            return isCompact ? item : Expanded(child: item);
+          });
+
+          if (isCompact) {
+            return Column(
+              children: tabItems
+                  .expand((child) => [child, const SizedBox(height: 8)])
+                  .take(tabItems.length * 2 - 1)
+                  .toList(growable: false),
+            );
+          }
+
+          return Row(children: tabItems);
+        }),
         const SizedBox(height: 24),
         if (currentTab == 0)
           _ReviewTab(onContinue: () => setState(() => currentTab = 1)),
@@ -199,33 +256,28 @@ class _ReviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveWrap(
           children: decisionModules.map((module) {
-            return SizedBox(
-              width: 300,
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(module.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700, fontSize: 16)),
-                        ),
-                        StatusBadge(status: module.status),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ...module.summary.map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(item),
-                        )),
-                  ],
-                ),
+            return GlassPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(module.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16)),
+                      ),
+                      StatusBadge(status: module.status),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...module.summary.map((item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(item),
+                      )),
+                ],
               ),
             );
           }).toList(growable: false),
@@ -264,8 +316,8 @@ class _AuditTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: SizedBox(
-        width: 760,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
         child: GlassPanel(
           padding: const EdgeInsets.all(36),
           child: Column(
@@ -341,8 +393,8 @@ class _SignTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: SizedBox(
-        width: 760,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
         child: GlassPanel(
           padding: const EdgeInsets.all(36),
           child: Column(

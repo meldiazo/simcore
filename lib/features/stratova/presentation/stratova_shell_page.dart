@@ -165,7 +165,11 @@ class StratovaShellPage extends StatelessWidget {
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isDesktop ? 24 : 16,
+                          vertical: isDesktop ? 0 : 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.72),
                           border: const Border(
@@ -206,11 +210,18 @@ class StratovaShellPage extends StatelessWidget {
                         ),
                       ),
                       Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(24),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1320),
-                            child: _buildContent(),
+                        child: SafeArea(
+                          top: false,
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.all(isDesktop ? 24 : 14),
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 1320),
+                                child: _buildContent(),
+                              ),
+                            ),
                           ),
                         ),
                       ),

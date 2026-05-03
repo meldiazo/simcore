@@ -58,33 +58,20 @@ class OperationsPage extends StatelessWidget {
           spacing: 20,
           runSpacing: 20,
           children: [
-            SizedBox(
-              width: 820,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Control de Linea de Ensamblaje',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 18)),
-                              SizedBox(height: 6),
-                              Text(
-                                  'Asignacion de turnos y mantenimiento preventivo.'),
-                            ],
-                          ),
-                        ),
-                        FilledButton(
-                          onPressed: () {},
-                          child: const Text('Anadir Turno Extra'),
-                        ),
-                      ],
+                    ResponsiveHeaderAction(
+                      title: 'Control de Linea de Ensamblaje',
+                      subtitle:
+                          'Asignacion de turnos y mantenimiento preventivo.',
+                      action: FilledButton(
+                        onPressed: () {},
+                        child: const Text('Anadir Turno Extra'),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     const _LineCard(
@@ -106,8 +93,8 @@ class OperationsPage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(
-              width: 440,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 children: [
                   GlassPanel(
@@ -189,8 +176,9 @@ class _LineCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
+          LayoutBuilder(builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 430;
+            final header = [
               Expanded(
                   child: Text(name,
                       style: const TextStyle(fontWeight: FontWeight.w700))),
@@ -206,8 +194,23 @@ class _LineCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         fontSize: 12)),
               ),
-            ],
-          ),
+            ];
+
+            if (isCompact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      softWrap: true,
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  header.last,
+                ],
+              );
+            }
+
+            return Row(children: header);
+          }),
           const SizedBox(height: 14),
           LinearProgressIndicator(
               value: efficiency / 100,

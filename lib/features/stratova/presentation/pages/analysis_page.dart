@@ -25,34 +25,27 @@ class AnalysisPage extends StatelessWidget {
           subtitle: 'Consolidacion de KPIs y comparativa con cohorte.',
         ),
         const SizedBox(height: 24),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: const [
-            SizedBox(
-                width: 400,
-                child: _SummaryCard(
-                    title: 'Puntaje General',
-                    value: '89.7',
-                    detail: 'Posicion #2 de 5 · +3.3% vs promedio',
-                    color: StratovaColors.success,
-                    icon: Icons.workspace_premium_outlined)),
-            SizedBox(
-                width: 400,
-                child: _SummaryCard(
-                    title: 'Tendencia',
-                    value: 'Creciente',
-                    detail: '+2.9 pts ciclo a ciclo',
-                    color: StratovaColors.accent,
-                    icon: Icons.trending_up_rounded)),
-            SizedBox(
-                width: 400,
-                child: _SummaryCard(
-                    title: 'Distancia al Lider',
-                    value: '4.5',
-                    detail: '-27.4% vs ciclo anterior',
-                    color: StratovaColors.warning,
-                    icon: Icons.track_changes_outlined)),
+        const ResponsiveWrap(
+          itemWidth: 300,
+          children: [
+            _SummaryCard(
+                title: 'Puntaje General',
+                value: '89.7',
+                detail: 'Posicion #2 de 5 · +3.3% vs promedio',
+                color: StratovaColors.success,
+                icon: Icons.workspace_premium_outlined),
+            _SummaryCard(
+                title: 'Tendencia',
+                value: 'Creciente',
+                detail: '+2.9 pts ciclo a ciclo',
+                color: StratovaColors.accent,
+                icon: Icons.trending_up_rounded),
+            _SummaryCard(
+                title: 'Brecha',
+                value: '4.5',
+                detail: '-27.4% vs ciclo anterior',
+                color: StratovaColors.warning,
+                icon: Icons.track_changes_outlined),
           ],
         ),
         const SizedBox(height: 24),
@@ -76,12 +69,10 @@ class AnalysisPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveSectionWrap(
           children: [
-            SizedBox(
-              width: 620,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,8 +110,8 @@ class AnalysisPage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(
-              width: 620,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

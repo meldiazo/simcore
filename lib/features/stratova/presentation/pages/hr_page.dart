@@ -68,21 +68,15 @@ class _HrPageState extends State<HrPage> {
           spacing: 20,
           runSpacing: 20,
           children: [
-            SizedBox(
-              width: 820,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.account_tree_outlined,
-                            color: StratovaColors.accent),
-                        SizedBox(width: 8),
-                        Text('Editor de Organigrama',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w700)),
-                      ],
+                    const IconTitle(
+                      icon: Icons.account_tree_outlined,
+                      title: 'Editor de Organigrama',
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -141,8 +135,8 @@ class _HrPageState extends State<HrPage> {
                 ),
               ),
             ),
-            SizedBox(
-              width: 440,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 children: [
                   GlassPanel(
@@ -229,7 +223,8 @@ class _OrgNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180,
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 180),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
         color: primary ? StratovaColors.accent : StratovaColors.surface,
@@ -292,8 +287,14 @@ class _CandidateTile extends StatelessWidget {
                 ],
               ),
             ),
-            Text(salary,
-                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700)),
+            Flexible(
+              child: Text(
+                salary,
+                textAlign: TextAlign.end,
+                softWrap: true,
+                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
       ),

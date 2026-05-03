@@ -21,26 +21,112 @@ class GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor ?? StratovaColors.glass,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor ?? StratovaColors.border),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x140F172A),
-                blurRadius: 30,
-                offset: Offset(0, 18),
-              ),
-            ],
+    return SizedBox(
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: backgroundColor ?? StratovaColors.glass,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: borderColor ?? StratovaColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x140F172A),
+                  blurRadius: 30,
+                  offset: Offset(0, 18),
+                ),
+              ],
+            ),
+            child: child,
           ),
-          child: child,
         ),
+      ),
+    );
+  }
+}
+
+EdgeInsets responsivePanelPadding(double width) {
+  if (width < 360) {
+    return const EdgeInsets.all(16);
+  }
+  if (width < 520) {
+    return const EdgeInsets.all(18);
+  }
+  return const EdgeInsets.all(22);
+}
+
+class ResponsiveSectionWrap extends StatelessWidget {
+  const ResponsiveSectionWrap({
+    super.key,
+    required this.children,
+    this.spacing = 20,
+    this.runSpacing = 20,
+  });
+
+  final List<Widget> children;
+  final double spacing;
+  final double runSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 700;
+
+      return Wrap(
+        spacing: spacing,
+        runSpacing: runSpacing,
+        children: children
+            .map((child) => SizedBox(
+                  width: isMobile ? constraints.maxWidth : null,
+                  child: child,
+                ))
+            .toList(growable: false),
+      );
+    });
+  }
+}
+
+class MobileInfoRow extends StatelessWidget {
+  const MobileInfoRow({
+    super.key,
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 112,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: StratovaColors.textTertiary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              softWrap: true,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -60,25 +146,247 @@ class PageIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 6),
-              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+    return LayoutBuilder(builder: (context, constraints) {
+      final isCompact = constraints.maxWidth < 560;
+      final titleText = Text(
+        title,
+        softWrap: true,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontSize: isCompact ? 26 : null,
+              height: 1.15,
+            ),
+      );
+      final introText = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          titleText,
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            softWrap: true,
+            style:
+                Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
+        ],
+      );
+
+      if (isCompact) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            introText,
+            if (trailing != null) ...[
+              const SizedBox(height: 14),
+              trailing!,
             ],
+          ],
+        );
+      }
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(child: introText),
+          if (trailing != null) ...[
+            const SizedBox(width: 20),
+            Flexible(child: trailing!),
+          ],
+        ],
+      );
+    });
+  }
+}
+
+class ResponsiveHeaderAction extends StatelessWidget {
+  const ResponsiveHeaderAction({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.action,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isCompact = constraints.maxWidth < 620;
+      final text = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            softWrap: true,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            softWrap: true,
+            style: const TextStyle(height: 1.4),
+          ),
+        ],
+      );
+
+      if (isCompact) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            text,
+            const SizedBox(height: 14),
+            action,
+          ],
+        );
+      }
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: text),
+          const SizedBox(width: 16),
+          Flexible(child: action),
+        ],
+      );
+    });
+  }
+}
+
+class AdaptiveActionRow extends StatelessWidget {
+  const AdaptiveActionRow({
+    super.key,
+    required this.children,
+    this.spacing = 12,
+  });
+
+  final List<Widget> children;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 430) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children
+              .expand((child) => [child, SizedBox(height: spacing)])
+              .take(children.length * 2 - 1)
+              .toList(growable: false),
+        );
+      }
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: children
+            .expand(
+                (child) => [Flexible(child: child), SizedBox(width: spacing)])
+            .take(children.length * 2 - 1)
+            .toList(growable: false),
+      );
+    });
+  }
+}
+
+class IconTitle extends StatelessWidget {
+  const IconTitle({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.color = StratovaColors.accent,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            softWrap: true,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 20),
-          trailing!,
-        ],
       ],
     );
+  }
+}
+
+class ResponsiveMetricRow extends StatelessWidget {
+  const ResponsiveMetricRow({
+    super.key,
+    required this.children,
+    this.spacing = 12,
+  });
+
+  final List<Widget> children;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 520) {
+        return Column(
+          children: children
+              .expand((child) => [
+                    SizedBox(width: double.infinity, child: child),
+                    SizedBox(height: spacing),
+                  ])
+              .take(children.length * 2 - 1)
+              .toList(growable: false),
+        );
+      }
+
+      return Row(
+        children: children
+            .map((child) => Expanded(child: child))
+            .expand((child) => [child, SizedBox(width: spacing)])
+            .take(children.length * 2 - 1)
+            .toList(growable: false),
+      );
+    });
+  }
+}
+
+class ResponsiveWrap extends StatelessWidget {
+  const ResponsiveWrap({
+    super.key,
+    required this.children,
+    this.itemWidth = 260,
+    this.spacing = 20,
+    this.runSpacing = 20,
+  });
+
+  final List<Widget> children;
+  final double itemWidth;
+  final double spacing;
+  final double runSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final availableWidth = constraints.maxWidth.isFinite
+          ? constraints.maxWidth
+          : MediaQuery.of(context).size.width;
+      final count =
+          (availableWidth / itemWidth).floor().clamp(1, children.length);
+      final width = (availableWidth - (spacing * (count - 1))) / count;
+
+      return Wrap(
+        spacing: spacing,
+        runSpacing: runSpacing,
+        children: children
+            .map((child) => SizedBox(width: width, child: child))
+            .toList(growable: false),
+      );
+    });
   }
 }
 
@@ -396,28 +704,6 @@ class MetricBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class ResponsiveWrap extends StatelessWidget {
-  const ResponsiveWrap({
-    super.key,
-    required this.children,
-    this.itemWidth = 260,
-  });
-
-  final List<Widget> children;
-  final double itemWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 20,
-      runSpacing: 20,
-      children: children
-          .map((child) => SizedBox(width: itemWidth, child: child))
-          .toList(growable: false),
     );
   }
 }

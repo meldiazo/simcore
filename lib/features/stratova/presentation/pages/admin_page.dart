@@ -23,14 +23,12 @@ class _AdminPageState extends State<AdminPage> {
           title: 'Panel de Control Docente',
           subtitle:
               'Auditoria de simulaciones, control de tiempo e inyeccion de eventos macroeconomicos.',
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+          trailing: AdaptiveActionRow(
             children: [
               OutlinedButton(
                 onPressed: () {},
                 child: const Text('Exportar CSV'),
               ),
-              const SizedBox(width: 12),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                     backgroundColor: StratovaColors.danger),
@@ -42,58 +40,14 @@ class _AdminPageState extends State<AdminPage> {
           ),
         ),
         const SizedBox(height: 24),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
+        ResponsiveSectionWrap(
           children: [
-            SizedBox(
-              width: 820,
-              child: GlassPanel(
-                padding: EdgeInsets.zero,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('Empresa')),
-                    DataColumn(label: Text('Miembros')),
-                    DataColumn(label: Text('Estado')),
-                    DataColumn(label: Text('Ultima actividad')),
-                  ],
-                  rows: adminTeams.map((team) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(team.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700))),
-                        DataCell(Text('${team.users}')),
-                        DataCell(
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: team.isReady
-                                  ? StratovaColors.successSoft
-                                  : StratovaColors.warningSoft,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              team.isReady
-                                  ? 'Decisiones enviadas'
-                                  : 'Editando borrador',
-                              style: TextStyle(
-                                  color: team.isReady
-                                      ? StratovaColors.success
-                                      : StratovaColors.warning),
-                            ),
-                          ),
-                        ),
-                        DataCell(Text(team.lastLogin)),
-                      ],
-                    );
-                  }).toList(growable: false),
-                ),
-              ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: const _AdminTeamsPanel(),
             ),
-            SizedBox(
-              width: 440,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 children: [
                   GlassPanel(
@@ -171,6 +125,88 @@ class _AdminPageState extends State<AdminPage> {
         ),
       ],
     );
+  }
+}
+
+class _AdminTeamsPanel extends StatelessWidget {
+  const _AdminTeamsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 700) {
+        return Column(
+          children: adminTeams.map((team) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GlassPanel(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(team.name,
+                        softWrap: true,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    MobileInfoRow(label: 'Miembros', value: '${team.users}'),
+                    MobileInfoRow(
+                      label: 'Estado',
+                      value: team.isReady
+                          ? 'Decisiones enviadas'
+                          : 'Editando borrador',
+                    ),
+                    MobileInfoRow(label: 'Actividad', value: team.lastLogin),
+                  ],
+                ),
+              ),
+            );
+          }).toList(growable: false),
+        );
+      }
+
+      return GlassPanel(
+        padding: EdgeInsets.zero,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Empresa')),
+            DataColumn(label: Text('Miembros')),
+            DataColumn(label: Text('Estado')),
+            DataColumn(label: Text('Ultima actividad')),
+          ],
+          rows: adminTeams.map((team) {
+            return DataRow(
+              cells: [
+                DataCell(Text(team.name,
+                    style: const TextStyle(fontWeight: FontWeight.w700))),
+                DataCell(Text('${team.users}')),
+                DataCell(
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: team.isReady
+                          ? StratovaColors.successSoft
+                          : StratovaColors.warningSoft,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      team.isReady
+                          ? 'Decisiones enviadas'
+                          : 'Editando borrador',
+                      style: TextStyle(
+                          color: team.isReady
+                              ? StratovaColors.success
+                              : StratovaColors.warning),
+                    ),
+                  ),
+                ),
+                DataCell(Text(team.lastLogin)),
+              ],
+            );
+          }).toList(growable: false),
+        ),
+      );
+    });
   }
 }
 

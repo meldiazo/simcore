@@ -82,21 +82,15 @@ class _MarketPageState extends State<MarketPage> {
           spacing: 20,
           runSpacing: 20,
           children: [
-            SizedBox(
-              width: 390,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 390),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.smart_toy_outlined,
-                            color: StratovaColors.accent),
-                        SizedBox(width: 8),
-                        Text('Simulador de Precios',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w700)),
-                      ],
+                    const IconTitle(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'Simulador de Precios',
                     ),
                     const SizedBox(height: 12),
                     const Text(
@@ -128,40 +122,27 @@ class _MarketPageState extends State<MarketPage> {
                 ),
               ),
             ),
-            SizedBox(
-              width: 890,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 890),
               child: GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Proyeccion de Demanda',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700)),
-                              SizedBox(height: 6),
-                              Text(
-                                  'Distribucion probabilistica basada en elasticidad precio-demanda.'),
-                            ],
-                          ),
+                    ResponsiveHeaderAction(
+                      title: 'Proyeccion de Demanda',
+                      subtitle:
+                          'Distribucion probabilistica basada en elasticidad precio-demanda.',
+                      action: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: StratovaColors.surface,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: StratovaColors.border),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: StratovaColors.surface,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: StratovaColors.border),
-                          ),
-                          child: const Text('Confianza: 82%',
-                              style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+                        child: const Text('Confianza: 82%',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
                     ),
                     const SizedBox(height: 30),
                     _DemandChart(
@@ -173,8 +154,8 @@ class _MarketPageState extends State<MarketPage> {
                       spacing: 20,
                       runSpacing: 20,
                       children: [
-                        SizedBox(
-                          width: 410,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 410),
                           child: GlassPanel(
                             backgroundColor: StratovaColors.surface,
                             child: Column(
@@ -205,8 +186,8 @@ class _MarketPageState extends State<MarketPage> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 410,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 410),
                           child: GlassPanel(
                             backgroundColor: StratovaColors.surface,
                             child: Column(
@@ -313,8 +294,9 @@ class _SliderField extends StatelessWidget {
           max: max,
           onChanged: onChanged,
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          runSpacing: 6,
           children: [
             Text(format(min),
                 style: const TextStyle(

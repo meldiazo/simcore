@@ -13,8 +13,8 @@ class ProfilePage extends StatelessWidget {
       spacing: 20,
       runSpacing: 20,
       children: [
-        SizedBox(
-          width: 360,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -59,28 +59,25 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(
-          width: 880,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 880),
           child: Column(
             children: [
-              GlassPanel(
-                child: Row(
-                  children: const [
-                    Expanded(
-                        child: _ProfileStat(
-                            label: 'Posicion Actual',
-                            value: '#2',
-                            detail: 'de 5 equipos')),
-                    Expanded(
-                        child: _ProfileStat(
-                            label: 'Ciclos Completados',
-                            value: '2',
-                            detail: 'de 8')),
-                    Expanded(
-                        child: _ProfileStat(
-                            label: 'Decisiones Enviadas',
-                            value: '12',
-                            detail: '100% a tiempo')),
+              const GlassPanel(
+                child: ResponsiveMetricRow(
+                  children: [
+                    _ProfileStat(
+                        label: 'Posicion Actual',
+                        value: '#2',
+                        detail: 'de 5 equipos'),
+                    _ProfileStat(
+                        label: 'Ciclos Completados',
+                        value: '2',
+                        detail: 'de 8'),
+                    _ProfileStat(
+                        label: 'Decisiones Enviadas',
+                        value: '12',
+                        detail: '100% a tiempo'),
                   ],
                 ),
               ),
@@ -221,35 +218,51 @@ class _RoleTile extends StatelessWidget {
         color: highlighted ? StratovaColors.accentSoft : StratovaColors.muted,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(subtitle),
-              ],
-            ),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                softWrap: true,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(subtitle, softWrap: true),
+          ],
+        );
+        final badgeWidget = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? StratovaColors.successSoft
+                : StratovaColors.surface,
+            borderRadius: BorderRadius.circular(999),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: highlighted
-                  ? StratovaColors.successSoft
-                  : StratovaColors.surface,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(badge,
-                style: TextStyle(
-                    color: highlighted
-                        ? StratovaColors.success
-                        : StratovaColors.textSecondary)),
-          ),
-        ],
-      ),
+          child: Text(badge,
+              style: TextStyle(
+                  color: highlighted
+                      ? StratovaColors.success
+                      : StratovaColors.textSecondary)),
+        );
+
+        if (constraints.maxWidth < 460) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              content,
+              const SizedBox(height: 10),
+              badgeWidget,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: 12),
+            Flexible(child: badgeWidget),
+          ],
+        );
+      }),
     );
   }
 }

@@ -1,5 +1,5 @@
-import 'package:core_sim_ia/app/router.dart';
-import 'package:core_sim_ia/app/theme.dart';
+import 'package:core_sim_ia/app/router/app_router.dart';
+import 'package:core_sim_ia/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
@@ -12,7 +12,7 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       onGenerateRoute: AppRouter.onGenerateRoute,
       initialRoute: AppRouter.workspace,
-      theme: buildStratovaTheme(),
+      theme: buildSimcoreTheme(),
     );
   }
 }

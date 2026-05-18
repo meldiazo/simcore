@@ -5,15 +5,17 @@ import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:core_sim_ia/core/config/app_config.dart';
 
-class DecisionsPage extends StatefulWidget {
+class DecisionsPage extends ConsumerStatefulWidget {
   const DecisionsPage({super.key});
 
   @override
-  State<DecisionsPage> createState() => _DecisionsPageState();
+  ConsumerState<DecisionsPage> createState() => _DecisionsPageState();
 }
 
-class _DecisionsPageState extends State<DecisionsPage> {
+class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   static const _auditSteps = [
     'Inicializando sandbox cuantico...',
     'Cruzando elasticidad de Precio vs Marketing...',
@@ -86,6 +88,9 @@ class _DecisionsPageState extends State<DecisionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Leemos la configuración global inyectada por Riverpod
+    final appConfig = ref.watch(appConfigProvider);
+
     final tabs = const [
       ('1. Chequeo de Borradores', Icons.shield_outlined),
       ('2. Auditoria Pre-Vuelo', Icons.smart_toy_outlined),
@@ -103,17 +108,18 @@ class _DecisionsPageState extends State<DecisionsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.hub_rounded, color: SimcoreColors.success),
-                SizedBox(width: 10),
+              children: [
+                const Icon(Icons.hub_rounded, color: SimcoreColors.success),
+                const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Servidor de Simulacion',
+                    const Text('Servidor de Simulacion',
                         style: TextStyle(
                             fontSize: 11, color: SimcoreColors.textTertiary)),
-                    Text('ONLINE',
-                        style: TextStyle(
+                    // 2. Mostramos el ambiente y la URL real en pantalla
+                    Text('${appConfig.environment.name.toUpperCase()} - ${appConfig.simUrl}',
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             color: SimcoreColors.success)),
                   ],

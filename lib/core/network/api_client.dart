@@ -6,84 +6,115 @@ import 'api_exception.dart';
 import 'api_result.dart';
 
 class ApiClient {
-  late final Dio _dio;
-
-  ApiClient({required String baseUrl}) {
+  ApiClient({
+    required String baseUrl,
+    TokenProvider? tokenProvider,
+    RefreshCallback? onRefresh,
+    VoidCallback? onSessionExpired,
+  })  : _tokenProvider = tokenProvider,
+        _onRefresh = onRefresh,
+        _onSessionExpired = onSessionExpired {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         sendTimeout: const Duration(seconds: 15),
+        headers: {'Content-Type': 'application/json'},
       ),
     );
 
-    // Interceptor para inyectar el Bearer token
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // TODO: Obtener el token del gestor de estado (ej. Riverpod) o SecureStorage
-          // Simulando la obtención del token
-          const String? accessToken = null; 
-
-          // No inyectar el token en la ruta de login
-          final isLoginRequest = options.path.contains('/api/v1/iam/auth/login');
-
-          if (accessToken != null && !isLoginRequest) {
-            options.headers['Authorization'] = 'Bearer $accessToken';
+          final isPublic = _isPublicRoute(options.path);
+          if (!isPublic && _tokenProvider != null) {
+            final token = await _tokenProvider!();
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
-          
           return handler.next(options);
+        },
+        onError: (error, handler) async {
+          final is401 = error.response?.statusCode == 401;
+          final isRefreshRoute = error.requestOptions.path.contains('/auth/refresh');
+          final isLoginRoute = error.requestOptions.path.contains('/auth/login');
+
+          if (is401 && !isRefreshRoute && !isLoginRoute && _onRefresh != null) {
+            try {
+              final newToken = await _onRefresh!();
+              if (newToken != null) {
+                final opts = error.requestOptions;
+                opts.headers['Authorization'] = 'Bearer $newToken';
+                final response = await _dio.fetch(opts);
+                return handler.resolve(response);
+              }
+            } catch (_) {
+              _onSessionExpired?.call();
+            }
+          }
+
+          return handler.next(error);
         },
       ),
     );
 
-    // Interceptor de Logs solo en modo de desarrollo
     if (kDebugMode) {
       _dio.interceptors.add(
         LogInterceptor(
-          request: true,
-          requestHeader: true,
           requestBody: true,
-          responseHeader: true,
           responseBody: true,
           error: true,
+          logPrint: (o) => debugPrint(o.toString()),
         ),
       );
     }
   }
 
-  Future<ApiResult<dynamic>> get(String path, {Map<String, dynamic>? queryParameters}) async {
-    return _safeRequest(() => _dio.get(path, queryParameters: queryParameters));
+  late final Dio _dio;
+  final TokenProvider? _tokenProvider;
+  final RefreshCallback? _onRefresh;
+  final VoidCallback? _onSessionExpired;
+
+  static bool _isPublicRoute(String path) {
+    return path.contains('/auth/login') ||
+        path.contains('/auth/refresh');
   }
 
-  Future<ApiResult<dynamic>> post(String path, {dynamic data}) async {
-    return _safeRequest(() => _dio.post(path, data: data));
+  Future<ApiResult<dynamic>> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return _safeRequest(
+      () => _dio.get(path, queryParameters: queryParameters, options: options),
+    );
   }
 
-  Future<ApiResult<dynamic>> put(String path, {dynamic data}) async {
-    return _safeRequest(() => _dio.put(path, data: data));
+  Future<ApiResult<dynamic>> post(String path, {dynamic data, Options? options}) async {
+    return _safeRequest(() => _dio.post(path, data: data, options: options));
   }
 
-  Future<ApiResult<dynamic>> patch(String path, {dynamic data}) async {
-    return _safeRequest(() => _dio.patch(path, data: data));
+  Future<ApiResult<dynamic>> put(String path, {dynamic data, Options? options}) async {
+    return _safeRequest(() => _dio.put(path, data: data, options: options));
   }
 
-  Future<ApiResult<dynamic>> delete(String path, {dynamic data}) async {
-    return _safeRequest(() => _dio.delete(path, data: data));
+  Future<ApiResult<dynamic>> patch(String path, {dynamic data, Options? options}) async {
+    return _safeRequest(() => _dio.patch(path, data: data, options: options));
   }
 
-  /// Ejecuta la petición de forma segura y encapsula el resultado en [ApiResult]
+  Future<ApiResult<dynamic>> delete(String path, {dynamic data, Options? options}) async {
+    return _safeRequest(() => _dio.delete(path, data: data, options: options));
+  }
+
   Future<ApiResult<dynamic>> _safeRequest(Future<Response> Function() requestFn) async {
     try {
       final response = await requestFn();
-      // Retornamos Right (Success) con la data
       return Right(response.data);
     } on DioException catch (e) {
-      // Retornamos Left (Failure) mapeando el error de Dio a ApiException
       return Left(_handleDioException(e));
     } catch (e) {
-      // Capturamos cualquier otro error imprevisto
       return Left(
         ApiException(
           type: ErrorType.unknown,
@@ -97,34 +128,27 @@ class ApiClient {
     if (error.response != null) {
       final statusCode = error.response?.statusCode;
       final responseData = error.response?.data;
-      
+
       String? errorMessage;
       if (responseData is Map<String, dynamic>) {
         errorMessage = responseData['message'] as String?;
       }
 
       return ApiException.fromStatusCode(statusCode, errorMessage ?? error.message);
-    } else {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.connectionError:
-          return ApiException(
-            type: ErrorType.network,
-            message: 'Error de conexión. Revisa tu internet.',
-          );
-        case DioExceptionType.cancel:
-          return ApiException(
-            type: ErrorType.unknown,
-            message: 'Petición cancelada.',
-          );
-        default:
-          return ApiException(
-            type: ErrorType.unknown,
-            message: error.message ?? 'Error desconocido en la red.',
-          );
-      }
     }
+
+    return switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout ||
+      DioExceptionType.connectionError =>
+        ApiException(type: ErrorType.network, message: 'Error de conexión. Revisa tu internet.'),
+      DioExceptionType.cancel =>
+        ApiException(type: ErrorType.unknown, message: 'Petición cancelada.'),
+      _ => ApiException(type: ErrorType.unknown, message: error.message ?? 'Error desconocido.'),
+    };
   }
 }
+
+typedef TokenProvider = Future<String?> Function();
+typedef RefreshCallback = Future<String?> Function();

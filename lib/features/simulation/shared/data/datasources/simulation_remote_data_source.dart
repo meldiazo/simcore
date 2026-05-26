@@ -234,7 +234,7 @@ class SimulationRemoteDataSource implements SimulationDataSource {
     return switch (id.toUpperCase()) {
       'MARKET' || 'MERCADO' => 'Módulo Mercado',
       'INVESTMENT' || 'FINANCE' || 'FINANZAS' => 'Inversiones y Financiamiento',
-      'ORGANIZATION' || 'HR' || 'RRHH' => 'Estructuras Organizativas',
+      'ORGANIZATION' => 'Estructuras Organizativas',
       'ACCOUNTING' || 'CONTABILIDAD' => 'Módulo Contabilidad',
       'ANALYSIS' || 'ANALISIS' => 'Análisis General',
       _ => 'Módulo SIMCORE',

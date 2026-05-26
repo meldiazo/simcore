@@ -113,7 +113,7 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.market => const MarketPage(),
       SimcoreSection.finance => const FinancePage(),
 
-      // Temporalmente usamos la pantalla que antes era RRHH.
+      
       // Más adelante esta pantalla debe quedar renombrada como OrganizationPage.
       SimcoreSection.organization => const OrganizationPage(),
 

@@ -80,7 +80,7 @@ class _FinancePageState extends State<FinancePage> {
                   child: ResponsiveHeaderAction(
                     title: 'Estado de Resultados Pro-Forma',
                     subtitle:
-                        'Celdas calculadas automaticamente desde Mercado y RRHH.',
+                        'Celdas calculadas automáticamente desde Mercado y Estructuras Organizativas.',
                     action: FilledButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.play_arrow_rounded),
@@ -223,7 +223,7 @@ class _FinanceTable extends StatelessWidget {
     final rows = [
       ('Ingresos Operativos', [1200000, 1350000, 1500000, 1680000], false),
       ('( C.O.G.S. )', [600000, 650000, 700000, 760000], true),
-      ('( Gastos Admin y RRHH )', [250000, 250000, 260000, 260000], true),
+      ('( Gastos administrativos y estructura organizativa )', [250000, 250000, 260000, 260000], true),
       ('( Marketing )', [150000, 150000, 180000, 200000], true),
       ('EBITDA Operativo', [200000, 300000, 360000, 460000], false),
     ];

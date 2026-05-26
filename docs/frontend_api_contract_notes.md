@@ -63,4 +63,3 @@ Validaciones realizadas:
 Observación de seguridad:
 
 - No guardar tokens reales en el repositorio.
-- No compartir tokens completos en documentación ni chats.

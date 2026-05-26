@@ -1,10 +1,16 @@
+import 'package:core_sim_ia/features/auth/presentation/pages/login_page.dart';
+import 'package:core_sim_ia/features/auth/presentation/pages/register_page.dart';
+import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:core_sim_ia/features/auth/presentation/providers/auth_state.dart';
 import 'package:core_sim_ia/features/shared/presentation/layout/simcore_shell_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppRouter {
   const AppRouter._();
 
-  // Rutas principales SIMCORE
+  static const String login = '/login';
+  static const String register = '/register';
   static const String workspace = '/';
   static const String decisions = '/decisions';
   static const String market = '/market';
@@ -16,23 +22,33 @@ class AppRouter {
   static const String profile = '/profile';
   static const String teacher = '/teacher';
 
-  // Rutas antiguas temporales.
-  // Se mantienen solo para no romper navegación vieja mientras migramos.
   static const String legacyHr = '/hr';
   static const String legacyOperations = '/operations';
   static const String legacyAdmin = '/admin';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final routeName = settings.name ?? workspace;
+
+    if (routeName == login) {
+      return MaterialPageRoute<void>(
+        builder: (_) => const LoginPage(),
+        settings: settings,
+      );
+    }
+
+    if (routeName == register) {
+      return MaterialPageRoute<void>(
+        builder: (_) => _AuthGuard(child: const RegisterPage()),
+        settings: settings,
+      );
+    }
+
     final normalizedRoute = _normalizeRoute(routeName);
     final section = _sectionFromRoute(normalizedRoute);
 
     return MaterialPageRoute<void>(
-      builder: (_) => SimcoreShellPage(section: section),
-      settings: RouteSettings(
-        name: normalizedRoute,
-        arguments: settings.arguments,
-      ),
+      builder: (_) => _AuthGuard(child: SimcoreShellPage(section: section)),
+      settings: RouteSettings(name: normalizedRoute, arguments: settings.arguments),
     );
   }
 
@@ -87,8 +103,9 @@ class AppRouter {
 
   static bool isKnownRoute(String? routeName) {
     if (routeName == null) return false;
-
     return switch (routeName) {
+      login ||
+      register ||
       workspace ||
       decisions ||
       market ||
@@ -104,6 +121,26 @@ class AppRouter {
       legacyAdmin =>
         true,
       _ => false,
+    };
+  }
+}
+
+// ── Guard que protege rutas autenticadas ──────────────────────────────────────
+
+class _AuthGuard extends ConsumerWidget {
+  const _AuthGuard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+
+    return switch (authState.status) {
+      AuthStatus.initial || AuthStatus.loading => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      AuthStatus.authenticated => child,
+      _ => const LoginPage(),
     };
   }
 }

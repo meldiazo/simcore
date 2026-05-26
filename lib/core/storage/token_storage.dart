@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class AuthTokens {
-  const AuthTokens({
+class StoredTokens {
+  const StoredTokens({
     required this.accessToken,
     required this.refreshToken,
   });
@@ -11,13 +11,13 @@ class AuthTokens {
 }
 
 abstract interface class TokenStorage {
-  Future<void> saveTokens(AuthTokens tokens);
+  Future<void> saveTokens(StoredTokens tokens);
 
   Future<String?> getAccessToken();
 
   Future<String?> getRefreshToken();
 
-  Future<AuthTokens?> getTokens();
+  Future<StoredTokens?> getTokens();
 
   Future<bool> hasTokens();
 
@@ -35,16 +35,9 @@ final class SecureTokenStorage implements TokenStorage {
   static const String _refreshTokenKey = 'simcore_refresh_token';
 
   @override
-  Future<void> saveTokens(AuthTokens tokens) async {
-    await _storage.write(
-      key: _accessTokenKey,
-      value: tokens.accessToken,
-    );
-
-    await _storage.write(
-      key: _refreshTokenKey,
-      value: tokens.refreshToken,
-    );
+  Future<void> saveTokens(StoredTokens tokens) async {
+    await _storage.write(key: _accessTokenKey, value: tokens.accessToken);
+    await _storage.write(key: _refreshTokenKey, value: tokens.refreshToken);
   }
 
   @override
@@ -58,18 +51,13 @@ final class SecureTokenStorage implements TokenStorage {
   }
 
   @override
-  Future<AuthTokens?> getTokens() async {
+  Future<StoredTokens?> getTokens() async {
     final accessToken = await getAccessToken();
     final refreshToken = await getRefreshToken();
 
-    if (accessToken == null || refreshToken == null) {
-      return null;
-    }
+    if (accessToken == null || refreshToken == null) return null;
 
-    return AuthTokens(
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    );
+    return StoredTokens(accessToken: accessToken, refreshToken: refreshToken);
   }
 
   @override

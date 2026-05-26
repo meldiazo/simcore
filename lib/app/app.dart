@@ -11,7 +11,7 @@ class App extends StatelessWidget {
       title: 'Stratova',
       debugShowCheckedModeBanner: false,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: AppRouter.workspace,
+      initialRoute: AppRouter.login,
       theme: buildSimcoreTheme(),
     );
   }

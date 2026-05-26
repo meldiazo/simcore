@@ -1,5 +1,6 @@
 import 'package:core_sim_ia/app/router/app_router.dart';
 import 'package:core_sim_ia/app/theme/app_theme.dart';
+import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:core_sim_ia/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:core_sim_ia/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
@@ -12,6 +13,7 @@ import 'package:core_sim_ia/features/profile/presentation/pages/profile_page.dar
 import 'package:core_sim_ia/features/teacher/presentation/pages/teacher_dashboard_page.dart';
 import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SimcoreSection {
   workspace,
@@ -265,7 +267,7 @@ class SimcoreShellPage extends StatelessWidget {
   }
 }
 
-class _Sidebar extends StatelessWidget {
+class _Sidebar extends ConsumerWidget {
   const _Sidebar({
     required this.section,
     required this.onTap,
@@ -275,7 +277,8 @@ class _Sidebar extends StatelessWidget {
   final ValueChanged<SimcoreDestination> onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authNotifierProvider).user;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.88),
@@ -368,6 +371,28 @@ class _Sidebar extends StatelessWidget {
                 }).toList(growable: false),
               ),
             ),
+            if (user != null && user.canManageUsers)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRouter.register),
+                  icon: const Icon(Icons.person_add_rounded, size: 16),
+                  label: const Text('Crear usuario'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SimcoreColors.accent,
+                    minimumSize: const Size(double.infinity, 42),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.all(16),
               child: GlassPanel(

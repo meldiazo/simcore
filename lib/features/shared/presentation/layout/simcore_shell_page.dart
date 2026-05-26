@@ -13,6 +13,8 @@ import 'package:core_sim_ia/features/profile/presentation/pages/profile_page.dar
 import 'package:core_sim_ia/features/teacher/presentation/pages/teacher_dashboard_page.dart';
 import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:core_sim_ia/core/config/app_config.dart';
+import 'package:core_sim_ia/features/shared/presentation/widgets/demo_mode_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SimcoreSection {

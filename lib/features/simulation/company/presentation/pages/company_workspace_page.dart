@@ -4,13 +4,20 @@ import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:core_sim_ia/features/shared/presentation/widgets/api_error_state.dart';
+import 'package:core_sim_ia/features/shared/presentation/widgets/loading_state.dart';
+import 'package:core_sim_ia/features/stratova/presentation/providers/stratova_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WorkspacePage extends StatelessWidget {
+class WorkspacePage extends ConsumerWidget {
   const WorkspacePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final completedModules = decisionModules
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modulesAsync = ref.watch(decisionModulesProvider);
+    final modules = modulesAsync.valueOrNull ?? const <DecisionModule>[];
+
+    final completedModules = modules
         .where((module) => module.status == DecisionStatus.submitted)
         .length;
 
@@ -96,7 +103,7 @@ class WorkspacePage extends StatelessWidget {
                     }),
                     const SizedBox(height: 14),
                     Text(
-                      'El motor de simulacion procesara las estrategias al finalizar. Tu equipo ha completado $completedModules de ${decisionModules.length} modulos obligatorios.',
+                      "El motor de simulacion procesara las estrategias al finalizar. Tu equipo ha completado $completedModules de ${modules.length} modulos obligatorios.",
                       style: const TextStyle(
                           fontSize: 15,
                           color: SimcoreColors.textSecondary,
@@ -174,12 +181,12 @@ class WorkspacePage extends StatelessWidget {
                             fontWeight: FontWeight.w700, fontSize: 16)),
                     const SizedBox(height: 6),
                     Text(
-                      '$completedModules de ${decisionModules.length} modulos completados',
+                      '$completedModules de ${modules.length} modulos completados',
                       style:
                           const TextStyle(color: SimcoreColors.textSecondary),
                     ),
                     const SizedBox(height: 20),
-                    ...decisionModules.map((module) => Padding(
+                    ...modules.map((module) => Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: MetricBar(
                             label: module.name,
@@ -207,10 +214,24 @@ class WorkspacePage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 28),
+        modulesAsync.when(
+  loading: () => const LoadingState(
+    message: 'Cargando progreso real de módulos desde Simulation Service...',
+  ),
+  error: (error, _) => ApiErrorState(
+    title: 'No se pudo cargar el progreso real de módulos',
+    message:
+        'La app está en modo backend real. No se usaron datos mock. '
+        'Error recibido: $error',
+    onRetry: () => ref.invalidate(decisionModulesProvider),
+  ),
+  data: (_) => const SizedBox.shrink(),
+),
+const SizedBox(height: 12),
         const SectionLabel('Resumen por Modulo'),
         const SizedBox(height: 14),
         ResponsiveWrap(
-          children: decisionModules.map((module) {
+          children: modules.map((module) {
             return GlassPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,40 +1,46 @@
 import 'package:core_sim_ia/core/network/api_client.dart';
 import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:core_sim_ia/features/stratova/data/datasources/stratova_data_source.dart';
-import 'package:core_sim_ia/features/stratova/data/datasources/stratova_mock_data_source.dart';
 
 class StratovaRemoteDataSource implements StratovaDataSource {
-  StratovaRemoteDataSource(
-    this._apiClient, {
-    StratovaDataSource? fallback,
-  }) : _fallback = fallback ?? StratovaMockDataSource();
+  StratovaRemoteDataSource(this._apiClient);
 
   final ApiClient _apiClient;
-  final StratovaDataSource _fallback;
 
   @override
   Future<StudentUser> getCurrentUser() {
-    return _fallback.getCurrentUser();
+    return _notIntegrated(
+      'getCurrentUser todavía depende de datos demo heredados. '
+      'Debe integrarse luego con AuthUser y SimulationContext.',
+    );
   }
 
   @override
   Future<CurrentCycle> getCurrentCycle() {
-    return _fallback.getCurrentCycle();
+    return _notIntegrated(
+      'getCurrentCycle todavía no tiene endpoint real conectado.',
+    );
   }
 
   @override
   Future<List<TeamMember>> getTeamMembers() {
-    return _fallback.getTeamMembers();
+    return _notIntegrated(
+      'getTeamMembers todavía no tiene endpoint real conectado.',
+    );
   }
 
   @override
   Future<List<KpiMetric>> getKpis() {
-    return _fallback.getKpis();
+    return _notIntegrated(
+      'getKpis todavía no tiene endpoint real conectado.',
+    );
   }
 
   @override
   Future<List<AlertItem>> getAlerts() {
-    return _fallback.getAlerts();
+    return _notIntegrated(
+      'getAlerts debe reemplazarse por incoherencias reales del backend.',
+    );
   }
 
   @override
@@ -47,14 +53,10 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
     return result.fold(
       (failure) {
-        return _fallback.getDecisionModules(companyId: companyId);
+        throw failure;
       },
-      (data) async {
+      (data) {
         final modules = _extractList(data);
-
-        if (modules.isEmpty) {
-          return _fallback.getDecisionModules(companyId: companyId);
-        }
 
         return modules.map(_decisionModuleFromJson).toList();
       },
@@ -63,50 +65,78 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
   @override
   Future<List<RankingTeam>> getRanking() {
-    return _fallback.getRanking();
+    return _notIntegrated(
+      'getRanking debe reemplazarse por comparación académica real.',
+    );
   }
 
   @override
   Future<List<MarketSegment>> getMarketSegments() {
-    return _fallback.getMarketSegments();
+    return _notIntegrated(
+      'getMarketSegments todavía no está conectado al módulo Mercado real.',
+    );
   }
 
   @override
   Future<List<Competitor>> getCompetitors() {
-    return _fallback.getCompetitors();
+    return _notIntegrated(
+      'getCompetitors todavía no está conectado al módulo Mercado real.',
+    );
   }
 
   @override
   Future<List<ScenarioData>> getFinancialScenarios() {
-    return _fallback.getFinancialScenarios();
+    return _notIntegrated(
+      'getFinancialScenarios debe reemplazarse por escenarios reales.',
+    );
   }
 
   @override
   Future<List<CashFlowEntry>> getCashFlow() {
-    return _fallback.getCashFlow();
+    return _notIntegrated(
+      'getCashFlow debe reemplazarse por estados financieros reales.',
+    );
   }
 
   @override
   Future<List<Inefficiency>> getOrganizationalInefficiencies() {
-    return _fallback.getOrganizationalInefficiencies();
+    return _notIntegrated(
+      'getOrganizationalInefficiencies debe reemplazarse por incoherencias reales.',
+    );
   }
 
   @override
   Future<List<AdminTeamStatus>> getAdminTeams() {
-    return _fallback.getAdminTeams();
+    return _notIntegrated(
+      'getAdminTeams debe reemplazarse por dashboard docente real.',
+    );
+  }
+
+  Future<T> _notIntegrated<T>(String message) {
+    return Future<T>.error(
+      UnsupportedError('Fuente de datos no integrada: $message'),
+    );
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
-      return data.whereType<Map<String, dynamic>>().toList();
+      return data
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
     }
 
-    if (data is Map<String, dynamic>) {
+    if (data is Map) {
+      final json = Map<String, dynamic>.from(data);
+
       for (final key in ['modules', 'data', 'content', 'items']) {
-        final value = data[key];
+        final value = json[key];
 
         if (value is List) {
-          return value.whereType<Map<String, dynamic>>().toList();
+          return value
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
         }
       }
     }
@@ -117,12 +147,12 @@ class StratovaRemoteDataSource implements StratovaDataSource {
   DecisionModule _decisionModuleFromJson(Map<String, dynamic> json) {
     final id = _readString(
       json,
-      ['id', 'moduleId', 'moduleCode', 'code'],
+      ['module', 'id', 'moduleId', 'moduleCode', 'code'],
     );
 
     final name = _readString(
       json,
-      ['name', 'moduleName', 'displayName', 'title'],
+      ['name', 'moduleName', 'displayName', 'title', 'module'],
     );
 
     final status = _readString(
@@ -130,19 +160,21 @@ class StratovaRemoteDataSource implements StratovaDataSource {
       ['status', 'state'],
     );
 
+    final progress = _readInt(
+      json,
+      ['progress', 'completionPercentage', 'percentage'],
+    );
+
     final safeId = id.isEmpty ? name.toLowerCase().replaceAll(' ', '-') : id;
 
     return DecisionModule(
       id: safeId,
-      name: name.isEmpty ? _humanizeModuleName(safeId) : name,
+      name: name.isEmpty ? _humanizeModuleName(safeId) : _humanizeModuleName(name),
       status: _statusFromJson(status),
-      progress: _readInt(
-        json,
-        ['progress', 'completionPercentage', 'percentage'],
-      ),
+      progress: progress > 0 ? progress : _progressFromStatus(status),
       summary: [
         'Origen: API real',
-        if (status.isNotEmpty) 'Estado: $status',
+        if (status.isNotEmpty) 'Estado backend: $status',
         if (json['updatedAt'] != null) 'Actualizado: ${json['updatedAt']}',
       ],
     );
@@ -150,10 +182,21 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
   DecisionStatus _statusFromJson(String value) {
     return switch (value.toUpperCase()) {
-      'SUBMITTED' || 'COMPLETED' || 'DONE' => DecisionStatus.submitted,
-      'DRAFT' || 'IN_PROGRESS' => DecisionStatus.draft,
-      'LOCKED' => DecisionStatus.locked,
+      'COMPLETE' || 'COMPLETED' || 'DONE' || 'SUBMITTED' =>
+        DecisionStatus.submitted,
+      'IN_PROGRESS' || 'DRAFT' => DecisionStatus.draft,
+      'REQUIRES_REVISION' || 'LOCKED' => DecisionStatus.locked,
+      'PENDING' || 'OUTDATED' => DecisionStatus.pending,
       _ => DecisionStatus.pending,
+    };
+  }
+
+  int _progressFromStatus(String value) {
+    return switch (value.toUpperCase()) {
+      'COMPLETE' || 'COMPLETED' || 'DONE' || 'SUBMITTED' => 100,
+      'IN_PROGRESS' || 'DRAFT' => 50,
+      'REQUIRES_REVISION' || 'OUTDATED' => 25,
+      _ => 0,
     };
   }
 
@@ -175,6 +218,7 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
       if (value is int) return value;
       if (value is double) return value.round();
+      if (value is num) return value.toInt();
       if (value is String) return int.tryParse(value) ?? 0;
     }
 
@@ -182,13 +226,13 @@ class StratovaRemoteDataSource implements StratovaDataSource {
   }
 
   String _humanizeModuleName(String id) {
-    return switch (id.toLowerCase()) {
-      'market' || 'mercado' || 'market_module' => 'Módulo Mercado',
-      'finance' || 'finanzas' || 'financial' => 'Módulo Finanzas',
-      'hr' || 'rrhh' || 'organization' || 'organizational' => 'Módulo RRHH',
-      'operations' || 'operaciones' => 'Módulo Operaciones',
-      'accounting' || 'contabilidad' => 'Módulo Contabilidad',
-      'analysis' || 'analisis' => 'Análisis General',
+    return switch (id.toUpperCase()) {
+      'MARKET' || 'MERCADO' => 'Módulo Mercado',
+      'INVESTMENT' || 'FINANCE' || 'FINANZAS' =>
+        'Inversiones y Financiamiento',
+      'ORGANIZATION' || 'HR' || 'RRHH' => 'Estructuras Organizativas',
+      'ACCOUNTING' || 'CONTABILIDAD' => 'Módulo Contabilidad',
+      'ANALYSIS' || 'ANALISIS' => 'Análisis General',
       _ => 'Módulo SIMCORE',
     };
   }

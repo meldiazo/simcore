@@ -17,11 +17,21 @@ class AppConfig {
     required this.useMockData,
   });
 
-  /// Desarrollo local.
-  /// Usa esto SOLO si tienes backend corriendo localmente:
+  /// Desarrollo con backend local real.
   /// IAM: http://localhost:8081
   /// SIM: http://localhost:8082
-  factory AppConfig.dev() {
+  factory AppConfig.devLocal() {
+    return const AppConfig(
+      environment: Environment.dev,
+      iamUrl: 'http://localhost:8081',
+      simUrl: 'http://localhost:8082',
+      useMockData: false,
+    );
+  }
+
+  /// Desarrollo visual sin backend.
+  /// Úsalo solo para pantallas demo o trabajo UI aislado.
+  factory AppConfig.devMock() {
     return const AppConfig(
       environment: Environment.dev,
       iamUrl: 'http://localhost:8081',
@@ -31,7 +41,7 @@ class AppConfig {
   }
 
   /// Backend desplegado en Railway.
-  /// Esta es la configuración que necesitas ahora para dejar de apuntar a localhost.
+  /// Úsalo solo para smoke test o validación final.
   factory AppConfig.railway() {
     return const AppConfig(
       environment: Environment.staging,
@@ -41,19 +51,8 @@ class AppConfig {
     );
   }
 
-  /// Configuración para pruebas integradas/staging.
-  /// Déjala preparada para cuando tengan dominios separados reales.
-  factory AppConfig.staging() {
-    return const AppConfig(
-      environment: Environment.staging,
-      iamUrl: 'https://simcore-production.up.railway.app',
-      simUrl: 'https://simcore-production.up.railway.app',
-      useMockData: false,
-    );
-  }
-
-  /// Configuración para producción final.
-  /// Cambiar cuando tengan dominio definitivo.
+  /// Producción final.
+  /// Cambiar cuando exista dominio definitivo.
   factory AppConfig.prod() {
     return const AppConfig(
       environment: Environment.prod,
@@ -62,10 +61,42 @@ class AppConfig {
       useMockData: false,
     );
   }
+
+  /// Selección por dart-define.
+  ///
+  /// Ejemplos:
+  /// flutter run --dart-define=APP_ENV=local
+  /// flutter run --dart-define=APP_ENV=mock
+  /// flutter run --dart-define=APP_ENV=railway
+  factory AppConfig.fromEnvironment() {
+  const forceMock =
+      bool.fromEnvironment('USE_MOCK_DATA', defaultValue: false);
+
+  if (forceMock) {
+    return AppConfig.devMock();
+  }
+
+  const appEnv = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'local',
+  );
+
+  switch (appEnv) {
+    case 'mock':
+      return AppConfig.devMock();
+    case 'railway':
+      return AppConfig.railway();
+    case 'prod':
+      return AppConfig.prod();
+    case 'local':
+    default:
+      return AppConfig.devLocal();
+  }
+}
 }
 
 /// Provider global de configuración.
-/// Ahora apunta a Railway, no a localhost.
+/// Por defecto usa backend local real.
 final appConfigProvider = Provider<AppConfig>((ref) {
-  return AppConfig.railway();
+  return AppConfig.fromEnvironment();
 });

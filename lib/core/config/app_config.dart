@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core_sim_ia/core/config/environment.dart';
 
 /// Capa central de configuración de SimCore.
-/// Dictamina hacia dónde apuntan los dominios de IAM y Simulación,
-/// y si la app debe usar datos estáticos o exigir conexión real.
+/// Define hacia dónde apuntan los servicios de IAM y Simulación,
+/// y si la app debe usar datos mock o conexión real.
 class AppConfig {
   final Environment environment;
   final String iamUrl;
@@ -17,40 +17,55 @@ class AppConfig {
     required this.useMockData,
   });
 
-  /// Configuración base para el entorno de Desarrollo Local.
+  /// Desarrollo local.
+  /// Usa esto SOLO si tienes backend corriendo localmente:
+  /// IAM: http://localhost:8081
+  /// SIM: http://localhost:8082
   factory AppConfig.dev() {
     return const AppConfig(
       environment: Environment.dev,
       iamUrl: 'http://localhost:8081',
       simUrl: 'http://localhost:8082',
-      useMockData: true, // En desarrollo permitimos usar los mocks de UI temporalmente
+      useMockData: true,
     );
   }
 
-  /// Configuración para pruebas integradas (QA / Docentes).
+  /// Backend desplegado en Railway.
+  /// Esta es la configuración que necesitas ahora para dejar de apuntar a localhost.
+  factory AppConfig.railway() {
+    return const AppConfig(
+      environment: Environment.staging,
+      iamUrl: 'https://simcore-production.up.railway.app',
+      simUrl: 'https://simcore-production.up.railway.app',
+      useMockData: false,
+    );
+  }
+
+  /// Configuración para pruebas integradas/staging.
+  /// Déjala preparada para cuando tengan dominios separados reales.
   factory AppConfig.staging() {
     return const AppConfig(
       environment: Environment.staging,
-      iamUrl: 'https://iam-staging.simcore.local', 
-      simUrl: 'https://sim-staging.simcore.local',
-      useMockData: false, // Tensión real exigida: la API debe funcionar.
+      iamUrl: 'https://simcore-production.up.railway.app',
+      simUrl: 'https://simcore-production.up.railway.app',
+      useMockData: false,
     );
   }
 
-  /// Configuración para los servidores de Producción (Universidades).
+  /// Configuración para producción final.
+  /// Cambiar cuando tengan dominio definitivo.
   factory AppConfig.prod() {
     return const AppConfig(
       environment: Environment.prod,
-      iamUrl: 'https://iam.simcore.com',
-      simUrl: 'https://sim.simcore.com',
-      useMockData: false, // Prohibido usar mocks, consecuencias reales obligatorias.
+      iamUrl: 'https://simcore-production.up.railway.app',
+      simUrl: 'https://simcore-production.up.railway.app',
+      useMockData: false,
     );
   }
 }
 
-/// Proveedor inmutable de la configuración. 
-/// Todas las capas de repositorios de datos y API Clients deben leer de este provider.
+/// Provider global de configuración.
+/// Ahora apunta a Railway, no a localhost.
 final appConfigProvider = Provider<AppConfig>((ref) {
-  // Cambia aquí a .dev(), .staging() o .prod() según el entorno que necesites.
-  return AppConfig.dev();
+  return AppConfig.railway();
 });

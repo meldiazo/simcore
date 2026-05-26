@@ -1,5 +1,5 @@
-import 'package:core_sim_ia/core/network/api_client.dart';
-import 'package:core_sim_ia/features/auth/data/models/created_user_model.dart';
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/auth/data/models/created_user_model.dart';
 
 abstract interface class UserRemoteDataSource {
   Future<CreatedUserModel> createUser({
@@ -56,7 +56,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }) async {
     final result = await _client.put(
       '/api/v1/iam/users/$userId/roles',
-      data: {'roleIds': [roleId]},
+      data: {
+        'roleIds': [roleId]
+      },
     );
 
     return result.fold(

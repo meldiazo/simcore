@@ -1,8 +1,8 @@
-import 'package:core_sim_ia/features/auth/presentation/pages/login_page.dart';
-import 'package:core_sim_ia/features/auth/presentation/pages/register_page.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_state.dart';
-import 'package:core_sim_ia/features/shared/presentation/layout/simcore_shell_page.dart';
+import 'package:simcore_frontend/features/auth/presentation/pages/login_page.dart';
+import 'package:simcore_frontend/features/auth/presentation/pages/register_page.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
+import 'package:simcore_frontend/features/shared/presentation/layout/simcore_shell_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,7 +48,8 @@ class AppRouter {
 
     return MaterialPageRoute<void>(
       builder: (_) => _AuthGuard(child: SimcoreShellPage(section: section)),
-      settings: RouteSettings(name: normalizedRoute, arguments: settings.arguments),
+      settings:
+          RouteSettings(name: normalizedRoute, arguments: settings.arguments),
     );
   }
 

@@ -1,7 +1,7 @@
-import 'package:core_sim_ia/app/router/app_router.dart';
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_state.dart';
+import 'package:simcore_frontend/app/router/app_router.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,7 +76,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: _LoginForm(
@@ -159,7 +160,7 @@ class _LeftPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Simulador empresarial de alta fidelidad para\nformación ejecutiva y académica.',
+                  'Simulador de Empresas para la Enseñanza Universitaria',
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     color: Colors.white.withValues(alpha: 0.65),
@@ -208,11 +209,12 @@ class _SimcoreLogo extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.show_chart_rounded, color: Colors.white, size: 22),
+          child: const Icon(Icons.show_chart_rounded,
+              color: Colors.white, size: 22),
         ),
         const SizedBox(width: 12),
         Text(
-          'Stratova',
+          'SIMCORE',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -349,7 +351,8 @@ class _LoginForm extends StatelessWidget {
             prefixIcon: Icons.person_outline_rounded,
             enabled: !isLoading,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'El usuario es obligatorio';
+              if (v == null || v.trim().isEmpty)
+                return 'El usuario es obligatorio';
               return null;
             },
             onFieldSubmitted: (_) => onSubmit(),
@@ -390,7 +393,7 @@ class _LoginForm extends StatelessWidget {
           // Footer
           Center(
             child: Text(
-              '© 2025 Stratova · Todos los derechos reservados',
+              '© 2026 SIMCORE · Todos los derechos reservados',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: SimcoreColors.textTertiary,
@@ -461,11 +464,13 @@ class _SimcoreTextField extends StatelessWidget {
           fontSize: 14,
           color: SimcoreColors.textTertiary,
         ),
-        prefixIcon: Icon(prefixIcon, color: SimcoreColors.textTertiary, size: 20),
+        prefixIcon:
+            Icon(prefixIcon, color: SimcoreColors.textTertiary, size: 20),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: SimcoreColors.muted,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: SimcoreColors.border),

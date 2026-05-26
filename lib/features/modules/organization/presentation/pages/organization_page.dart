@@ -1,17 +1,17 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HrPage extends StatefulWidget {
-  const HrPage({super.key});
+class OrganizationPage extends StatefulWidget {
+  const OrganizationPage({super.key});
 
   @override
-  State<HrPage> createState() => _HrPageState();
+  State<OrganizationPage> createState() => _OrganizationPageState();
 }
 
-class _HrPageState extends State<HrPage> {
+class _OrganizationPageState extends State<OrganizationPage> {
   int hiringCount = 0;
 
   @override
@@ -22,7 +22,7 @@ class _HrPageState extends State<HrPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
-          title: 'Modulo Organizacional (RRHH)',
+          title: 'Estructuras Organizativas',
           subtitle:
               'Diseno de estructura, contrataciones y simulacion de nomina.',
         ),
@@ -86,7 +86,7 @@ class _HrPageState extends State<HrPage> {
                       children: const [
                         _OrgNode('CEO / Dir. General', primary: true),
                         _OrgNode('Dir. Finanzas'),
-                        _OrgNode('Dir. RRHH'),
+                        _OrgNode('Dirección de Talento y Operaciones'),
                         _OrgNode('Dir. Operaciones'),
                         _OrgNode('Planta y Logistica', dashed: true),
                       ],

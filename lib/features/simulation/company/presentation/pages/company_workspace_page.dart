@@ -1,12 +1,12 @@
-import 'package:core_sim_ia/app/router/app_router.dart';
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/router/app_router.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/api_error_state.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/loading_state.dart';
-import 'package:core_sim_ia/features/stratova/presentation/providers/stratova_providers.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class WorkspacePage extends ConsumerWidget {
@@ -215,19 +215,20 @@ class WorkspacePage extends ConsumerWidget {
         ),
         const SizedBox(height: 28),
         modulesAsync.when(
-  loading: () => const LoadingState(
-    message: 'Cargando progreso real de módulos desde Simulation Service...',
-  ),
-  error: (error, _) => ApiErrorState(
-    title: 'No se pudo cargar el progreso real de módulos',
-    message:
-        'La app está en modo backend real. No se usaron datos mock. '
-        'Error recibido: $error',
-    onRetry: () => ref.invalidate(decisionModulesProvider),
-  ),
-  data: (_) => const SizedBox.shrink(),
-),
-const SizedBox(height: 12),
+          loading: () => const LoadingState(
+            message:
+                'Cargando progreso real de módulos desde Simulation Service...',
+          ),
+          error: (error, _) => ApiErrorState(
+            title: 'No se pudo cargar el progreso real de módulos',
+            message:
+                'La app está en modo backend real. No se usaron datos mock. '
+                'Error recibido: $error',
+            onRetry: () => ref.invalidate(decisionModulesProvider),
+          ),
+          data: (_) => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 12),
         const SectionLabel('Resumen por Modulo'),
         const SizedBox(height: 14),
         ResponsiveWrap(

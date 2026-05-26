@@ -1,4 +1,4 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class LoadingState extends StatelessWidget {

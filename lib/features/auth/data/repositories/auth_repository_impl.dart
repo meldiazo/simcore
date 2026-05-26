@@ -1,10 +1,10 @@
-import 'package:core_sim_ia/core/error/failure.dart';
-import 'package:core_sim_ia/core/network/api_exception.dart';
-import 'package:core_sim_ia/core/storage/token_storage.dart';
-import 'package:core_sim_ia/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_tokens.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_user.dart';
-import 'package:core_sim_ia/features/auth/domain/repositories/auth_repository.dart';
+import 'package:simcore_frontend/core/error/failure.dart';
+import 'package:simcore_frontend/core/network/api_exception.dart';
+import 'package:simcore_frontend/core/storage/token_storage.dart';
+import 'package:simcore_frontend/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_tokens.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
+import 'package:simcore_frontend/features/auth/domain/repositories/auth_repository.dart';
 import 'package:dartz/dartz.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -23,7 +23,8 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final tokens = await _dataSource.login(username: username, password: password);
+      final tokens =
+          await _dataSource.login(username: username, password: password);
       await _tokenStorage.saveTokens(
         StoredTokens(
           accessToken: tokens.accessToken,
@@ -39,16 +40,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-Future<Either<Failure, AuthUser>> getMe() async {
-  try {
-    final user = await _dataSource.getMe();
-    return Right(user);
-  } on ApiException catch (e) {
-    return Left(_mapApiException(e));
-  } catch (e) {
-    return Left(UnknownFailure(e.toString()));
+  Future<Either<Failure, AuthUser>> getMe() async {
+    try {
+      final user = await _dataSource.getMe();
+      return Right(user);
+    } on ApiException catch (e) {
+      return Left(_mapApiException(e));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
   }
-}
 
   @override
   Future<Either<Failure, AuthTokens>> refreshToken(String refreshToken) async {

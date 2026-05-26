@@ -54,7 +54,7 @@ Validaciones realizadas:
 - Ya no se instancia `ApiClient(...)` dentro de `lib/features`.
 - `auth` usa `iamApiClientProvider`.
 - `register` usa `iamApiClientProvider`.
-- `stratova/simulation` usa `simulationApiClientProvider`.
+- `simulation/shared` usa `simulationApiClientProvider`.
 - Se comprobó en Chrome DevTools que la llamada:
   `GET /api/v1/simulation/companies/1/modules`
   envía header `Authorization: Bearer`.

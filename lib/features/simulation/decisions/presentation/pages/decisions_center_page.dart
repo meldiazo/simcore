@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:core_sim_ia/core/config/app_config.dart';
+import 'package:simcore_frontend/core/config/app_config.dart';
 
 class DecisionsPage extends ConsumerStatefulWidget {
   const DecisionsPage({super.key});
@@ -17,11 +17,11 @@ class DecisionsPage extends ConsumerStatefulWidget {
 
 class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   static const _auditSteps = [
-    'Inicializando sandbox cuantico...',
+    'Preparando centro de decisiones...',
     'Cruzando elasticidad de Precio vs Marketing...',
     'Verificando capacidad operativa...',
     'Calculando riesgo de liquidez y tesoreria...',
-    'Simulacion Montecarlo completada.',
+    'Análisis de decisiones actualizado.',
   ];
 
   int currentTab = 0;
@@ -118,7 +118,8 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
                         style: TextStyle(
                             fontSize: 11, color: SimcoreColors.textTertiary)),
                     // 2. Mostramos el ambiente y la URL real en pantalla
-                    Text('${appConfig.environment.name.toUpperCase()} - ${appConfig.simUrl}',
+                    Text(
+                        '${appConfig.environment.name.toUpperCase()} - ${appConfig.simUrl}',
                         style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             color: SimcoreColors.success)),
@@ -143,8 +144,7 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color:
-                            active ? SimcoreColors.accentSoft : Colors.white,
+                        color: active ? SimcoreColors.accentSoft : Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: SimcoreColors.border),
                       ),

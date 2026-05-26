@@ -20,5 +20,6 @@ class CreatedUser extends Equatable {
   final int tenantId;
 
   @override
-  List<Object?> get props => [id, username, email, firstName, lastName, enabled, tenantId];
+  List<Object?> get props =>
+      [id, username, email, firstName, lastName, enabled, tenantId];
 }

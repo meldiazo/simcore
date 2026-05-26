@@ -1,20 +1,20 @@
-import 'package:core_sim_ia/app/router/app_router.dart';
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/simulation/company/presentation/pages/company_workspace_page.dart';
-import 'package:core_sim_ia/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
-import 'package:core_sim_ia/features/modules/market/presentation/pages/market_page.dart';
-import 'package:core_sim_ia/features/modules/finance/presentation/pages/finance_page.dart';
-import 'package:core_sim_ia/features/modules/organization/presentation/pages/organization_page.dart';
-import 'package:core_sim_ia/features/modules/analysis/presentation/pages/analysis_page.dart';
-import 'package:core_sim_ia/features/ranking/presentation/pages/ranking_page.dart';
-import 'package:core_sim_ia/features/profile/presentation/pages/profile_page.dart';
-import 'package:core_sim_ia/features/teacher/presentation/pages/teacher_dashboard_page.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/router/app_router.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
+import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
+import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
+import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
+import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
+import 'package:simcore_frontend/features/modules/analysis/presentation/pages/analysis_page.dart';
+import 'package:simcore_frontend/features/ranking/presentation/pages/ranking_page.dart';
+import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
+import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:core_sim_ia/core/config/app_config.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/demo_mode_banner.dart';
+import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/demo_mode_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SimcoreSection {
@@ -115,19 +115,18 @@ class SimcoreShellPage extends StatelessWidget {
 
       // Temporalmente usamos la pantalla que antes era RRHH.
       // Más adelante esta pantalla debe quedar renombrada como OrganizationPage.
-      SimcoreSection.organization => const HrPage(),
+      SimcoreSection.organization => const OrganizationPage(),
 
       // Temporalmente usamos AnalysisPage como placeholder visual.
       // Luego debe reemplazarse por AccountingPage cuando creemos esa pantalla.
       SimcoreSection.accounting => const AnalysisPage(),
-
       SimcoreSection.analysis => const AnalysisPage(),
       SimcoreSection.ranking => const RankingPage(),
       SimcoreSection.profile => const ProfilePage(),
 
       // Temporalmente usamos la pantalla que antes era Admin.
       // Más adelante esta pantalla debe quedar renombrada como TeacherDashboardPage.
-      SimcoreSection.teacher => const AdminPage(),
+      SimcoreSection.teacher => const TeacherDashboardPage(),
     };
   }
 

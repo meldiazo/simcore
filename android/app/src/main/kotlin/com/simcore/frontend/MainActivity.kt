@@ -1,0 +1,5 @@
+package com.simcore.frontend
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

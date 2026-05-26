@@ -1,8 +1,8 @@
 enum ErrorType {
   unauthorized, // 401
-  forbidden,    // 403
-  notFound,     // 404
-  serverError,  // 500
+  forbidden, // 403
+  notFound, // 404
+  serverError, // 500
   network,
   unknown,
 }
@@ -55,5 +55,6 @@ class ApiException implements Exception {
   }
 
   @override
-  String toString() => 'ApiException(type: $type, message: $message, statusCode: $statusCode)';
+  String toString() =>
+      'ApiException(type: $type, message: $message, statusCode: $statusCode)';
 }

@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 
 class FinancePage extends StatefulWidget {
@@ -29,7 +29,7 @@ class _FinancePageState extends State<FinancePage> {
                 : OutlinedButton.icon(
                     onPressed: () => setState(() => showAiPanel = true),
                     icon: const Icon(Icons.smart_toy_outlined),
-                    label: const Text('Mostrar Asesor xAI'),
+                    label: const Text('Ver orientación de análisis'),
                   ),
           ),
           const SizedBox(height: 24),
@@ -85,7 +85,7 @@ class _FinancePageState extends State<FinancePage> {
                       onPressed: () {},
                       icon: const Icon(Icons.play_arrow_rounded),
                       label: const Text(
-                        'Correr Simulacion Montecarlo',
+                        'Analizar escenarios',
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
@@ -173,9 +173,9 @@ class _AiPanel extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('xAI Analyst',
+                      Text('Asistente de análisis',
                           style: TextStyle(fontWeight: FontWeight.w700)),
-                      Text('En linea • Simulando escenarios',
+                      Text('Pendiente de integración',
                           style: TextStyle(
                               fontSize: 12, color: SimcoreColors.accent)),
                     ],

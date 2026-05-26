@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/core/network/api_client.dart';
-import 'package:core_sim_ia/features/auth/data/models/auth_tokens_model.dart';
-import 'package:core_sim_ia/features/auth/data/models/auth_user_model.dart';
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/auth/data/models/auth_tokens_model.dart';
+import 'package:simcore_frontend/features/auth/data/models/auth_user_model.dart';
 
 abstract interface class AuthRemoteDataSource {
   Future<AuthTokensModel> login({

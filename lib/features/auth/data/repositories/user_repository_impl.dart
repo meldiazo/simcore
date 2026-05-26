@@ -1,8 +1,8 @@
-import 'package:core_sim_ia/core/error/failure.dart';
-import 'package:core_sim_ia/core/network/api_exception.dart';
-import 'package:core_sim_ia/features/auth/data/datasources/user_remote_datasource.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/created_user.dart';
-import 'package:core_sim_ia/features/auth/domain/repositories/user_repository.dart';
+import 'package:simcore_frontend/core/error/failure.dart';
+import 'package:simcore_frontend/core/network/api_exception.dart';
+import 'package:simcore_frontend/features/auth/data/datasources/user_remote_datasource.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/created_user.dart';
+import 'package:simcore_frontend/features/auth/domain/repositories/user_repository.dart';
 import 'package:dartz/dartz.dart';
 
 class UserRepositoryImpl implements UserRepository {
@@ -54,8 +54,10 @@ class UserRepositoryImpl implements UserRepository {
   Failure _mapException(ApiException e) {
     return switch (e.type) {
       ErrorType.network => NetworkFailure(e.message),
-      ErrorType.unauthorized => const ServerFailure('Tu sesión expiró. Vuelve a iniciar sesión.'),
-      ErrorType.forbidden => const ServerFailure('No tienes permisos para crear usuarios.'),
+      ErrorType.unauthorized =>
+        const ServerFailure('Tu sesión expiró. Vuelve a iniciar sesión.'),
+      ErrorType.forbidden =>
+        const ServerFailure('No tienes permisos para crear usuarios.'),
       _ => ServerFailure(e.message),
     };
   }

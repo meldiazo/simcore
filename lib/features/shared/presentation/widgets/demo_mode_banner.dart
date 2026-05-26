@@ -1,4 +1,4 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 enum DemoModeBannerTone {
@@ -31,7 +31,8 @@ class DemoModeBanner extends StatelessWidget {
         color: isWarning ? const Color(0xFFFFF7E6) : const Color(0xFFEFF6FF),
         border: Border(
           bottom: BorderSide(
-            color: isWarning ? const Color(0xFFFFD591) : const Color(0xFFBBD7FF),
+            color:
+                isWarning ? const Color(0xFFFFD591) : const Color(0xFFBBD7FF),
           ),
         ),
       ),

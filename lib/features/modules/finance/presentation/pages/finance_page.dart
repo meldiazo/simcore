@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 
 class FinancePage extends StatefulWidget {
@@ -29,7 +29,7 @@ class _FinancePageState extends State<FinancePage> {
                 : OutlinedButton.icon(
                     onPressed: () => setState(() => showAiPanel = true),
                     icon: const Icon(Icons.smart_toy_outlined),
-                    label: const Text('Mostrar Asesor xAI'),
+                    label: const Text('Ver orientación de análisis'),
                   ),
           ),
           const SizedBox(height: 24),
@@ -80,12 +80,12 @@ class _FinancePageState extends State<FinancePage> {
                   child: ResponsiveHeaderAction(
                     title: 'Estado de Resultados Pro-Forma',
                     subtitle:
-                        'Celdas calculadas automaticamente desde Mercado y RRHH.',
+                        'Celdas calculadas automáticamente desde Mercado y Estructuras Organizativas.',
                     action: FilledButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.play_arrow_rounded),
                       label: const Text(
-                        'Correr Simulacion Montecarlo',
+                        'Analizar escenarios',
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
@@ -173,9 +173,9 @@ class _AiPanel extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('xAI Analyst',
+                      Text('Asistente de análisis',
                           style: TextStyle(fontWeight: FontWeight.w700)),
-                      Text('En linea • Simulando escenarios',
+                      Text('Pendiente de integración',
                           style: TextStyle(
                               fontSize: 12, color: SimcoreColors.accent)),
                     ],
@@ -223,7 +223,7 @@ class _FinanceTable extends StatelessWidget {
     final rows = [
       ('Ingresos Operativos', [1200000, 1350000, 1500000, 1680000], false),
       ('( C.O.G.S. )', [600000, 650000, 700000, 760000], true),
-      ('( Gastos Admin y RRHH )', [250000, 250000, 260000, 260000], true),
+      ('( Gastos administrativos y estructura organizativa )', [250000, 250000, 260000, 260000], true),
       ('( Marketing )', [150000, 150000, 180000, 200000], true),
       ('EBITDA Operativo', [200000, 300000, 360000, 460000], false),
     ];

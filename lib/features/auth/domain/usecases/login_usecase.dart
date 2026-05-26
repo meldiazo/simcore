@@ -1,7 +1,7 @@
-import 'package:core_sim_ia/core/error/failure.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_tokens.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_user.dart';
-import 'package:core_sim_ia/features/auth/domain/repositories/auth_repository.dart';
+import 'package:simcore_frontend/core/error/failure.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_tokens.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
+import 'package:simcore_frontend/features/auth/domain/repositories/auth_repository.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
@@ -10,7 +10,8 @@ class LoginUseCase {
 
   final AuthRepository _repository;
 
-  Future<Either<Failure, (AuthTokens, AuthUser)>> call(LoginParams params) async {
+  Future<Either<Failure, (AuthTokens, AuthUser)>> call(
+      LoginParams params) async {
     final tokensResult = await _repository.login(
       username: params.username,
       password: params.password,

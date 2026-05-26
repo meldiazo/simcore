@@ -1,17 +1,17 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AdminPage extends StatefulWidget {
-  const AdminPage({super.key});
+class TeacherDashboardPage extends StatefulWidget {
+  const TeacherDashboardPage({super.key});
 
   @override
-  State<AdminPage> createState() => _AdminPageState();
+  State<TeacherDashboardPage> createState() => _TeacherDashboardPageState();
 }
 
-class _AdminPageState extends State<AdminPage> {
+class _TeacherDashboardPageState extends State<TeacherDashboardPage> {
   bool simulationRunning = true;
 
   @override

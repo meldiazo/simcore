@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/core/error/failure.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_tokens.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_user.dart';
+import 'package:simcore_frontend/core/error/failure.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_tokens.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:dartz/dartz.dart';
 
 abstract interface class AuthRepository {

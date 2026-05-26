@@ -1,4 +1,4 @@
-import 'package:core_sim_ia/features/auth/domain/entities/auth_tokens.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_tokens.dart';
 
 class AuthTokensModel extends AuthTokens {
   const AuthTokensModel({

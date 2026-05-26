@@ -1,10 +1,9 @@
-
-import 'package:core_sim_ia/features/auth/data/datasources/user_remote_datasource.dart';
-import 'package:core_sim_ia/features/auth/data/repositories/user_repository_impl.dart';
-import 'package:core_sim_ia/features/auth/domain/repositories/user_repository.dart';
-import 'package:core_sim_ia/features/auth/domain/usecases/register_user_usecase.dart';
-import 'package:core_sim_ia/core/network/api_client_providers.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/register_state.dart';
+import 'package:simcore_frontend/features/auth/data/datasources/user_remote_datasource.dart';
+import 'package:simcore_frontend/features/auth/data/repositories/user_repository_impl.dart';
+import 'package:simcore_frontend/features/auth/domain/repositories/user_repository.dart';
+import 'package:simcore_frontend/features/auth/domain/usecases/register_user_usecase.dart';
+import 'package:simcore_frontend/core/network/api_client_providers.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/register_state.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -63,7 +62,8 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
   void reset() => state = const RegisterState();
 }
 
-final StateNotifierProvider<RegisterNotifier, RegisterState> registerNotifierProvider =
+final StateNotifierProvider<RegisterNotifier, RegisterState>
+    registerNotifierProvider =
     StateNotifierProvider<RegisterNotifier, RegisterState>((ref) {
   return RegisterNotifier(ref.watch(_registerUseCaseProvider));
 });

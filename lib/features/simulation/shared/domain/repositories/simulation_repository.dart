@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 
-abstract class StratovaDataSource {
+abstract class SimulationRepository {
   Future<StudentUser> getCurrentUser();
 
   Future<CurrentCycle> getCurrentCycle();

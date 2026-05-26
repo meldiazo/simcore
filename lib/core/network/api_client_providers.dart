@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:core_sim_ia/core/config/app_config.dart';
-import 'package:core_sim_ia/core/network/api_client.dart';
-import 'package:core_sim_ia/core/storage/token_storage.dart';
-import 'package:core_sim_ia/core/storage/token_storage_provider.dart';
+import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/core/storage/token_storage.dart';
+import 'package:simcore_frontend/core/storage/token_storage_provider.dart';
 
 final sessionExpiredSignalProvider = StateProvider<int>((ref) => 0);
 

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:core_sim_ia/core/config/environment.dart';
+import 'package:simcore_frontend/core/config/environment.dart';
 
 /// Capa central de configuración de SimCore.
 /// Define hacia dónde apuntan los servicios de IAM y Simulación,
@@ -69,30 +69,30 @@ class AppConfig {
   /// flutter run --dart-define=APP_ENV=mock
   /// flutter run --dart-define=APP_ENV=railway
   factory AppConfig.fromEnvironment() {
-  const forceMock =
-      bool.fromEnvironment('USE_MOCK_DATA', defaultValue: false);
+    const forceMock =
+        bool.fromEnvironment('USE_MOCK_DATA', defaultValue: false);
 
-  if (forceMock) {
-    return AppConfig.devMock();
-  }
-
-  const appEnv = String.fromEnvironment(
-    'APP_ENV',
-    defaultValue: 'local',
-  );
-
-  switch (appEnv) {
-    case 'mock':
+    if (forceMock) {
       return AppConfig.devMock();
-    case 'railway':
-      return AppConfig.railway();
-    case 'prod':
-      return AppConfig.prod();
-    case 'local':
-    default:
-      return AppConfig.devLocal();
+    }
+
+    const appEnv = String.fromEnvironment(
+      'APP_ENV',
+      defaultValue: 'local',
+    );
+
+    switch (appEnv) {
+      case 'mock':
+        return AppConfig.devMock();
+      case 'railway':
+        return AppConfig.railway();
+      case 'prod':
+        return AppConfig.prod();
+      case 'local':
+      default:
+        return AppConfig.devLocal();
+    }
   }
-}
 }
 
 /// Provider global de configuración.

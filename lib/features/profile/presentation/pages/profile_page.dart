@@ -1,6 +1,6 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -232,9 +232,8 @@ class _RoleTile extends StatelessWidget {
         final badgeWidget = Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: highlighted
-                ? SimcoreColors.successSoft
-                : SimcoreColors.surface,
+            color:
+                highlighted ? SimcoreColors.successSoft : SimcoreColors.surface,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(badge,

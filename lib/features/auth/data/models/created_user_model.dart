@@ -1,4 +1,4 @@
-import 'package:core_sim_ia/features/auth/domain/entities/created_user.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/created_user.dart';
 
 class CreatedUserModel extends CreatedUser {
   const CreatedUserModel({

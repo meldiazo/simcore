@@ -1,4 +1,4 @@
-import 'package:core_sim_ia/core/error/failure.dart';
+import 'package:simcore_frontend/core/error/failure.dart';
 
 sealed class Result<T> {
   const Result();

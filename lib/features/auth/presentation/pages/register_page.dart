@@ -1,20 +1,22 @@
-import 'package:core_sim_ia/app/theme/app_theme.dart';
-import 'package:core_sim_ia/features/auth/domain/usecases/register_user_usecase.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/register_notifier.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/register_state.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/auth/domain/usecases/register_user_usecase.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/register_notifier.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/register_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // IDs de roles según el backend
 const _roles = [
-  _RoleOption(id: 1, label: 'Administrador', icon: Icons.admin_panel_settings_rounded),
+  _RoleOption(
+      id: 1, label: 'Administrador', icon: Icons.admin_panel_settings_rounded),
   _RoleOption(id: 2, label: 'Docente', icon: Icons.school_rounded),
   _RoleOption(id: 3, label: 'Estudiante', icon: Icons.person_rounded),
 ];
 
 class _RoleOption {
-  const _RoleOption({required this.id, required this.label, required this.icon});
+  const _RoleOption(
+      {required this.id, required this.label, required this.icon});
   final int id;
   final String label;
   final IconData icon;
@@ -87,7 +89,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const Icon(Icons.check_circle_rounded,
+                color: Colors.white, size: 18),
             const SizedBox(width: 10),
             Text(
               'Usuario creado exitosamente',
@@ -121,7 +124,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 480),
                     child: Column(
@@ -143,10 +147,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                           firstNameCtrl: _firstNameCtrl,
                           lastNameCtrl: _lastNameCtrl,
                           obscurePassword: _obscurePassword,
-                          onToggleObscure: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                          onToggleObscure: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                           selectedRoleId: _selectedRoleId,
-                          onRoleChanged: (id) => setState(() => _selectedRoleId = id),
+                          onRoleChanged: (id) =>
+                              setState(() => _selectedRoleId = id),
                           fieldErrors: state.fieldErrors,
                           isLoading: state.isLoading,
                           onSubmit: _submit,
@@ -262,11 +267,12 @@ class _Logo extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.show_chart_rounded, color: Colors.white, size: 20),
+          child: const Icon(Icons.show_chart_rounded,
+              color: Colors.white, size: 20),
         ),
         const SizedBox(width: 10),
         Text(
-          'Stratova',
+          'SIMCORE',
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -287,7 +293,8 @@ class _RoleCards extends StatelessWidget {
             (r) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -297,7 +304,8 @@ class _RoleCards extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(r.icon, color: Colors.white.withValues(alpha: 0.8), size: 18),
+                    Icon(r.icon,
+                        color: Colors.white.withValues(alpha: 0.8), size: 18),
                     const SizedBox(width: 12),
                     Text(
                       r.label,
@@ -450,7 +458,8 @@ class _RegisterForm extends StatelessWidget {
             enabled: !isLoading,
             backendError: fieldErrors['username'],
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'El usuario es obligatorio';
+              if (v == null || v.trim().isEmpty)
+                return 'El usuario es obligatorio';
               if (v.trim().length < 3) return 'Mínimo 3 caracteres';
               return null;
             },
@@ -466,7 +475,8 @@ class _RegisterForm extends StatelessWidget {
             enabled: !isLoading,
             backendError: fieldErrors['email'],
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'El correo es obligatorio';
+              if (v == null || v.trim().isEmpty)
+                return 'El correo es obligatorio';
               final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
               if (!emailRegex.hasMatch(v.trim())) return 'Correo inválido';
               return null;
@@ -552,7 +562,8 @@ class _Field extends StatelessWidget {
           controller: controller,
           enabled: enabled,
           keyboardType: keyboardType,
-          style: GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textPrimary),
+          style:
+              GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textPrimary),
           validator: (v) => backendError ?? validator?.call(v),
           decoration: _inputDeco(hint, icon),
         ),
@@ -591,18 +602,22 @@ class _PasswordField extends StatelessWidget {
           controller: controller,
           obscureText: obscure,
           enabled: enabled,
-          style: GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textPrimary),
+          style:
+              GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textPrimary),
           validator: (v) {
             if (backendError != null) return backendError;
             if (v == null || v.isEmpty) return 'La contraseña es obligatoria';
             if (v.length < 12) return 'Mínimo 12 caracteres';
             return null;
           },
-          decoration: _inputDeco('Mínimo 12 caracteres', Icons.lock_outline_rounded)
-              .copyWith(
+          decoration:
+              _inputDeco('Mínimo 12 caracteres', Icons.lock_outline_rounded)
+                  .copyWith(
             suffixIcon: IconButton(
               icon: Icon(
-                obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
                 color: SimcoreColors.textTertiary,
                 size: 20,
               ),
@@ -622,7 +637,8 @@ class _PasswordField extends StatelessWidget {
 InputDecoration _inputDeco(String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textTertiary),
+    hintStyle:
+        GoogleFonts.inter(fontSize: 14, color: SimcoreColors.textTertiary),
     prefixIcon: Icon(icon, color: SimcoreColors.textTertiary, size: 20),
     filled: true,
     fillColor: SimcoreColors.muted,
@@ -663,7 +679,8 @@ class _InlineError extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.info_outline_rounded, size: 13, color: SimcoreColors.danger),
+        const Icon(Icons.info_outline_rounded,
+            size: 13, color: SimcoreColors.danger),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
@@ -709,10 +726,14 @@ class _RoleSelector extends StatelessWidget {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: isSelected ? SimcoreColors.accentSoft : SimcoreColors.muted,
+                  color: isSelected
+                      ? SimcoreColors.accentSoft
+                      : SimcoreColors.muted,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? SimcoreColors.accent : SimcoreColors.border,
+                    color: isSelected
+                        ? SimcoreColors.accent
+                        : SimcoreColors.border,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -731,7 +752,8 @@ class _RoleSelector extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected
                             ? SimcoreColors.accent
                             : SimcoreColors.textSecondary,
@@ -765,13 +787,15 @@ class _SubmitButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: SimcoreColors.accent,
           disabledBackgroundColor: SimcoreColors.accentMuted,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: isLoading
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 'Crear usuario',
@@ -803,7 +827,8 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: SimcoreColors.danger, size: 18),
+          const Icon(Icons.error_outline_rounded,
+              color: SimcoreColors.danger, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

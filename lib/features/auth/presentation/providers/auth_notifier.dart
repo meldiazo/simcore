@@ -1,12 +1,12 @@
-import 'package:core_sim_ia/core/network/api_client_providers.dart';
-import 'package:core_sim_ia/core/storage/token_storage.dart';
-import 'package:core_sim_ia/core/storage/token_storage_provider.dart';
-import 'package:core_sim_ia/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:core_sim_ia/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:core_sim_ia/features/auth/domain/entities/auth_user.dart';
-import 'package:core_sim_ia/features/auth/domain/repositories/auth_repository.dart';
-import 'package:core_sim_ia/features/auth/domain/usecases/login_usecase.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_state.dart';
+import 'package:simcore_frontend/core/network/api_client_providers.dart';
+import 'package:simcore_frontend/core/storage/token_storage.dart';
+import 'package:simcore_frontend/core/storage/token_storage_provider.dart';
+import 'package:simcore_frontend/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:simcore_frontend/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
+import 'package:simcore_frontend/features/auth/domain/repositories/auth_repository.dart';
+import 'package:simcore_frontend/features/auth/domain/usecases/login_usecase.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final Provider<AuthRemoteDataSource> _authDataSourceProvider =

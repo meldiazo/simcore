@@ -1,11 +1,11 @@
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/stratova/data/datasources/stratova_data_source.dart';
-import 'package:core_sim_ia/features/stratova/domain/repositories/stratova_repository.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
+import 'package:simcore_frontend/features/simulation/shared/domain/repositories/simulation_repository.dart';
 
-class StratovaRepositoryImpl implements StratovaRepository {
-  StratovaRepositoryImpl(this._dataSource);
+class SimulationRepositoryImpl implements SimulationRepository {
+  SimulationRepositoryImpl(this._dataSource);
 
-  final StratovaDataSource _dataSource;
+  final SimulationDataSource _dataSource;
 
   @override
   Future<StudentUser> getCurrentUser() {

@@ -1,7 +1,7 @@
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/stratova/data/datasources/stratova_data_source.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
 
-class StratovaMockDataSource implements StratovaDataSource {
+class SimulationMockDataSource implements SimulationDataSource {
   @override
   Future<StudentUser> getCurrentUser() async => studentUser;
 

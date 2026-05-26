@@ -1,9 +1,9 @@
-import 'package:core_sim_ia/core/network/api_client.dart';
-import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:core_sim_ia/features/stratova/data/datasources/stratova_data_source.dart';
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
 
-class StratovaRemoteDataSource implements StratovaDataSource {
-  StratovaRemoteDataSource(this._apiClient);
+class SimulationRemoteDataSource implements SimulationDataSource {
+  SimulationRemoteDataSource(this._apiClient);
 
   final ApiClient _apiClient;
 
@@ -169,7 +169,9 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
     return DecisionModule(
       id: safeId,
-      name: name.isEmpty ? _humanizeModuleName(safeId) : _humanizeModuleName(name),
+      name: name.isEmpty
+          ? _humanizeModuleName(safeId)
+          : _humanizeModuleName(name),
       status: _statusFromJson(status),
       progress: progress > 0 ? progress : _progressFromStatus(status),
       summary: [
@@ -182,7 +184,10 @@ class StratovaRemoteDataSource implements StratovaDataSource {
 
   DecisionStatus _statusFromJson(String value) {
     return switch (value.toUpperCase()) {
-      'COMPLETE' || 'COMPLETED' || 'DONE' || 'SUBMITTED' =>
+      'COMPLETE' ||
+      'COMPLETED' ||
+      'DONE' ||
+      'SUBMITTED' =>
         DecisionStatus.submitted,
       'IN_PROGRESS' || 'DRAFT' => DecisionStatus.draft,
       'REQUIRES_REVISION' || 'LOCKED' => DecisionStatus.locked,
@@ -228,9 +233,8 @@ class StratovaRemoteDataSource implements StratovaDataSource {
   String _humanizeModuleName(String id) {
     return switch (id.toUpperCase()) {
       'MARKET' || 'MERCADO' => 'Módulo Mercado',
-      'INVESTMENT' || 'FINANCE' || 'FINANZAS' =>
-        'Inversiones y Financiamiento',
-      'ORGANIZATION' || 'HR' || 'RRHH' => 'Estructuras Organizativas',
+      'INVESTMENT' || 'FINANCE' || 'FINANZAS' => 'Inversiones y Financiamiento',
+      'ORGANIZATION' => 'Estructuras Organizativas',
       'ACCOUNTING' || 'CONTABILIDAD' => 'Módulo Contabilidad',
       'ANALYSIS' || 'ANALISIS' => 'Análisis General',
       _ => 'Módulo SIMCORE',

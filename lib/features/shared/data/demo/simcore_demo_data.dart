@@ -275,7 +275,9 @@ const teamMembers = [
       role: 'Gerente de Marketing',
       status: 'En borrador'),
   TeamMember(
-      name: 'Diego Fernandez', role: 'Gerente de RRHH', status: 'Pendiente'),
+      name: 'Diego Fernandez',
+      role: 'Responsable de estructura organizativa',
+      status: 'Pendiente'),
   TeamMember(
       name: 'Ana Lopez',
       role: 'Gerente de Operaciones',
@@ -376,7 +378,7 @@ const decisionModules = [
   ),
   DecisionModule(
     id: 'hr',
-    name: 'Modulo RRHH',
+    name: 'Módulo Organización',
     status: DecisionStatus.pending,
     progress: 0,
     summary: [

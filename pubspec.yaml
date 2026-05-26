@@ -1,4 +1,4 @@
-name: core_sim_ia
+name: simcore_frontend
 description: Flutter Clean Architecture template with Riverpod.
 publish_to: "none"
 version: 1.0.0+1

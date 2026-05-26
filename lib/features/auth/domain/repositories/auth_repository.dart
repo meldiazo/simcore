@@ -9,7 +9,7 @@ abstract interface class AuthRepository {
     required String password,
   });
 
-  Future<Either<Failure, AuthUser>> getMe(String accessToken);
+  Future<Either<Failure, AuthUser>> getMe();
 
   Future<Either<Failure, AuthTokens>> refreshToken(String refreshToken);
 

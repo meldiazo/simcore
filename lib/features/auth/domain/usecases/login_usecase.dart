@@ -19,7 +19,7 @@ class LoginUseCase {
     return tokensResult.fold(
       (failure) => Left(failure),
       (tokens) async {
-        final userResult = await _repository.getMe(tokens.accessToken);
+        final userResult = await _repository.getMe();
         return userResult.fold(
           (failure) => Left(failure),
           (user) => Right((tokens, user)),

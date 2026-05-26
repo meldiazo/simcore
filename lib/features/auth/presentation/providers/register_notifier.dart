@@ -1,27 +1,22 @@
-import 'package:core_sim_ia/core/config/app_config.dart';
-import 'package:core_sim_ia/core/network/api_client.dart';
+
 import 'package:core_sim_ia/features/auth/data/datasources/user_remote_datasource.dart';
 import 'package:core_sim_ia/features/auth/data/repositories/user_repository_impl.dart';
 import 'package:core_sim_ia/features/auth/domain/repositories/user_repository.dart';
 import 'package:core_sim_ia/features/auth/domain/usecases/register_user_usecase.dart';
-import 'package:core_sim_ia/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:core_sim_ia/core/network/api_client_providers.dart';
 import 'package:core_sim_ia/features/auth/presentation/providers/register_state.dart';
-import 'package:core_sim_ia/core/storage/token_storage_provider.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ── Infraestructura ───────────────────────────────────────────────────────────
 
-final Provider<UserRepository> userRepositoryProvider = Provider<UserRepository>((ref) {
-  final config = ref.watch(appConfigProvider);
-  final storage = ref.watch(tokenStorageProvider);
+final Provider<UserRepository> userRepositoryProvider =
+    Provider<UserRepository>((ref) {
+  final client = ref.watch(iamApiClientProvider);
 
-  final client = ApiClient(
-    baseUrl: config.iamUrl,
-    tokenProvider: () => storage.getAccessToken(),
-    onSessionExpired: () => ref.read(authNotifierProvider.notifier).logout(),
+  return UserRepositoryImpl(
+    UserRemoteDataSourceImpl(client),
   );
-
-  return UserRepositoryImpl(UserRemoteDataSourceImpl(client));
 });
 
 final Provider<RegisterUserUseCase> _registerUseCaseProvider =

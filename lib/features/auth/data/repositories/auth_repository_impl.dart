@@ -39,16 +39,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthUser>> getMe(String accessToken) async {
-    try {
-      final user = await _dataSource.getMe(accessToken);
-      return Right(user);
-    } on ApiException catch (e) {
-      return Left(_mapApiException(e));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
-    }
+Future<Either<Failure, AuthUser>> getMe() async {
+  try {
+    final user = await _dataSource.getMe();
+    return Right(user);
+  } on ApiException catch (e) {
+    return Left(_mapApiException(e));
+  } catch (e) {
+    return Left(UnknownFailure(e.toString()));
   }
+}
 
   @override
   Future<Either<Failure, AuthTokens>> refreshToken(String refreshToken) async {

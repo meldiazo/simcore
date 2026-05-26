@@ -20,7 +20,10 @@ class ApiClient {
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         sendTimeout: const Duration(seconds: 15),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+},
       ),
     );
 
@@ -78,9 +81,13 @@ class ApiClient {
   final VoidCallback? _onSessionExpired;
 
   static bool _isPublicRoute(String path) {
-    return path.contains('/auth/login') ||
-        path.contains('/auth/refresh');
-  }
+  return path.contains('/auth/login') ||
+      path.contains('/auth/refresh') ||
+      path.contains('/actuator/health') ||
+      path.contains('/v3/api-docs') ||
+      path.contains('/swagger-ui') ||
+      path.contains('/.well-known/jwks.json');
+}
 
   Future<ApiResult<dynamic>> get(
     String path, {

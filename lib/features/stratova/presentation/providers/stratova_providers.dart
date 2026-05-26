@@ -1,5 +1,5 @@
 import 'package:core_sim_ia/core/config/app_config.dart';
-import 'package:core_sim_ia/core/network/api_client.dart';
+import 'package:core_sim_ia/core/network/api_client_providers.dart';
 import 'package:core_sim_ia/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:core_sim_ia/features/stratova/data/datasources/stratova_data_source.dart';
 import 'package:core_sim_ia/features/stratova/data/datasources/stratova_mock_data_source.dart';
@@ -8,13 +8,7 @@ import 'package:core_sim_ia/features/stratova/data/repositories/stratova_reposit
 import 'package:core_sim_ia/features/stratova/domain/repositories/stratova_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final simcoreApiClientProvider = Provider<ApiClient>((ref) {
-  final config = ref.watch(appConfigProvider);
 
-  return ApiClient(
-    baseUrl: config.simUrl,
-  );
-});
 
 final stratovaDataSourceProvider = Provider<StratovaDataSource>((ref) {
   final config = ref.watch(appConfigProvider);
@@ -24,8 +18,8 @@ final stratovaDataSourceProvider = Provider<StratovaDataSource>((ref) {
   }
 
   return StratovaRemoteDataSource(
-    ref.watch(simcoreApiClientProvider),
-  );
+  ref.watch(simulationApiClientProvider),
+);
 });
 
 final stratovaRepositoryProvider = Provider<StratovaRepository>((ref) {

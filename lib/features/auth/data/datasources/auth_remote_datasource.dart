@@ -1,7 +1,6 @@
 import 'package:core_sim_ia/core/network/api_client.dart';
 import 'package:core_sim_ia/features/auth/data/models/auth_tokens_model.dart';
 import 'package:core_sim_ia/features/auth/data/models/auth_user_model.dart';
-import 'package:dio/dio.dart';
 
 abstract interface class AuthRemoteDataSource {
   Future<AuthTokensModel> login({
@@ -9,7 +8,7 @@ abstract interface class AuthRemoteDataSource {
     required String password,
   });
 
-  Future<AuthUserModel> getMe(String accessToken);
+  Future<AuthUserModel> getMe();
 
   Future<AuthTokensModel> refreshToken(String refreshToken);
 }
@@ -26,7 +25,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     final result = await _client.post(
       '/api/v1/iam/auth/login',
-      data: {'username': username, 'password': password},
+      data: {
+        'username': username,
+        'password': password,
+      },
     );
 
     return result.fold(
@@ -36,11 +38,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthUserModel> getMe(String accessToken) async {
-    final result = await _client.get(
-      '/api/v1/iam/auth/me',
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
-    );
+  Future<AuthUserModel> getMe() async {
+    final result = await _client.get('/api/v1/iam/auth/me');
 
     return result.fold(
       (exception) => throw exception,
@@ -52,7 +51,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AuthTokensModel> refreshToken(String refreshToken) async {
     final result = await _client.post(
       '/api/v1/iam/auth/refresh',
-      data: {'refreshToken': refreshToken},
+      data: {
+        'refreshToken': refreshToken,
+      },
     );
 
     return result.fold(

@@ -5,6 +5,8 @@ import 'package:simcore_frontend/features/auth/presentation/providers/auth_state
 import 'package:simcore_frontend/features/shared/presentation/layout/simcore_shell_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
+import 'package:simcore_frontend/features/shared/presentation/pages/forbidden_page.dart';
 
 class AppRouter {
   const AppRouter._();
@@ -26,6 +28,54 @@ class AppRouter {
   static const String legacyHr = '/hr';
   static const String legacyAdmin = '/admin';
 
+  static const Set<String> _studentRoutes = <String>{
+    workspace,
+    decisions,
+    market,
+    investment,
+    organization,
+    accounting,
+    analysis,
+    profile,
+  };
+
+  static const Set<String> _teacherRoutes = <String>{
+    workspace,
+    decisions,
+    market,
+    investment,
+    organization,
+    accounting,
+    analysis,
+    ranking,
+    profile,
+    teacher,
+  };
+
+  static bool canAccessRoute(String routeName, AuthUser user) {
+    if (!isKnownRoute(routeName)) return false;
+
+    if (routeName == login) return true;
+
+    if (routeName == register) {
+      return user.canManageUsers;
+    }
+
+    final normalizedRoute = _normalizeRoute(routeName);
+
+    if (user.isAdmin) return true;
+
+    if (user.isDocente) {
+      return _teacherRoutes.contains(normalizedRoute);
+    }
+
+    if (user.isEstudiante) {
+      return _studentRoutes.contains(normalizedRoute);
+    }
+
+    return false;
+  }
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final routeName = settings.name ?? workspace;
 
@@ -36,20 +86,25 @@ class AppRouter {
       );
     }
 
+    final normalizedRoute = _normalizeRoute(routeName);
+    final section = _sectionFromRoute(normalizedRoute);
+
     if (routeName == register) {
       return MaterialPageRoute<void>(
-        builder: (_) => _AuthGuard(child: const RegisterPage()),
+        builder: (_) => _AuthGuard(
+          routeName: register,
+          child: const RegisterPage(),
+        ),
         settings: settings,
       );
     }
 
-    final normalizedRoute = _normalizeRoute(routeName);
-    final section = _sectionFromRoute(normalizedRoute);
-
     return MaterialPageRoute<void>(
-      builder: (_) => _AuthGuard(child: SimcoreShellPage(section: section)),
-      settings:
-          RouteSettings(name: normalizedRoute, arguments: settings.arguments),
+      builder: (_) => _AuthGuard(
+        routeName: normalizedRoute,
+        child: SimcoreShellPage(section: section),
+      ),
+      settings: RouteSettings(name: normalizedRoute, arguments: settings.arguments),
     );
   }
 
@@ -61,7 +116,7 @@ class AppRouter {
       decisions => decisions,
       market => market,
       legacyFinance => investment,
-investment => investment,
+      investment => investment,
       organization => organization,
       accounting => accounting,
       analysis => analysis,
@@ -111,15 +166,15 @@ investment => investment,
       decisions ||
       market ||
       investment ||
-legacyFinance =>
-  true,
+      legacyFinance ||
       organization ||
       accounting ||
       analysis ||
       ranking ||
       profile ||
       teacher ||
-      legacyAdmin =>
+      legacyAdmin ||
+      legacyHr =>
         true,
       _ => false,
     };
@@ -129,19 +184,38 @@ legacyFinance =>
 // ── Guard que protege rutas autenticadas ──────────────────────────────────────
 
 class _AuthGuard extends ConsumerWidget {
-  const _AuthGuard({required this.child});
+  const _AuthGuard({required this.routeName, required this.child});
+
+  final String routeName;
   final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
 
-    return switch (authState.status) {
-      AuthStatus.initial || AuthStatus.loading => const Scaffold(
+    switch (authState.status) {
+      case AuthStatus.initial:
+      case AuthStatus.loading:
+        return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
-        ),
-      AuthStatus.authenticated => child,
-      _ => const LoginPage(),
-    };
+        );
+
+      case AuthStatus.authenticated:
+        final user = authState.user;
+
+        if (user == null) {
+          return const LoginPage();
+        }
+
+        if (!AppRouter.canAccessRoute(routeName, user)) {
+          return ForbiddenPage(routeName: routeName);
+        }
+
+        return child;
+
+      case AuthStatus.unauthenticated:
+      case AuthStatus.error:
+        return const LoginPage();
+    }
   }
 }

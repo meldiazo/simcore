@@ -14,7 +14,8 @@ class AppRouter {
   static const String workspace = '/';
   static const String decisions = '/decisions';
   static const String market = '/market';
-  static const String finance = '/finance';
+  static const String investment = '/investment';
+  static const String legacyFinance = '/finance';
   static const String organization = '/organization';
   static const String accounting = '/accounting';
   static const String analysis = '/analysis';
@@ -23,7 +24,6 @@ class AppRouter {
   static const String teacher = '/teacher';
 
   static const String legacyHr = '/hr';
-  static const String legacyOperations = '/operations';
   static const String legacyAdmin = '/admin';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -56,12 +56,12 @@ class AppRouter {
   static String _normalizeRoute(String routeName) {
     return switch (routeName) {
       legacyHr => organization,
-      legacyOperations => organization,
       legacyAdmin => teacher,
       workspace => workspace,
       decisions => decisions,
       market => market,
-      finance => finance,
+      legacyFinance => investment,
+investment => investment,
       organization => organization,
       accounting => accounting,
       analysis => analysis,
@@ -76,7 +76,7 @@ class AppRouter {
     return switch (routeName) {
       decisions => SimcoreSection.decisions,
       market => SimcoreSection.market,
-      finance => SimcoreSection.finance,
+      investment => SimcoreSection.investment,
       organization => SimcoreSection.organization,
       accounting => SimcoreSection.accounting,
       analysis => SimcoreSection.analysis,
@@ -92,7 +92,7 @@ class AppRouter {
       SimcoreSection.workspace => workspace,
       SimcoreSection.decisions => decisions,
       SimcoreSection.market => market,
-      SimcoreSection.finance => finance,
+      SimcoreSection.investment => investment,
       SimcoreSection.organization => organization,
       SimcoreSection.accounting => accounting,
       SimcoreSection.analysis => analysis,
@@ -110,15 +110,15 @@ class AppRouter {
       workspace ||
       decisions ||
       market ||
-      finance ||
+      investment ||
+legacyFinance =>
+  true,
       organization ||
       accounting ||
       analysis ||
       ranking ||
       profile ||
       teacher ||
-      legacyHr ||
-      legacyOperations ||
       legacyAdmin =>
         true,
       _ => false,

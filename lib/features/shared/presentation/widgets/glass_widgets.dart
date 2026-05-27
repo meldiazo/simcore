@@ -1,9 +1,11 @@
 import 'dart:ui';
 
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 class GlassPanel extends StatelessWidget {
   const GlassPanel({
@@ -533,32 +535,37 @@ class CycleChip extends StatelessWidget {
 class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
 
-  final DecisionStatus status;
+  final ModuleStatus status;
 
   @override
   Widget build(BuildContext context) {
     final (label, bg, fg) = switch (status) {
-      DecisionStatus.pending => (
-          'Pendiente',
-          SimcoreColors.muted,
-          SimcoreColors.textSecondary
-        ),
-      DecisionStatus.draft => (
-          'En borrador',
-          SimcoreColors.accentSoft,
-          SimcoreColors.accent
-        ),
-      DecisionStatus.submitted => (
-          'Enviado',
-          SimcoreColors.successSoft,
-          SimcoreColors.success
-        ),
-      DecisionStatus.locked => (
-          'Bloqueado',
-          SimcoreColors.muted,
-          SimcoreColors.textSecondary
-        ),
-    };
+  ModuleStatus.pending => (
+      'Pendiente',
+      SimcoreColors.muted,
+      SimcoreColors.textSecondary,
+    ),
+  ModuleStatus.inProgress => (
+      'En progreso',
+      SimcoreColors.accentSoft,
+      SimcoreColors.accent,
+    ),
+  ModuleStatus.complete => (
+      'Completo',
+      SimcoreColors.successSoft,
+      SimcoreColors.success,
+    ),
+  ModuleStatus.requiresRevision => (
+      'Requiere revisión',
+      SimcoreColors.warningSoft,
+      SimcoreColors.warning,
+    ),
+  ModuleStatus.outdated => (
+      'Desactualizado',
+      SimcoreColors.warningSoft,
+      SimcoreColors.warning,
+    ),
+};
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

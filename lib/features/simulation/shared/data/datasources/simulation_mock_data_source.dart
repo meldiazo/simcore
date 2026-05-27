@@ -18,10 +18,10 @@ class SimulationMockDataSource implements SimulationDataSource {
   Future<List<AlertItem>> getAlerts() async => alerts;
 
   @override
-  Future<List<DecisionModule>> getDecisionModules({
+  Future<List<ModuleProgress>> getModuleProgress({
     int companyId = 1,
   }) async {
-    return decisionModules;
+    return moduleProgressItems;
   }
 
   @override

@@ -8,17 +8,18 @@ import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 class WorkspacePage extends ConsumerWidget {
   const WorkspacePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modulesAsync = ref.watch(decisionModulesProvider);
-    final modules = modulesAsync.valueOrNull ?? const <DecisionModule>[];
+    final modulesAsync = ref.watch(moduleProgressProvider);
+    final modules = modulesAsync.valueOrNull ?? const <ModuleProgress>[];
 
     final completedModules = modules
-        .where((module) => module.status == DecisionStatus.submitted)
+        .where((module) => module.status == ModuleStatus.complete)
         .length;
 
     return Column(
@@ -193,9 +194,9 @@ class WorkspacePage extends ConsumerWidget {
                             value: module.progress.toDouble(),
                             max: 100,
                             trailing: '${module.progress}%',
-                            color: module.status == DecisionStatus.submitted
+                            color: module.status == ModuleStatus.complete
                                 ? SimcoreColors.success
-                                : module.status == DecisionStatus.draft
+                                : module.status == ModuleStatus.inProgress
                                     ? SimcoreColors.accent
                                     : SimcoreColors.textTertiary,
                           ),
@@ -224,7 +225,7 @@ class WorkspacePage extends ConsumerWidget {
             message:
                 'La app está en modo backend real. No se usaron datos mock. '
                 'Error recibido: $error',
-            onRetry: () => ref.invalidate(decisionModulesProvider),
+            onRetry: () => ref.invalidate(moduleProgressProvider),
           ),
           data: (_) => const SizedBox.shrink(),
         ),

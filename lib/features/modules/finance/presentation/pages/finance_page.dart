@@ -22,7 +22,7 @@ class _FinancePageState extends State<FinancePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PageIntro(
-            title: 'Finanzas y Flujo de Caja',
+            title: 'Inversiones y Financiamiento',
             subtitle: 'Proyecciones interactivas, VPN y estado de resultados.',
             trailing: showAiPanel
                 ? null

@@ -1,0 +1,23 @@
+import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
+
+abstract class CompanyRepository {
+  Future<List<Company>> getCompaniesByGroup({required int groupId});
+
+  Future<Company> getCompanyById({required int companyId});
+
+  Future<List<CompanyModuleProgress>> getModuleProgress({
+    required int companyId,
+  });
+
+  Future<Map<String, dynamic>?> getActiveScenario({required int groupId});
+
+  Future<List<Map<String, dynamic>>> getIncoherences({
+    required int companyId,
+    String scenarioType = 'PROBABLE',
+  });
+
+  Future<List<Map<String, dynamic>>> getDecisions({
+    required int companyId,
+  });
+}

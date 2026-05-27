@@ -92,7 +92,7 @@ class ProfilePage extends StatelessWidget {
                     SizedBox(height: 16),
                     _RoleTile(
                       title: 'MBA 2026 - Simulacion Empresarial',
-                      subtitle: 'Gerente de Finanzas · Equipo Alpha',
+                      subtitle: 'Responsable de Inversión y Financiamiento · Equipo Alpha',
                       badge: 'En progreso',
                       highlighted: true,
                     ),

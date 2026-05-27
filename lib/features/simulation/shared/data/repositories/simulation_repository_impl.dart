@@ -33,10 +33,10 @@ class SimulationRepositoryImpl implements SimulationRepository {
   }
 
   @override
-  Future<List<DecisionModule>> getDecisionModules({
+  Future<List<ModuleProgress>> getModuleProgress({
     int companyId = 1,
   }) {
-    return _dataSource.getDecisionModules(companyId: companyId);
+    return _dataSource.getModuleProgress(companyId: companyId);
   }
 
   @override

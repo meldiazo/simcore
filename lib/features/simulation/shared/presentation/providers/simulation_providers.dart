@@ -8,7 +8,7 @@ import 'package:simcore_frontend/features/simulation/shared/data/repositories/si
 import 'package:simcore_frontend/features/simulation/shared/domain/repositories/simulation_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final SimulationDataSourceProvider = Provider<SimulationDataSource>((ref) {
+final simulationDataSourceProvider = Provider<SimulationDataSource>((ref) {
   final config = ref.watch(appConfigProvider);
 
   if (config.useMockData) {
@@ -20,63 +20,63 @@ final SimulationDataSourceProvider = Provider<SimulationDataSource>((ref) {
   );
 });
 
-final SimulationRepositoryProvider = Provider<SimulationRepository>((ref) {
+final simulationRepositoryProvider = Provider<SimulationRepository>((ref) {
   return SimulationRepositoryImpl(
-    ref.watch(SimulationDataSourceProvider),
+    ref.watch(simulationDataSourceProvider),
   );
 });
 
 final currentUserProvider = FutureProvider<StudentUser>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getCurrentUser();
+  return ref.watch(simulationRepositoryProvider).getCurrentUser();
 });
 
 final currentCycleProvider = FutureProvider<CurrentCycle>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getCurrentCycle();
+  return ref.watch(simulationRepositoryProvider).getCurrentCycle();
 });
 
 final teamMembersProvider = FutureProvider<List<TeamMember>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getTeamMembers();
+  return ref.watch(simulationRepositoryProvider).getTeamMembers();
 });
 
 final kpisProvider = FutureProvider<List<KpiMetric>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getKpis();
+  return ref.watch(simulationRepositoryProvider).getKpis();
 });
 
 final alertsProvider = FutureProvider<List<AlertItem>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getAlerts();
+  return ref.watch(simulationRepositoryProvider).getAlerts();
 });
 
-final decisionModulesProvider = FutureProvider<List<DecisionModule>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getDecisionModules();
+final moduleProgressProvider = FutureProvider<List<ModuleProgress>>((ref) {
+  return ref.watch(simulationRepositoryProvider).getModuleProgress();
 });
 
 final rankingProvider = FutureProvider<List<RankingTeam>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getRanking();
+  return ref.watch(simulationRepositoryProvider).getRanking();
 });
 
 final marketSegmentsProvider = FutureProvider<List<MarketSegment>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getMarketSegments();
+  return ref.watch(simulationRepositoryProvider).getMarketSegments();
 });
 
 final competitorsProvider = FutureProvider<List<Competitor>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getCompetitors();
+  return ref.watch(simulationRepositoryProvider).getCompetitors();
 });
 
 final financialScenariosProvider = FutureProvider<List<ScenarioData>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getFinancialScenarios();
+  return ref.watch(simulationRepositoryProvider).getFinancialScenarios();
 });
 
 final cashFlowProvider = FutureProvider<List<CashFlowEntry>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getCashFlow();
+  return ref.watch(simulationRepositoryProvider).getCashFlow();
 });
 
 final organizationalInefficienciesProvider =
     FutureProvider<List<Inefficiency>>((ref) {
   return ref
-      .watch(SimulationRepositoryProvider)
+      .watch(simulationRepositoryProvider)
       .getOrganizationalInefficiencies();
 });
 
 final adminTeamsProvider = FutureProvider<List<AdminTeamStatus>>((ref) {
-  return ref.watch(SimulationRepositoryProvider).getAdminTeams();
+  return ref.watch(simulationRepositoryProvider).getAdminTeams();
 });

@@ -11,7 +11,7 @@ abstract class SimulationDataSource {
 
   Future<List<AlertItem>> getAlerts();
 
-  Future<List<DecisionModule>> getDecisionModules({
+  Future<List<ModuleProgress>> getModuleProgress({
     int companyId = 1,
   });
 

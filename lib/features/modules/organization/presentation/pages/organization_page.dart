@@ -86,8 +86,8 @@ class _OrganizationPageState extends State<OrganizationPage> {
                       children: const [
                         _OrgNode('CEO / Dir. General', primary: true),
                         _OrgNode('Dir. Finanzas'),
-                        _OrgNode('Dirección de Talento y Operaciones'),
-                        _OrgNode('Dir. Operaciones'),
+                        _OrgNode('Dirección de Talento y Procesos'),
+                        _OrgNode('Responsable de Capacidad Operativa'),
                         _OrgNode('Planta y Logistica', dashed: true),
                       ],
                     ),

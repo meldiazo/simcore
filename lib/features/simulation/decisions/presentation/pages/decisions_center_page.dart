@@ -263,7 +263,7 @@ class _ReviewTab extends StatelessWidget {
     return Column(
       children: [
         ResponsiveWrap(
-          children: decisionModules.map((module) {
+          children: moduleProgressItems.map((module) {
             return GlassPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

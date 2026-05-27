@@ -21,7 +21,7 @@ enum SimcoreSection {
   workspace,
   decisions,
   market,
-  finance,
+  investment,
   organization,
   accounting,
   analysis,
@@ -64,14 +64,14 @@ const destinations = [
     icon: Icons.trending_up_rounded,
   ),
   SimcoreDestination(
-    section: SimcoreSection.finance,
-    label: 'Módulo Finanzas',
-    route: AppRouter.finance,
-    icon: Icons.attach_money_rounded,
-  ),
+  section: SimcoreSection.investment,
+  label: 'Inversiones y Financiamiento',
+  route: AppRouter.investment,
+  icon: Icons.attach_money_rounded,
+),
   SimcoreDestination(
     section: SimcoreSection.organization,
-    label: 'Módulo Organización',
+    label: 'Estructuras Organizativas',
     route: AppRouter.organization,
     icon: Icons.groups_rounded,
   ),
@@ -111,7 +111,7 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.workspace => const WorkspacePage(),
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
-      SimcoreSection.finance => const FinancePage(),
+      SimcoreSection.investment => const FinancePage(),
 
       
       // Más adelante esta pantalla debe quedar renombrada como OrganizationPage.

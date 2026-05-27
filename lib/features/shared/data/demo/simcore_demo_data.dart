@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
-enum DecisionStatus { pending, draft, submitted, locked }
+
 
 enum AlertKind { info, success, warning, danger }
 
@@ -100,23 +101,24 @@ class TeamMember extends Equatable {
   List<Object?> get props => [name, role, status];
 }
 
-class DecisionModule extends Equatable {
-  const DecisionModule({
-    required this.id,
-    required this.name,
+class ModuleProgress extends Equatable {
+  const ModuleProgress({
+    required this.module,
     required this.status,
     required this.progress,
     required this.summary,
   });
 
-  final String id;
-  final String name;
-  final DecisionStatus status;
+  final SimModule module;
+  final ModuleStatus status;
   final int progress;
   final List<String> summary;
 
+  String get id => module.toApi();
+  String get name => module.label;
+
   @override
-  List<Object?> get props => [id, name, status, progress, summary];
+  List<Object?> get props => [module, status, progress, summary];
 }
 
 class RankingTeam extends Equatable {
@@ -247,7 +249,7 @@ const studentUser = StudentUser(
   name: 'Sofia Garcia',
   email: 'sofia.garcia@universidad.edu',
   institution: 'Universidad Empresarial de Buenos Aires',
-  role: 'Gerente de Finanzas',
+  role: 'Responsable Financiera',
   avatar: 'SG',
   team: 'Equipo Alpha',
   cohort: 'MBA 2026 - Simulacion Empresarial',
@@ -264,7 +266,7 @@ const currentCycle = CurrentCycle(
 const teamMembers = [
   TeamMember(
       name: 'Sofia Garcia',
-      role: 'Gerente de Finanzas',
+      role: 'Responsable Financiera',
       status: 'Decisiones enviadas'),
   TeamMember(
       name: 'Martin Rodriguez',
@@ -280,7 +282,7 @@ const teamMembers = [
       status: 'Pendiente'),
   TeamMember(
       name: 'Ana Lopez',
-      role: 'Gerente de Operaciones',
+      role: 'Responbsable de capacidad operativa',
       status: 'Decisiones enviadas'),
 ];
 
@@ -335,7 +337,7 @@ const alerts = [
     title: 'Liquidez por debajo del objetivo',
     message:
         'El ratio actual de liquidez esta por debajo del objetivo estrategico. Ajusta inversiones o capital de trabajo.',
-    module: 'Finanzas',
+    module: 'Financiamiento',
   ),
   AlertItem(
     type: AlertKind.info,
@@ -353,46 +355,56 @@ const alerts = [
   ),
 ];
 
-const decisionModules = [
-  DecisionModule(
-    id: 'market',
-    name: 'Modulo Mercado',
-    status: DecisionStatus.draft,
+const moduleProgressItems = [
+  ModuleProgress(
+    module: SimModule.market,
+    status: ModuleStatus.inProgress,
     progress: 60,
     summary: [
       'Precio promedio: \$1,250',
       'Marketing: \$450,000',
-      'Canales: Online, Retail, B2B'
+      'Canales: Online, Retail, B2B',
     ],
   ),
-  DecisionModule(
-    id: 'finance',
-    name: 'Modulo Finanzas',
-    status: DecisionStatus.submitted,
+  ModuleProgress(
+    module: SimModule.investment,
+    status: ModuleStatus.complete,
     progress: 100,
     summary: [
-      'Inversion en activos: \$500,000',
+      'Inversión en activos: \$500,000',
       'Financiamiento: \$250,000',
-      'Dividendos: \$100,000'
+      'Dividendos: \$100,000',
     ],
   ),
-  DecisionModule(
-    id: 'hr',
-    name: 'Módulo Organización',
-    status: DecisionStatus.pending,
+  ModuleProgress(
+    module: SimModule.organization,
+    status: ModuleStatus.pending,
     progress: 0,
     summary: [
       'Contrataciones: 8',
-      'Capacitacion: \$75,000',
-      'Ajuste salarial: 5%'
+      'Capacitación: \$75,000',
+      'Ajuste salarial: 5%',
     ],
   ),
-  DecisionModule(
-    id: 'operations',
-    name: 'Modulo Operaciones',
-    status: DecisionStatus.draft,
+  ModuleProgress(
+    module: SimModule.accounting,
+    status: ModuleStatus.inProgress,
     progress: 40,
-    summary: ['Produccion: 98,000', 'Inventario: 15,000', 'Calidad: \$120,000'],
+    summary: [
+      'Asientos pendientes de revisión',
+      'Estados financieros en preparación',
+      'Ratios pendientes de consolidación',
+    ],
+  ),
+  ModuleProgress(
+    module: SimModule.analysis,
+    status: ModuleStatus.pending,
+    progress: 0,
+    summary: [
+      'Pendiente de consolidar resultados',
+      'Pendiente de revisar incoherencias',
+      'Pendiente de defensa académica',
+    ],
   ),
 ];
 

@@ -1,6 +1,7 @@
 import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 class SimulationRemoteDataSource implements SimulationDataSource {
   SimulationRemoteDataSource(this._apiClient);
@@ -44,7 +45,7 @@ class SimulationRemoteDataSource implements SimulationDataSource {
   }
 
   @override
-  Future<List<DecisionModule>> getDecisionModules({
+  Future<List<ModuleProgress>> getModuleProgress({
     int companyId = 1,
   }) async {
     final result = await _apiClient.get(
@@ -58,7 +59,7 @@ class SimulationRemoteDataSource implements SimulationDataSource {
       (data) {
         final modules = _extractList(data);
 
-        return modules.map(_decisionModuleFromJson).toList();
+        return modules.map(_moduleProgressFromJson).toList();
       },
     );
   }
@@ -144,66 +145,37 @@ class SimulationRemoteDataSource implements SimulationDataSource {
     return const [];
   }
 
-  DecisionModule _decisionModuleFromJson(Map<String, dynamic> json) {
-    final id = _readString(
-      json,
-      ['module', 'id', 'moduleId', 'moduleCode', 'code'],
-    );
+  ModuleProgress _moduleProgressFromJson(Map<String, dynamic> json) {
+  final moduleValue = _readString(
+    json,
+    ['module', 'id', 'moduleId', 'moduleCode', 'code'],
+  );
 
-    final name = _readString(
-      json,
-      ['name', 'moduleName', 'displayName', 'title', 'module'],
-    );
+  final statusValue = _readString(
+    json,
+    ['status', 'state'],
+  );
 
-    final status = _readString(
-      json,
-      ['status', 'state'],
-    );
+  final module = SimModule.fromApi(moduleValue);
+  final status = ModuleStatus.fromApi(statusValue);
 
-    final progress = _readInt(
-      json,
-      ['progress', 'completionPercentage', 'percentage'],
-    );
+  final progress = _readInt(
+    json,
+    ['progress', 'completionPercentage', 'percentage'],
+  );
 
-    final safeId = id.isEmpty ? name.toLowerCase().replaceAll(' ', '-') : id;
+  return ModuleProgress(
+    module: module,
+    status: status,
+    progress: progress > 0 ? progress : status.progressHint,
+    summary: [
+      'Origen: API real',
+      'Estado backend: ${status.toApi()}',
+      if (json['updatedAt'] != null) 'Actualizado: ${json['updatedAt']}',
+    ],
+  );
+}
 
-    return DecisionModule(
-      id: safeId,
-      name: name.isEmpty
-          ? _humanizeModuleName(safeId)
-          : _humanizeModuleName(name),
-      status: _statusFromJson(status),
-      progress: progress > 0 ? progress : _progressFromStatus(status),
-      summary: [
-        'Origen: API real',
-        if (status.isNotEmpty) 'Estado backend: $status',
-        if (json['updatedAt'] != null) 'Actualizado: ${json['updatedAt']}',
-      ],
-    );
-  }
-
-  DecisionStatus _statusFromJson(String value) {
-    return switch (value.toUpperCase()) {
-      'COMPLETE' ||
-      'COMPLETED' ||
-      'DONE' ||
-      'SUBMITTED' =>
-        DecisionStatus.submitted,
-      'IN_PROGRESS' || 'DRAFT' => DecisionStatus.draft,
-      'REQUIRES_REVISION' || 'LOCKED' => DecisionStatus.locked,
-      'PENDING' || 'OUTDATED' => DecisionStatus.pending,
-      _ => DecisionStatus.pending,
-    };
-  }
-
-  int _progressFromStatus(String value) {
-    return switch (value.toUpperCase()) {
-      'COMPLETE' || 'COMPLETED' || 'DONE' || 'SUBMITTED' => 100,
-      'IN_PROGRESS' || 'DRAFT' => 50,
-      'REQUIRES_REVISION' || 'OUTDATED' => 25,
-      _ => 0,
-    };
-  }
 
   String _readString(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
@@ -228,16 +200,5 @@ class SimulationRemoteDataSource implements SimulationDataSource {
     }
 
     return 0;
-  }
-
-  String _humanizeModuleName(String id) {
-    return switch (id.toUpperCase()) {
-      'MARKET' || 'MERCADO' => 'Módulo Mercado',
-      'INVESTMENT' || 'FINANCE' || 'FINANZAS' => 'Inversiones y Financiamiento',
-      'ORGANIZATION' => 'Estructuras Organizativas',
-      'ACCOUNTING' || 'CONTABILIDAD' => 'Módulo Contabilidad',
-      'ANALYSIS' || 'ANALISIS' => 'Análisis General',
-      _ => 'Módulo SIMCORE',
-    };
   }
 }

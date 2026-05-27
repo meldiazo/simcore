@@ -2,6 +2,8 @@ import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/simulation/shared/data/models/simulation_context_model.dart';
+import 'package:simcore_frontend/features/simulation/shared/domain/entities/simulation_context.dart';
 
 class SimulationRemoteDataSource implements SimulationDataSource {
   SimulationRemoteDataSource(this._apiClient);
@@ -63,6 +65,20 @@ class SimulationRemoteDataSource implements SimulationDataSource {
       },
     );
   }
+  @override
+Future<SimulationContext> getSimulationContext({required int companyId}) async {
+  final result = await _apiClient.get(
+    '/api/v1/simulation/companies/$companyId',
+  );
+
+  return result.fold(
+    (failure) => throw failure,
+    (data) {
+      final json = Map<String, dynamic>.from(data as Map);
+      return SimulationContextModel.fromCompanyJson(json);
+    },
+  );
+}
 
   @override
   Future<List<RankingTeam>> getRanking() {

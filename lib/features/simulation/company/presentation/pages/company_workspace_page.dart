@@ -9,6 +9,7 @@ import 'package:simcore_frontend/features/shared/presentation/widgets/loading_st
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 class WorkspacePage extends ConsumerWidget {
   const WorkspacePage({super.key});
@@ -16,6 +17,21 @@ class WorkspacePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modulesAsync = ref.watch(moduleProgressProvider);
+    final contextState = ref.watch(simulationContextNotifierProvider);
+
+if (contextState.status == SimulationContextStatus.loading ||
+    contextState.status == SimulationContextStatus.initial) {
+  return const Center(child: CircularProgressIndicator());
+}
+
+if (contextState.status == SimulationContextStatus.error) {
+  return ApiErrorState(
+    title: 'No se pudo cargar el contexto de simulación',
+    message: contextState.errorMessage ?? 'Error desconocido',
+    onRetry: () =>
+        ref.read(simulationContextNotifierProvider.notifier).load(companyId: 1),
+  );
+}
     final modules = modulesAsync.valueOrNull ?? const <ModuleProgress>[];
 
     final completedModules = modules
@@ -29,6 +45,7 @@ class WorkspacePage extends ConsumerWidget {
           title: 'Workspace Ejecutivo',
           subtitle: 'Panel de control y metricas clave para Equipo Alpha',
         ),
+        
         const SizedBox(height: 28),
         GlassPanel(
           padding: const EdgeInsets.all(28),

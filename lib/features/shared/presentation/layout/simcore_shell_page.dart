@@ -1,7 +1,7 @@
 import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
 import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
@@ -13,8 +13,6 @@ import 'package:simcore_frontend/features/profile/presentation/pages/profile_pag
 import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:simcore_frontend/core/config/app_config.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/demo_mode_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SimcoreSection {
@@ -64,11 +62,11 @@ const destinations = [
     icon: Icons.trending_up_rounded,
   ),
   SimcoreDestination(
-  section: SimcoreSection.investment,
-  label: 'Inversiones y Financiamiento',
-  route: AppRouter.investment,
-  icon: Icons.attach_money_rounded,
-),
+    section: SimcoreSection.investment,
+    label: 'Inversiones y Financiamiento',
+    route: AppRouter.investment,
+    icon: Icons.attach_money_rounded,
+  ),
   SimcoreDestination(
     section: SimcoreSection.organization,
     label: 'Estructuras Organizativas',
@@ -112,20 +110,11 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
       SimcoreSection.investment => const FinancePage(),
-
-      
-      // Más adelante esta pantalla debe quedar renombrada como OrganizationPage.
       SimcoreSection.organization => const OrganizationPage(),
-
-      // Temporalmente usamos AnalysisPage como placeholder visual.
-      // Luego debe reemplazarse por AccountingPage cuando creemos esa pantalla.
       SimcoreSection.accounting => const AnalysisPage(),
       SimcoreSection.analysis => const AnalysisPage(),
       SimcoreSection.ranking => const RankingPage(),
       SimcoreSection.profile => const ProfilePage(),
-
-      // Temporalmente usamos la pantalla que antes era Admin.
-      // Más adelante esta pantalla debe quedar renombrada como TeacherDashboardPage.
       SimcoreSection.teacher => const TeacherDashboardPage(),
     };
   }
@@ -135,7 +124,6 @@ class SimcoreShellPage extends StatelessWidget {
       Navigator.of(context).maybePop();
       return;
     }
-
     Navigator.of(context).pushReplacementNamed(destination.route);
   }
 
@@ -154,113 +142,25 @@ class SimcoreShellPage extends StatelessWidget {
                     onTap: (d) => _navigate(context, d),
                   ),
                 ),
-          appBar: isDesktop
-              ? null
-              : AppBar(
-                  title: const Text('SIMCORE'),
-                  actions: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context)
-                          .pushReplacementNamed(AppRouter.profile),
-                      icon: const Icon(Icons.account_circle_outlined),
-                    ),
-                  ],
+          body: Row(
+            children: [
+              if (isDesktop)
+                SizedBox(
+                  width: 290,
+                  child: _Sidebar(
+                    section: section,
+                    onTap: (d) => _navigate(context, d),
+                  ),
                 ),
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF7FAFF),
-                  Color(0xFFF4F7FB),
-                  Color(0xFFEFF4FF),
-                ],
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildContent(),
+                  ),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                if (isDesktop)
-                  SizedBox(
-                    width: 290,
-                    child: _Sidebar(
-                      section: section,
-                      onTap: (d) => _navigate(context, d),
-                    ),
-                  ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isDesktop ? 24 : 16,
-                          vertical: isDesktop ? 0 : 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.72),
-                          border: const Border(
-                            bottom: BorderSide(color: SimcoreColors.border),
-                          ),
-                        ),
-                        child: Wrap(
-                          spacing: 18,
-                          runSpacing: 12,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            const CycleChip(),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Equipo',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: SimcoreColors.textTertiary,
-                                  ),
-                                ),
-                                Text(
-                                  studentUser.team,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: () => Navigator.of(context)
-                                  .pushReplacementNamed(AppRouter.profile),
-                              icon: const Icon(Icons.person_outline_rounded),
-                              label: Text(
-                                studentUser.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: SafeArea(
-                          top: false,
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.all(isDesktop ? 24 : 14),
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 1320),
-                                child: _buildContent(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
         );
       },
@@ -277,15 +177,27 @@ class _Sidebar extends ConsumerWidget {
   final SimcoreSection section;
   final ValueChanged<SimcoreDestination> onTap;
 
+  List<SimcoreDestination> _filterDestinations(AuthUser? user) {
+    if (user == null) return const [];
+    return destinations
+        .where((destination) => AppRouter.canAccessRoute(destination.route, user))
+        .toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authNotifierProvider).user;
+    final visibleDestinations = _filterDestinations(user);
+
+    final username = user?.username ?? 'Usuario';
+    final roles = user?.roles ?? const <String>[];
+    final roleText = roles.isEmpty ? 'Sin rol' : roles.join(', ');
+    final avatarText = username.isNotEmpty ? username.substring(0, 1).toUpperCase() : '?';
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.88),
-        border: const Border(
-          right: BorderSide(color: SimcoreColors.border),
-        ),
+        color: Colors.white.withOpacity(0.88),
+        border: const Border(right: BorderSide(color: SimcoreColors.border)),
       ),
       child: SafeArea(
         child: Column(
@@ -317,50 +229,35 @@ class _Sidebar extends ConsumerWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                children: destinations.map((destination) {
+                children: visibleDestinations.map((destination) {
                   final active = destination.section == section;
-
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: () => onTap(destination),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         decoration: BoxDecoration(
-                          color: active
-                              ? SimcoreColors.accentSoft
-                              : Colors.transparent,
+                          color: active ? SimcoreColors.accentSoft : Colors.transparent,
                           borderRadius: BorderRadius.circular(18),
                           border: active
-                              ? Border.all(
-                                  color: SimcoreColors.accent
-                                      .withValues(alpha: 0.18),
-                                )
+                              ? Border.all(color: SimcoreColors.accent.withOpacity(0.18))
                               : null,
                         ),
                         child: Row(
                           children: [
                             Icon(
                               destination.icon,
-                              color: active
-                                  ? SimcoreColors.accent
-                                  : SimcoreColors.textSecondary,
+                              color: active ? SimcoreColors.accent : SimcoreColors.textSecondary,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 destination.label,
                                 style: TextStyle(
-                                  color: active
-                                      ? SimcoreColors.accent
-                                      : SimcoreColors.textSecondary,
-                                  fontWeight: active
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
+                                  color: active ? SimcoreColors.accent : SimcoreColors.textSecondary,
+                                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -376,8 +273,7 @@ class _Sidebar extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: FilledButton.icon(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(AppRouter.register),
+                  onPressed: () => Navigator.of(context).pushNamed(AppRouter.register),
                   icon: const Icon(Icons.person_add_rounded, size: 16),
                   label: const Text('Crear usuario'),
                   style: FilledButton.styleFrom(
@@ -403,7 +299,7 @@ class _Sidebar extends ConsumerWidget {
                     CircleAvatar(
                       backgroundColor: SimcoreColors.accent,
                       child: Text(
-                        studentUser.avatar,
+                        avatarText,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -416,7 +312,7 @@ class _Sidebar extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            studentUser.name,
+                            username,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -425,7 +321,7 @@ class _Sidebar extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            studentUser.role,
+                            roleText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -437,11 +333,14 @@ class _Sidebar extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => onTap(
-                        destinations.firstWhere(
-                          (e) => e.section == SimcoreSection.profile,
-                        ),
-                      ),
+                      tooltip: 'Cerrar sesión',
+                      onPressed: () {
+                        ref.read(authNotifierProvider.notifier).logout();
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRouter.login,
+                          (route) => false,
+                        );
+                      },
                       icon: const Icon(Icons.logout_rounded, size: 18),
                     ),
                   ],

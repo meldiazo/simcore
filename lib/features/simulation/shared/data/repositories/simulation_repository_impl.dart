@@ -1,6 +1,7 @@
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
 import 'package:simcore_frontend/features/simulation/shared/domain/repositories/simulation_repository.dart';
+import 'package:simcore_frontend/features/simulation/shared/domain/entities/simulation_context.dart';
 
 class SimulationRepositoryImpl implements SimulationRepository {
   SimulationRepositoryImpl(this._dataSource);
@@ -73,4 +74,9 @@ class SimulationRepositoryImpl implements SimulationRepository {
   Future<List<AdminTeamStatus>> getAdminTeams() {
     return _dataSource.getAdminTeams();
   }
+
+  @override
+Future<SimulationContext> getSimulationContext({required int companyId}) {
+  return _dataSource.getSimulationContext(companyId: companyId);
+}
 }

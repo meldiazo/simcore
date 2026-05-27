@@ -1,4 +1,5 @@
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/simulation/shared/domain/entities/simulation_context.dart';
 
 abstract class SimulationDataSource {
   Future<StudentUser> getCurrentUser();
@@ -28,4 +29,5 @@ abstract class SimulationDataSource {
   Future<List<Inefficiency>> getOrganizationalInefficiencies();
 
   Future<List<AdminTeamStatus>> getAdminTeams();
+  Future<SimulationContext> getSimulationContext({required int companyId});
 }

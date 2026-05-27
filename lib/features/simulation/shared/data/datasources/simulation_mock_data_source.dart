@@ -1,5 +1,7 @@
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/shared/data/datasources/simulation_data_source.dart';
+import 'package:simcore_frontend/features/simulation/shared/data/models/simulation_context_model.dart';
+import 'package:simcore_frontend/features/simulation/shared/domain/entities/simulation_context.dart';
 
 class SimulationMockDataSource implements SimulationDataSource {
   @override
@@ -48,4 +50,9 @@ class SimulationMockDataSource implements SimulationDataSource {
 
   @override
   Future<List<AdminTeamStatus>> getAdminTeams() async => adminTeams;
+  
+  @override
+Future<SimulationContext> getSimulationContext({required int companyId}) async {
+  return SimulationContextModel.devDefault();
+}
 }

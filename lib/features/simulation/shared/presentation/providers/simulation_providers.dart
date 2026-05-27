@@ -7,6 +7,7 @@ import 'package:simcore_frontend/features/simulation/shared/data/datasources/sim
 import 'package:simcore_frontend/features/simulation/shared/data/repositories/simulation_repository_impl.dart';
 import 'package:simcore_frontend/features/simulation/shared/domain/repositories/simulation_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 final simulationDataSourceProvider = Provider<SimulationDataSource>((ref) {
   final config = ref.watch(appConfigProvider);
@@ -47,7 +48,17 @@ final alertsProvider = FutureProvider<List<AlertItem>>((ref) {
 });
 
 final moduleProgressProvider = FutureProvider<List<ModuleProgress>>((ref) {
-  return ref.watch(simulationRepositoryProvider).getModuleProgress();
+  final contextState = ref.watch(simulationContextNotifierProvider);
+  final context = contextState.context;
+
+  if (context == null) {
+    // Contexto aún no inicializado: retornar lista vacía sin error.
+    return Future.value(const <ModuleProgress>[]);
+  }
+
+  return ref
+      .watch(simulationRepositoryProvider)
+      .getModuleProgress(companyId: context.companyId);
 });
 
 final rankingProvider = FutureProvider<List<RankingTeam>>((ref) {

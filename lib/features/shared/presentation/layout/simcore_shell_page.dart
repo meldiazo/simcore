@@ -1,18 +1,21 @@
 import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/academic/presentation/pages/course_manager_page.dart';
+import 'package:simcore_frontend/features/academic/presentation/pages/group_manager_page.dart';
 import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/comparison/presentation/pages/company_comparison_page.dart';
+import 'package:simcore_frontend/features/modules/accounting/presentation/pages/accounting_page.dart';
+import 'package:simcore_frontend/features/modules/analysis/presentation/pages/analysis_page.dart';
+import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
+import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
+import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
+import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
+import 'package:simcore_frontend/features/reports/presentation/pages/company_report_page.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
-import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
-import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
-import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
-import 'package:simcore_frontend/features/modules/analysis/presentation/pages/analysis_page.dart';
-import 'package:simcore_frontend/features/modules/accounting/presentation/pages/accounting_page.dart';
-import 'package:simcore_frontend/features/ranking/presentation/pages/ranking_page.dart';
-import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +30,9 @@ enum SimcoreSection {
   ranking,
   profile,
   teacher,
+  courseManager,
+  groupManager,
+  report,
 }
 
 class SimcoreDestination {
@@ -88,15 +94,33 @@ const destinations = [
   ),
   SimcoreDestination(
     section: SimcoreSection.ranking,
-    label: 'Ranking',
+    label: 'Comparación',
     route: AppRouter.ranking,
-    icon: Icons.emoji_events_rounded,
+    icon: Icons.compare_arrows_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.report,
+    label: 'Reporte Final',
+    route: AppRouter.report,
+    icon: Icons.description_rounded,
   ),
   SimcoreDestination(
     section: SimcoreSection.teacher,
     label: '[Docente] Panel',
     route: AppRouter.teacher,
     icon: Icons.admin_panel_settings_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.courseManager,
+    label: 'Gestión de Cursos',
+    route: AppRouter.courseManager,
+    icon: Icons.school_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.groupManager,
+    label: 'Gestión de Grupos',
+    route: AppRouter.groupManager,
+    icon: Icons.group_work_rounded,
   ),
 ];
 
@@ -114,9 +138,12 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.organization => const OrganizationPage(),
       SimcoreSection.accounting => const AccountingPage(),
       SimcoreSection.analysis => const AnalysisPage(),
-      SimcoreSection.ranking => const RankingPage(),
+      SimcoreSection.ranking => const CompanyComparisonPage(),
       SimcoreSection.profile => const ProfilePage(),
       SimcoreSection.teacher => const TeacherDashboardPage(),
+      SimcoreSection.courseManager => const CourseManagerPage(),
+      SimcoreSection.groupManager => const GroupManagerPage(),
+      SimcoreSection.report => const CompanyReportPage(),
     };
   }
 

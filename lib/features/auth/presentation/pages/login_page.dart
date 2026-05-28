@@ -351,8 +351,9 @@ class _LoginForm extends StatelessWidget {
             prefixIcon: Icons.person_outline_rounded,
             enabled: !isLoading,
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'El usuario es obligatorio';
+              }
               return null;
             },
             onFieldSubmitted: (_) => onSubmit(),

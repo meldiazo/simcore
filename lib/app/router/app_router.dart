@@ -1,14 +1,14 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/pages/login_page.dart';
 import 'package:simcore_frontend/features/auth/presentation/pages/register_page.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/layout/simcore_shell_page.dart';
+import 'package:simcore_frontend/features/shared/presentation/pages/forbidden_page.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/pages/group_setup_page.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
-import 'package:simcore_frontend/features/shared/presentation/pages/forbidden_page.dart';
 
 class AppRouter {
   const AppRouter._();
@@ -25,8 +25,11 @@ class AppRouter {
   static const String accounting = '/accounting';
   static const String analysis = '/analysis';
   static const String ranking = '/ranking';
+  static const String report = '/report';
   static const String profile = '/profile';
   static const String teacher = '/teacher';
+  static const String courseManager = '/course-manager';
+  static const String groupManager = '/group-manager';
 
   static const String legacyHr = '/hr';
   static const String legacyAdmin = '/admin';
@@ -39,6 +42,7 @@ class AppRouter {
     organization,
     accounting,
     analysis,
+    report,
     profile,
   };
 
@@ -51,8 +55,11 @@ class AppRouter {
     accounting,
     analysis,
     ranking,
+    report,
     profile,
     teacher,
+    courseManager,
+    groupManager,
   };
 
   static bool canAccessRoute(String routeName, AuthUser user) {
@@ -131,8 +138,11 @@ class AppRouter {
       accounting => accounting,
       analysis => analysis,
       ranking => ranking,
+      report => report,
       profile => profile,
       teacher => teacher,
+      courseManager => courseManager,
+      groupManager => groupManager,
       _ => workspace,
     };
   }
@@ -146,8 +156,11 @@ class AppRouter {
       accounting => SimcoreSection.accounting,
       analysis => SimcoreSection.analysis,
       ranking => SimcoreSection.ranking,
+      report => SimcoreSection.report,
       profile => SimcoreSection.profile,
       teacher => SimcoreSection.teacher,
+      courseManager => SimcoreSection.courseManager,
+      groupManager => SimcoreSection.groupManager,
       _ => SimcoreSection.workspace,
     };
   }
@@ -162,8 +175,11 @@ class AppRouter {
       SimcoreSection.accounting => accounting,
       SimcoreSection.analysis => analysis,
       SimcoreSection.ranking => ranking,
+      SimcoreSection.report => report,
       SimcoreSection.profile => profile,
       SimcoreSection.teacher => teacher,
+      SimcoreSection.courseManager => courseManager,
+      SimcoreSection.groupManager => groupManager,
     };
   }
 
@@ -182,8 +198,11 @@ class AppRouter {
       accounting ||
       analysis ||
       ranking ||
+      report ||
       profile ||
       teacher ||
+      courseManager ||
+      groupManager ||
       legacyAdmin ||
       legacyHr =>
         true,

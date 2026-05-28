@@ -7,6 +7,7 @@ import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/module_flow_stepper.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
@@ -181,6 +182,8 @@ class _WorkspaceBody extends StatelessWidget {
                               style: TextStyle(fontWeight: FontWeight.w700)),
                         ],
                       ),
+                      const SizedBox(height: 18),
+                      ModuleFlowStepper(modules: workspace.modules),
                       const SizedBox(height: 18),
                       ...workspace.modules.map((m) => _MiniModuleRow(module: m)),
                     ],

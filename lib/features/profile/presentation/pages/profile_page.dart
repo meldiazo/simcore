@@ -1,14 +1,19 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authNotifierProvider).user;
+    final username = user?.username ?? 'Usuario';
+    final roles = user?.roles.join(', ') ?? 'Sin rol';
+    final avatarText = username.isNotEmpty ? username[0].toUpperCase() : '?';
+
     return Wrap(
       spacing: 20,
       runSpacing: 20,
@@ -20,7 +25,7 @@ class ProfilePage extends StatelessWidget {
             children: [
               const PageIntro(
                 title: 'Perfil del Usuario',
-                subtitle: 'Informacion personal y estadisticas de desempeno.',
+                subtitle: 'Información personal y rol en la simulación.',
               ),
               const SizedBox(height: 24),
               GlassPanel(
@@ -29,30 +34,25 @@ class ProfilePage extends StatelessWidget {
                     CircleAvatar(
                       radius: 48,
                       backgroundColor: SimcoreColors.accent,
-                      child: Text(studentUser.avatar,
+                      child: Text(avatarText,
                           style: const TextStyle(
                               fontSize: 30,
                               color: Colors.white,
                               fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(height: 16),
-                    Text(studentUser.name,
+                    Text(username,
                         style: const TextStyle(
                             fontSize: 24, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text(studentUser.role),
+                    Text(roles),
                     const Divider(height: 32),
                     _ProfileRow(
-                        icon: Icons.mail_outline_rounded,
-                        value: studentUser.email),
+                        icon: Icons.person_outline_rounded,
+                        value: 'ID: ${user?.id ?? '-'}'),
                     _ProfileRow(
-                        icon: Icons.apartment_outlined,
-                        value: studentUser.institution),
-                    _ProfileRow(
-                        icon: Icons.groups_rounded, value: studentUser.team),
-                    _ProfileRow(
-                        icon: Icons.calendar_month_outlined,
-                        value: studentUser.cohort),
+                        icon: Icons.business_rounded,
+                        value: 'Tenant: ${user?.tenantId ?? '-'}'),
                   ],
                 ),
               ),
@@ -63,46 +63,16 @@ class ProfilePage extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 880),
           child: Column(
             children: [
-              const GlassPanel(
-                child: ResponsiveMetricRow(
-                  children: [
-                    _ProfileStat(
-                        label: 'Posicion Actual',
-                        value: '#2',
-                        detail: 'de 5 equipos'),
-                    _ProfileStat(
-                        label: 'Ciclos Completados',
-                        value: '2',
-                        detail: 'de 8'),
-                    _ProfileStat(
-                        label: 'Decisiones Enviadas',
-                        value: '12',
-                        detail: '100% a tiempo'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
               GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Roles en Simulaciones',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 18)),
-                    SizedBox(height: 16),
-                    _RoleTile(
-                      title: 'MBA 2026 - Simulacion Empresarial',
-                      subtitle: 'Responsable de Inversión y Financiamiento · Equipo Alpha',
-                      badge: 'En progreso',
-                      highlighted: true,
-                    ),
-                    SizedBox(height: 12),
-                    _RoleTile(
-                      title: 'MBA 2025 - Simulacion Empresarial',
-                      subtitle: 'Gerente de Marketing · Equipo Delta',
-                      badge: 'Completado',
-                      highlighted: false,
-                    ),
+                  children: [
+                    const Text('Información de sesión',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                    const SizedBox(height: 16),
+                    _ProfileRow(icon: Icons.badge_rounded, value: 'Usuario: $username'),
+                    _ProfileRow(icon: Icons.lock_outline_rounded, value: 'Roles: $roles'),
+                    _ProfileRow(icon: Icons.numbers_rounded, value: 'ID: ${user?.id ?? '-'}'),
                   ],
                 ),
               ),
@@ -111,7 +81,7 @@ class ProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Logros y Badges',
+                    const Text('Logros y Badges (próximamente)',
                         style: TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 18)),
                     const SizedBox(height: 16),
@@ -165,103 +135,6 @@ class _ProfileRow extends StatelessWidget {
           Expanded(child: Text(value)),
         ],
       ),
-    );
-  }
-}
-
-class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({
-    required this.label,
-    required this.value,
-    required this.detail,
-  });
-
-  final String label;
-  final String value;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: SimcoreColors.textTertiary)),
-        const SizedBox(height: 8),
-        Text(value,
-            style: GoogleFonts.jetBrainsMono(
-                fontSize: 30, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
-        Text(detail),
-      ],
-    );
-  }
-}
-
-class _RoleTile extends StatelessWidget {
-  const _RoleTile({
-    required this.title,
-    required this.subtitle,
-    required this.badge,
-    required this.highlighted,
-  });
-
-  final String title;
-  final String subtitle;
-  final String badge;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: highlighted ? SimcoreColors.accentSoft : SimcoreColors.muted,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                softWrap: true,
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text(subtitle, softWrap: true),
-          ],
-        );
-        final badgeWidget = Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color:
-                highlighted ? SimcoreColors.successSoft : SimcoreColors.surface,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(badge,
-              style: TextStyle(
-                  color: highlighted
-                      ? SimcoreColors.success
-                      : SimcoreColors.textSecondary)),
-        );
-
-        if (constraints.maxWidth < 460) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              content,
-              const SizedBox(height: 10),
-              badgeWidget,
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: content),
-            const SizedBox(width: 12),
-            Flexible(child: badgeWidget),
-          ],
-        );
-      }),
     );
   }
 }

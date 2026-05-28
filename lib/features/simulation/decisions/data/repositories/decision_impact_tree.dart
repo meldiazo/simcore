@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/simulation/decisions/presentation/providers/decision_providers.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 
 class DecisionImpactTree extends ConsumerWidget {
   const DecisionImpactTree({super.key, required this.decisionId});

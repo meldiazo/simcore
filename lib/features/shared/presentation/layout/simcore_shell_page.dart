@@ -1,7 +1,9 @@
 import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
 import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
@@ -12,6 +14,7 @@ import 'package:simcore_frontend/features/ranking/presentation/pages/ranking_pag
 import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -184,10 +187,27 @@ class _Sidebar extends ConsumerWidget {
         .toList(growable: false);
   }
 
+  // Mapea las secciones de la UI a los módulos de la simulación
+  static const Map<SimcoreSection, SimModule> _sectionToModuleMap = {
+    SimcoreSection.market: SimModule.market,
+    SimcoreSection.investment: SimModule.investment,
+    SimcoreSection.organization: SimModule.organization,
+    SimcoreSection.accounting: SimModule.accounting,
+    SimcoreSection.analysis: SimModule.analysis,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authNotifierProvider).user;
+    final modulesAsync = ref.watch(moduleProgressProvider);
     final visibleDestinations = _filterDestinations(user);
+
+    // Creamos un mapa para buscar eficientemente el progreso de cada módulo
+    final moduleProgressMap = modulesAsync.when(
+      data: (modules) => {for (var m in modules) m.module: m},
+      loading: () => <SimModule, ModuleProgress>{},
+      error: (_, __) => <SimModule, ModuleProgress>{},
+    );
 
     final username = user?.username ?? 'Usuario';
     final roles = user?.roles ?? const <String>[];
@@ -196,7 +216,7 @@ class _Sidebar extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: Colors.white.withValues(alpha: 0.88),
         border: const Border(right: BorderSide(color: SimcoreColors.border)),
       ),
       child: SafeArea(
@@ -231,6 +251,11 @@ class _Sidebar extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 children: visibleDestinations.map((destination) {
                   final active = destination.section == section;
+
+                  // Buscamos el progreso del módulo correspondiente a esta sección del menú
+                  final simModule = _sectionToModuleMap[destination.section];
+                  final progress = simModule != null ? moduleProgressMap[simModule] : null;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: InkWell(
@@ -242,7 +267,7 @@ class _Sidebar extends ConsumerWidget {
                           color: active ? SimcoreColors.accentSoft : Colors.transparent,
                           borderRadius: BorderRadius.circular(18),
                           border: active
-                              ? Border.all(color: SimcoreColors.accent.withOpacity(0.18))
+                              ? Border.all(color: SimcoreColors.accent.withValues(alpha: 0.18))
                               : null,
                         ),
                         child: Row(
@@ -261,6 +286,7 @@ class _Sidebar extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            _ModuleStatusIndicator(status: progress?.status),
                           ],
                         ),
                       ),
@@ -350,6 +376,37 @@ class _Sidebar extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ModuleStatusIndicator extends StatelessWidget {
+  const _ModuleStatusIndicator({this.status});
+
+  final ModuleStatus? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget icon;
+    switch (status) {
+      case ModuleStatus.complete:
+        icon = const Icon(Icons.check_circle_outline_rounded, color: SimcoreColors.success, size: 18);
+        break;
+      case ModuleStatus.inProgress:
+        icon = const Icon(Icons.data_usage_rounded, color: SimcoreColors.accent, size: 18);
+        break;
+      case ModuleStatus.locked:
+        icon = const Icon(Icons.lock_outline_rounded, color: SimcoreColors.danger, size: 18); // Un módulo bloqueado no se puede editar.
+        break;
+      case ModuleStatus.pending:
+        icon = const Icon(Icons.circle_outlined, color: SimcoreColors.textTertiary, size: 14);
+        break;
+      default:
+        return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: icon,
     );
   }
 }

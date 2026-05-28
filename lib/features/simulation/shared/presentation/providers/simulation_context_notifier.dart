@@ -19,6 +19,8 @@ class SimulationContextState {
 
   bool get isReady => status == SimulationContextStatus.ready;
 
+  get currentCompany => null;
+
   SimulationContextState copyWith({
     SimulationContextStatus? status,
     SimulationContext? context,

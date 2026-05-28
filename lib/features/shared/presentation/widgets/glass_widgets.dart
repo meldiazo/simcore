@@ -5,7 +5,6 @@ import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 class GlassPanel extends StatelessWidget {
   const GlassPanel({
@@ -554,6 +553,11 @@ class StatusBadge extends StatelessWidget {
       'Completo',
       SimcoreColors.successSoft,
       SimcoreColors.success,
+    ),
+  ModuleStatus.locked => (
+      'Bloqueado',
+      SimcoreColors.dangerSoft,
+      SimcoreColors.danger,
     ),
   ModuleStatus.requiresRevision => (
       'Requiere revisión',

@@ -1,12 +1,15 @@
 import 'dart:async';
-
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 
 class DecisionsPage extends ConsumerStatefulWidget {
   const DecisionsPage({super.key});
@@ -32,6 +35,21 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   double signProgress = 0;
   Timer? _auditTimer;
   Timer? _signTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final simContextState = ref.read(simulationContextNotifierProvider);
+      if (simContextState.isReady && simContextState.context != null) {
+        final companyId = simContextState.context!.companyId.toString();
+        ref.read(module_actions.moduleProgressProvider.notifier).start(
+              companyId,
+              SimModule.decisions.toApi(),
+            );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -73,6 +91,15 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
         if (signProgress >= 100) {
           signProgress = 100;
           isSubmitted = true;
+          final simContextState = ref.read(simulationContextNotifierProvider);
+          if (simContextState.isReady && simContextState.context != null) {
+            final companyId = simContextState.context!.companyId.toString();
+            ref.read(module_actions.moduleProgressProvider.notifier).complete(
+                  companyId,
+                  SimModule.decisions.toApi(),
+                );
+            ref.invalidate(global_providers.moduleProgressProvider);
+          }
           timer.cancel();
         }
       });
@@ -88,7 +115,6 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Leemos la configuración global inyectada por Riverpod
     final appConfig = ref.watch(appConfigProvider);
 
     final tabs = const [
@@ -117,7 +143,6 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
                     const Text('Servidor de Simulacion',
                         style: TextStyle(
                             fontSize: 11, color: SimcoreColors.textTertiary)),
-                    // 2. Mostramos el ambiente y la URL real en pantalla
                     Text(
                         '${appConfig.environment.name.toUpperCase()} - ${appConfig.simUrl}',
                         style: const TextStyle(

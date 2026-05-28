@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/models/decision_model.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_impact_tree.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
@@ -19,30 +22,17 @@ class DecisionsPage extends ConsumerStatefulWidget {
 }
 
 class _DecisionsPageState extends ConsumerState<DecisionsPage> {
-  static const _auditSteps = [
-    'Preparando centro de decisiones...',
-    'Cruzando elasticidad de Precio vs Marketing...',
-    'Verificando capacidad operativa...',
-    'Calculando riesgo de liquidez y tesoreria...',
-    'Análisis de decisiones actualizado.',
-  ];
-
   int currentTab = 0;
-  bool isAuditing = false;
-  bool auditComplete = false;
   bool isSubmitted = false;
-  int auditStep = 0;
   double signProgress = 0;
-  Timer? _auditTimer;
   Timer? _signTimer;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      final simContextState = ref.read(simulationContextNotifierProvider);
-      if (simContextState.isReady && simContextState.context != null) {
-        final companyId = simContextState.context!.companyId.toString();
+      final companyId = ref.read(currentCompanyIdProvider).toString();
+      if (companyId.isNotEmpty) {
         ref.read(module_actions.moduleProgressProvider.notifier).start(
               companyId,
               SimModule.decisions.toApi(),
@@ -53,31 +43,8 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
 
   @override
   void dispose() {
-    _auditTimer?.cancel();
     _signTimer?.cancel();
     super.dispose();
-  }
-
-  void _runAudit() {
-    setState(() {
-      isAuditing = true;
-      auditComplete = false;
-      auditStep = 0;
-    });
-
-    _auditTimer?.cancel();
-    _auditTimer = Timer.periodic(const Duration(milliseconds: 900), (timer) {
-      if (auditStep >= _auditSteps.length - 1) {
-        timer.cancel();
-        setState(() {
-          isAuditing = false;
-          auditComplete = true;
-          currentTab = 2;
-        });
-      } else {
-        setState(() => auditStep += 1);
-      }
-    });
   }
 
   void _startSigning() {
@@ -91,9 +58,8 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
         if (signProgress >= 100) {
           signProgress = 100;
           isSubmitted = true;
-          final simContextState = ref.read(simulationContextNotifierProvider);
-          if (simContextState.isReady && simContextState.context != null) {
-            final companyId = simContextState.context!.companyId.toString();
+          final companyId = ref.read(currentCompanyIdProvider).toString();
+          if (companyId.isNotEmpty) {
             ref.read(module_actions.moduleProgressProvider.notifier).complete(
                   companyId,
                   SimModule.decisions.toApi(),
@@ -118,9 +84,9 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
     final appConfig = ref.watch(appConfigProvider);
 
     final tabs = const [
-      ('1. Chequeo de Borradores', Icons.shield_outlined),
-      ('2. Auditoria Pre-Vuelo', Icons.smart_toy_outlined),
-      ('3. Firma Ejecutiva', Icons.fingerprint_rounded),
+      ('Decisiones Registradas', Icons.history_edu_rounded),
+      ('Registrar Nueva Decisión', Icons.add_circle_outline_rounded),
+      ('Firma del Ciclo', Icons.fingerprint_rounded),
     ];
 
     return Column(
@@ -128,8 +94,7 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
       children: [
         PageIntro(
           title: 'Centro de Decisiones',
-          subtitle:
-              'Revision final, auditoria algoritmica y firma de la estrategia del Ciclo 03.',
+          subtitle: 'Consulta, registra y finaliza las decisiones estratégicas de tu compañía para el ciclo actual.',
           trailing: GlassPanel(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             child: Row(
@@ -159,8 +124,6 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
           final isCompact = constraints.maxWidth < 520;
           final tabItems = List.generate(tabs.length, (index) {
             final active = index == currentTab;
-            final completed =
-                index < currentTab || (index == 1 && auditComplete);
             final item = InkWell(
               onTap:
                   isSubmitted ? null : () => setState(() => currentTab = index),
@@ -177,15 +140,13 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: completed
-                                ? SimcoreColors.success
-                                : active
+                            backgroundColor: active
                                     ? SimcoreColors.accent
                                     : SimcoreColors.surface,
                             child: Icon(
-                              completed ? Icons.check_rounded : tabs[index].$2,
+                              tabs[index].$2,
                               size: 18,
-                              color: completed || active
+                              color: active
                                   ? Colors.white
                                   : SimcoreColors.textTertiary,
                             ),
@@ -211,14 +172,12 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
                       children: [
                         CircleAvatar(
                           radius: 24,
-                          backgroundColor: completed
-                              ? SimcoreColors.success
-                              : active
+                          backgroundColor: active
                                   ? SimcoreColors.accent
                                   : SimcoreColors.surface,
                           child: Icon(
-                            completed ? Icons.check_rounded : tabs[index].$2,
-                            color: completed || active
+                            tabs[index].$2,
+                            color: active
                                 ? Colors.white
                                 : SimcoreColors.textTertiary,
                           ),
@@ -256,16 +215,9 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
         }),
         const SizedBox(height: 24),
         if (currentTab == 0)
-          _ReviewTab(onContinue: () => setState(() => currentTab = 1)),
+          const _DecisionsListTab(),
         if (currentTab == 1)
-          _AuditTab(
-            isAuditing: isAuditing,
-            auditComplete: auditComplete,
-            auditStep: auditStep,
-            stepLabel: _auditSteps[auditStep],
-            onStart: _runAudit,
-            onContinue: () => setState(() => currentTab = 2),
-          ),
+          const _NewDecisionTab(),
         if (currentTab == 2)
           _SignTab(
             signProgress: signProgress,
@@ -278,130 +230,179 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   }
 }
 
-class _ReviewTab extends StatelessWidget {
-  const _ReviewTab({required this.onContinue});
+class _DecisionsListTab extends ConsumerWidget {
+  const _DecisionsListTab();
 
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ResponsiveWrap(
-          children: moduleProgressItems.map((module) {
-            return GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(module.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16)),
-                      ),
-                      StatusBadge(status: module.status),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ...module.summary.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Text(item),
-                      )),
-                ],
-              ),
-            );
-          }).toList(growable: false),
-        ),
-        const SizedBox(height: 20),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton.icon(
-            onPressed: onContinue,
-            icon: const Icon(Icons.arrow_forward_rounded),
-            label: const Text('Proceder a Auditoria Cuantica'),
+  void _showDecisionDetails(BuildContext context, DecisionModel decision) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Detalle de Decisión: ${decision.decisionType}'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text('Módulo: ${decision.module}'),
+              const SizedBox(height: 8),
+              Text('Justificación: ${decision.justification}'),
+              const Divider(height: 24),
+              const Text('Impacto en otros módulos:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              DecisionImpactTree(decisionId: decision.id),
+            ],
           ),
         ),
-      ],
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cerrar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final decisionsAsync = ref.watch(companyDecisionsProvider);
+
+    return decisionsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (decisions) {
+        if (decisions.isEmpty) {
+          return const Center(child: Text('No hay decisiones registradas para esta compañía.'));
+        }
+        return ListView.builder(
+          shrinkWrap: true,
+          itemCount: decisions.length,
+          itemBuilder: (context, index) {
+            final decision = decisions[index];
+            return Card(
+              child: ListTile(
+                leading: const Icon(Icons.receipt_long_rounded),
+                title: Text('${decision.decisionType} en ${decision.module}'),
+                subtitle: Text(decision.justification, maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded),
+                onTap: () => _showDecisionDetails(context, decision),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
 
-class _AuditTab extends StatelessWidget {
-  const _AuditTab({
-    required this.isAuditing,
-    required this.auditComplete,
-    required this.auditStep,
-    required this.stepLabel,
-    required this.onStart,
-    required this.onContinue,
-  });
+class _NewDecisionTab extends ConsumerStatefulWidget {
+  const _NewDecisionTab();
 
-  final bool isAuditing;
-  final bool auditComplete;
-  final int auditStep;
-  final String stepLabel;
-  final VoidCallback onStart;
-  final VoidCallback onContinue;
+  @override
+  ConsumerState<_NewDecisionTab> createState() => _NewDecisionTabState();
+}
+
+class _NewDecisionTabState extends ConsumerState<_NewDecisionTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _decisionTypeController = TextEditingController();
+  final _payloadController = TextEditingController();
+  final _justificationController = TextEditingController();
+  SimModule? _selectedModule;
+
+  @override
+  void dispose() {
+    _decisionTypeController.dispose();
+    _payloadController.dispose();
+    _justificationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      final companyId = ref.read(currentCompanyIdProvider).toString();
+      final newDecision = DecisionModel(
+        id: '', // El backend asignará el ID
+        companyId: companyId,
+        module: _selectedModule!.toApi(),
+        decisionType: _decisionTypeController.text,
+        payload: jsonDecode(_payloadController.text),
+        justification: _justificationController.text,
+      );
+
+      final success = await ref.read(decisionNotifierProvider.notifier).createDecision(newDecision);
+
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Decisión registrada con éxito'), backgroundColor: SimcoreColors.success),
+        );
+        _formKey.currentState!.reset();
+        setState(() => _selectedModule = null);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al registrar la decisión'), backgroundColor: SimcoreColors.danger),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
-        child: GlassPanel(
-          padding: const EdgeInsets.all(36),
-          child: Column(
-            children: [
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [SimcoreColors.accentSoft, Colors.white]),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Icon(Icons.smart_toy_outlined,
-                    color: SimcoreColors.accent, size: 42),
+    final decisionState = ref.watch(decisionNotifierProvider);
+
+    return GlassPanel(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Registrar Nueva Decisión', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<SimModule>(
+              value: _selectedModule,
+              hint: const Text('Seleccionar Módulo'),
+              items: SimModule.values.map((module) {
+                return DropdownMenuItem(value: module, child: Text(module.label));
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedModule = value),
+              validator: (value) => value == null ? 'Por favor, seleccione un módulo' : null,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _decisionTypeController,
+              decoration: const InputDecoration(labelText: 'Tipo de Decisión (ej. SET_PRICE)', border: OutlineInputBorder()),
+              validator: (value) => value == null || value.isEmpty ? 'Este campo es requerido' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _payloadController,
+              decoration: const InputDecoration(labelText: 'Payload (en formato JSON)', border: OutlineInputBorder()),
+              maxLines: 4,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Este campo es requerido';
+                try {
+                  jsonDecode(value);
+                  return null;
+                } catch (e) {
+                  return 'El formato JSON no es válido';
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _justificationController,
+              decoration: const InputDecoration(labelText: 'Justificación de la decisión', border: OutlineInputBorder()),
+              maxLines: 3,
+              validator: (value) => value == null || value.isEmpty ? 'Este campo es requerido' : null,
+            ),
+            const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: decisionState.isLoading ? null : _submitForm,
+                icon: decisionState.isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
+                label: const Text('Guardar Decisión'),
               ),
-              const SizedBox(height: 20),
-              const Text('Sandbox de Validacion',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 10),
-              const Text(
-                'La IA integrara las metricas de tus cuatro dimensiones de decision y simulara escenarios de estres para buscar fisuras financieras u operativas.',
-                textAlign: TextAlign.center,
-                style:
-                    TextStyle(color: SimcoreColors.textSecondary, height: 1.5),
-              ),
-              const SizedBox(height: 30),
-              if (!isAuditing && !auditComplete)
-                FilledButton.icon(
-                  onPressed: onStart,
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: const Text('Iniciar Escaneo Algoritmico'),
-                ),
-              if (isAuditing) ...[
-                CircularProgressIndicator(value: (auditStep + 1) / 5),
-                const SizedBox(height: 18),
-                Text(stepLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-              if (auditComplete) ...[
-                const Icon(Icons.verified_rounded,
-                    color: SimcoreColors.success, size: 44),
-                const SizedBox(height: 12),
-                const Text('Auditoria completada sin bloqueos criticos.',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  onPressed: onContinue,
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  label: const Text('Continuar a Firma Ejecutiva'),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

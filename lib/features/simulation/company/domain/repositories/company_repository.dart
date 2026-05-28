@@ -20,4 +20,20 @@ abstract class CompanyRepository {
   Future<List<Map<String, dynamic>>> getDecisions({
     required int companyId,
   });
+
+  Future<Company> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  });
+
+  Future<Company> activateCompany({required int companyId});
+
+  Future<Company> closeCompany({required int companyId, required String reason});
+
+  Future<void> linkGroupToCompany({required int groupId, required int companyId});
 }

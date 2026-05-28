@@ -8,6 +8,7 @@ import 'package:simcore_frontend/features/modules/market/presentation/pages/mark
 import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
 import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
 import 'package:simcore_frontend/features/modules/analysis/presentation/pages/analysis_page.dart';
+import 'package:simcore_frontend/features/modules/accounting/presentation/pages/accounting_page.dart';
 import 'package:simcore_frontend/features/ranking/presentation/pages/ranking_page.dart';
 import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
@@ -111,7 +112,7 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.market => const MarketPage(),
       SimcoreSection.investment => const FinancePage(),
       SimcoreSection.organization => const OrganizationPage(),
-      SimcoreSection.accounting => const AnalysisPage(),
+      SimcoreSection.accounting => const AccountingPage(),
       SimcoreSection.analysis => const AnalysisPage(),
       SimcoreSection.ranking => const RankingPage(),
       SimcoreSection.profile => const ProfilePage(),
@@ -196,7 +197,7 @@ class _Sidebar extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: Colors.white.withValues(alpha: 0.88),
         border: const Border(right: BorderSide(color: SimcoreColors.border)),
       ),
       child: SafeArea(
@@ -242,7 +243,7 @@ class _Sidebar extends ConsumerWidget {
                           color: active ? SimcoreColors.accentSoft : Colors.transparent,
                           borderRadius: BorderRadius.circular(18),
                           border: active
-                              ? Border.all(color: SimcoreColors.accent.withOpacity(0.18))
+                              ? Border.all(color: SimcoreColors.accent.withValues(alpha: 0.18))
                               : null,
                         ),
                         child: Row(

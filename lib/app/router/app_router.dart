@@ -3,6 +3,8 @@ import 'package:simcore_frontend/features/auth/presentation/pages/register_page.
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/layout/simcore_shell_page.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/pages/group_setup_page.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
@@ -13,6 +15,7 @@ class AppRouter {
 
   static const String login = '/login';
   static const String register = '/register';
+  static const String groupSetup = '/group-setup';
   static const String workspace = '/';
   static const String decisions = '/decisions';
   static const String market = '/market';
@@ -82,6 +85,13 @@ class AppRouter {
     if (routeName == login) {
       return MaterialPageRoute<void>(
         builder: (_) => const LoginPage(),
+        settings: settings,
+      );
+    }
+
+    if (routeName == groupSetup) {
+      return MaterialPageRoute<void>(
+        builder: (_) => const GroupSetupPage(),
         settings: settings,
       );
     }
@@ -162,6 +172,7 @@ class AppRouter {
     return switch (routeName) {
       login ||
       register ||
+      groupSetup ||
       workspace ||
       decisions ||
       market ||
@@ -209,6 +220,15 @@ class _AuthGuard extends ConsumerWidget {
 
         if (!AppRouter.canAccessRoute(routeName, user)) {
           return ForbiddenPage(routeName: routeName);
+        }
+
+        // Si el contexto de simulación necesita que el usuario elija su grupo,
+        // redirigir a la pantalla de setup (solo para rutas que requieren contexto).
+        if (routeName != AppRouter.groupSetup) {
+          final ctxState = ref.watch(simulationContextNotifierProvider);
+          if (ctxState.needsGroupId) {
+            return const GroupSetupPage();
+          }
         }
 
         return child;

@@ -1,270 +1,313 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/modules/analysis/presentation/providers/analysis_providers.dart';
+import 'package:simcore_frontend/features/simulation/decisions/presentation/providers/decision_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AnalysisPage extends StatelessWidget {
+class AnalysisPage extends ConsumerWidget {
   const AnalysisPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final benchmark = [
-      ('Rentabilidad', 18.5, 16.8, 22.1),
-      ('Liquidez', 2.4, 2.6, 3.1),
-      ('Eficiencia', 87.3, 82.9, 91.5),
-      ('Market Share', 14.8, 13.8, 18.3),
-      ('Endeudamiento', 45.2, 48.5, 38.9),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final indicatorsAsync = ref.watch(financialIndicatorsProvider);
+    final incoherencesAsync = ref.watch(analysisIncoherencesProvider);
+    final reportAsync = ref.watch(narrativeReportProvider);
+    final decisionsAsync = ref.watch(companyDecisionsProvider);
+    final notifierState = ref.watch(analysisNotifierProvider);
+    final isLoading = notifierState is AsyncLoading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
-          title: 'Analisis General',
-          subtitle: 'Consolidacion de KPIs y comparativa con cohorte.',
+          title: 'Análisis General',
+          subtitle: 'Indicadores financieros, incoherencias y narrativa del plan.',
         ),
         const SizedBox(height: 24),
-        const ResponsiveWrap(
-          itemWidth: 300,
-          children: [
-            _SummaryCard(
-                title: 'Puntaje General',
-                value: '89.7',
-                detail: 'Posicion #2 de 5 · +3.3% vs promedio',
-                color: SimcoreColors.success,
-                icon: Icons.workspace_premium_outlined),
-            _SummaryCard(
-                title: 'Tendencia',
-                value: 'Creciente',
-                detail: '+2.9 pts ciclo a ciclo',
-                color: SimcoreColors.accent,
-                icon: Icons.trending_up_rounded),
-            _SummaryCard(
-                title: 'Brecha',
-                value: '4.5',
-                detail: '-27.4% vs ciclo anterior',
-                color: SimcoreColors.warning,
-                icon: Icons.track_changes_outlined),
-          ],
-        ),
-        const SizedBox(height: 24),
+
+        // Financial Indicators
         GlassPanel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Evolucion de indicadores',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-              const SizedBox(height: 18),
-              ...[
-                ('Rentabilidad', [14.2, 16.2, 18.5], SimcoreColors.accent),
-                ('Eficiencia', [79.5, 82.1, 87.3], SimcoreColors.success),
-                ('Market Share', [12.4, 13.1, 14.8], SimcoreColors.warning),
-              ].map((row) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child:
-                        _TrendRow(label: row.$1, values: row.$2, color: row.$3),
-                  )),
+              const IconTitle(
+                icon: Icons.insert_chart_outlined_rounded,
+                title: 'Indicadores Financieros',
+              ),
+              const SizedBox(height: 16),
+              indicatorsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: SimcoreColors.danger)),
+                data: (indicators) {
+                  if (indicators == null || indicators.isEmpty) {
+                    return const Text(
+                      'Sin indicadores. Completa los módulos anteriores.',
+                      style: TextStyle(color: SimcoreColors.textSecondary),
+                    );
+                  }
+                  final keys = ['van', 'tir', 'pri', 'grossMargin', 'netMargin', 'roi'];
+                  final labels = {
+                    'van': 'VAN',
+                    'tir': 'TIR (%)',
+                    'pri': 'PRI (años)',
+                    'grossMargin': 'Margen Bruto (%)',
+                    'netMargin': 'Margen Neto (%)',
+                    'roi': 'ROI (%)',
+                  };
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 12,
+                    children: keys.map((k) {
+                      final val = indicators[k];
+                      if (val == null) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: SimcoreColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: SimcoreColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(labels[k] ?? k,
+                                style: const TextStyle(
+                                    fontSize: 11, color: SimcoreColors.textTertiary)),
+                            const SizedBox(height: 4),
+                            Text(
+                              val.toString(),
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Incoherences
+        GlassPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconTitle(
+                icon: Icons.warning_amber_rounded,
+                title: 'Incoherencias detectadas',
+              ),
+              const SizedBox(height: 16),
+              incoherencesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: SimcoreColors.danger)),
+                data: (incoherences) {
+                  if (incoherences.isEmpty) {
+                    return const Text(
+                      'Sin incoherencias detectadas.',
+                      style: TextStyle(color: SimcoreColors.success),
+                    );
+                  }
+                  return Column(
+                    children: incoherences
+                        .map((i) => _IncoherenceTile(data: i))
+                        .toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Narrative report
+        GlassPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconTitle(
+                icon: Icons.description_outlined,
+                title: 'Narrativa del plan',
+              ),
+              const SizedBox(height: 16),
+              reportAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: SimcoreColors.danger)),
+                data: (report) {
+                  if (report == null) {
+                    return const Text(
+                      'Sin reporte narrativo disponible.',
+                      style: TextStyle(color: SimcoreColors.textSecondary),
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (report['marketSummary'] != null)
+                        _ReportSectionWidget(title: 'Mercado', content: report['marketSummary'].toString()),
+                      if (report['investmentSummary'] != null)
+                        _ReportSectionWidget(title: 'Inversión', content: report['investmentSummary'].toString()),
+                      if (report['organizationSummary'] != null)
+                        _ReportSectionWidget(title: 'Organización', content: report['organizationSummary'].toString()),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Key decisions
+        GlassPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconTitle(
+                icon: Icons.check_circle_outline_rounded,
+                title: 'Decisiones clave',
+              ),
+              const SizedBox(height: 16),
+              decisionsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: SimcoreColors.danger)),
+                data: (decisions) {
+                  if (decisions.isEmpty) {
+                    return const Text(
+                      'Sin decisiones registradas.',
+                      style: TextStyle(color: SimcoreColors.textSecondary),
+                    );
+                  }
+                  return Column(
+                    children: decisions
+                        .map((d) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: SimcoreColors.accentSoft,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(d.module,
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            color: SimcoreColors.accent,
+                                            fontWeight: FontWeight.w700)),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                      child: Text(d.justification,
+                                          style: const TextStyle(height: 1.4))),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                  );
+                },
+              ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        ResponsiveSectionWrap(
-          children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Comparativa vs Cohorte',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 18)),
-                    const SizedBox(height: 18),
-                    ...benchmark.map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                      child: Text(item.$1,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600))),
-                                  Text(
-                                    '${item.$2} / ${item.$3} / ${item.$4}',
-                                    style:
-                                        GoogleFonts.jetBrainsMono(fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                  value: (item.$2 / item.$4).clamp(0.0, 1.0),
-                                  minHeight: 8),
-                            ],
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Benchmark Detallado',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 18)),
-                    const SizedBox(height: 18),
-                    ...rankingData.take(3).map((team) => Padding(
-                          padding: const EdgeInsets.only(bottom: 18),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: team.rank == 1
-                                    ? const Color(0xFFFFE08A)
-                                    : team.rank == 2
-                                        ? const Color(0xFFE5E7EB)
-                                        : const Color(0xFFF5D0A9),
-                                child: Text('${team.rank}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w700)),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(team.team,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700)),
-                                    Text(
-                                        'Rent. ${team.profitability}% · Share ${team.marketShare}% · Efic. ${team.efficiency}%'),
-                                  ],
-                                ),
-                              ),
-                              Text(team.score.toStringAsFixed(1),
-                                  style: GoogleFonts.jetBrainsMono(
-                                      fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                        )),
-                    const Divider(),
-                    const Text(
-                      'Insight IA: el equipo Alpha supera el promedio de la cohorte en rentabilidad y eficiencia, pero aun carga una brecha material de market share frente al lider.',
-                      style: TextStyle(
-                          height: 1.5, color: SimcoreColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        FilledButton(
+          onPressed: !isLoading
+              ? () => ref.read(analysisNotifierProvider.notifier).completeModule()
+              : null,
+          style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
+          child: const Text('Completar módulo Análisis'),
         ),
       ],
     );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.title,
-    required this.value,
-    required this.detail,
-    required this.color,
-    required this.icon,
-  });
+class _IncoherenceTile extends StatelessWidget {
+  const _IncoherenceTile({required this.data});
 
-  final String title;
-  final String value;
-  final String detail;
-  final Color color;
-  final IconData icon;
+  final Map<String, dynamic> data;
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                  backgroundColor: color,
-                  child: Icon(icon, color: Colors.white)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style:
-                            const TextStyle(color: SimcoreColors.textTertiary)),
-                    Text(value,
-                        style: const TextStyle(
-                            fontSize: 28, fontWeight: FontWeight.w700)),
-                  ],
-                ),
+    final level = data['level']?.toString() ?? 'LOW';
+    final (color, bg) = switch (level.toUpperCase()) {
+      'HIGH' => (SimcoreColors.danger, SimcoreColors.dangerSoft),
+      'MEDIUM' => (SimcoreColors.warning, SimcoreColors.warningSoft),
+      _ => (const Color(0xFFFBBF24), const Color(0xFFFEF9C3)),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(detail),
-        ],
+              child: Text(
+                level,
+                style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                data['message']?.toString() ?? data['description']?.toString() ?? '',
+                style: const TextStyle(height: 1.4),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _TrendRow extends StatelessWidget {
-  const _TrendRow({
-    required this.label,
-    required this.values,
-    required this.color,
-  });
+class _ReportSectionWidget extends StatelessWidget {
+  const _ReportSectionWidget({required this.title, required this.content});
 
-  final String label;
-  final List<double> values;
-  final Color color;
+  final String title;
+  final String content;
 
   @override
   Widget build(BuildContext context) {
-    final max = values.reduce((a, b) => a > b ? a : b);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        Row(
-          children: values.map((value) {
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Container(
-                  height: 10,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: color.withValues(alpha: value / max),
-                  ),
-                ),
-              ),
-            );
-          }).toList(growable: false),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: values
-              .map((value) => Text(value.toString(),
-                  style: GoogleFonts.jetBrainsMono(fontSize: 12)))
-              .toList(growable: false),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700, color: SimcoreColors.accent)),
+          const SizedBox(height: 6),
+          Text(content,
+              style: const TextStyle(
+                  color: SimcoreColors.textSecondary, height: 1.5)),
+        ],
+      ),
     );
   }
 }

@@ -219,6 +219,36 @@ enum IncoherenceLevel {
   }
 }
 
+enum CompanySector {
+  technology('TECHNOLOGY', 'Tecnología'),
+  services('SERVICES', 'Servicios'),
+  manufacturing('MANUFACTURING', 'Manufactura'),
+  commerce('COMMERCE', 'Comercio'),
+  agriculture('AGRICULTURE', 'Agricultura'),
+  construction('CONSTRUCTION', 'Construcción'),
+  health('HEALTH', 'Salud'),
+  education('EDUCATION', 'Educación'),
+  other('OTHER', 'Otro');
+
+  const CompanySector(this.apiValue, this.label);
+  final String apiValue;
+  final String label;
+  String toApi() => apiValue;
+  static CompanySector fromApi(String value) {
+    return switch (_normalizeApiEnum(value)) {
+      'TECHNOLOGY' => CompanySector.technology,
+      'SERVICES' => CompanySector.services,
+      'MANUFACTURING' => CompanySector.manufacturing,
+      'COMMERCE' => CompanySector.commerce,
+      'AGRICULTURE' => CompanySector.agriculture,
+      'CONSTRUCTION' => CompanySector.construction,
+      'HEALTH' => CompanySector.health,
+      'EDUCATION' => CompanySector.education,
+      _ => CompanySector.other,
+    };
+  }
+}
+
 enum CommentVisibility {
   private('PRIVATE', 'Privado'),
   shared('SHARED', 'Compartido');

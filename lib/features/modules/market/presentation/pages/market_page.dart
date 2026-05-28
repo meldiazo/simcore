@@ -1,384 +1,259 @@
-import 'dart:math' as math;
-
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/modules/market/domain/entities/market_assumption.dart';
+import 'package:simcore_frontend/features/modules/market/domain/entities/sales_projection.dart';
+import 'package:simcore_frontend/features/modules/market/presentation/providers/market_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class MarketPage extends StatefulWidget {
+class MarketPage extends ConsumerStatefulWidget {
   const MarketPage({super.key});
 
   @override
-  State<MarketPage> createState() => _MarketPageState();
+  ConsumerState<MarketPage> createState() => _MarketPageState();
 }
 
-class _MarketPageState extends State<MarketPage> {
-  double price = 1250;
-  double marketing = 450000;
+class _MarketPageState extends ConsumerState<MarketPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _segmentCtrl = TextEditingController();
+  final _sizeCtrl = TextEditingController();
+  final _demandCtrl = TextEditingController();
+  final _competitionCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _justificationCtrl = TextEditingController();
+  bool _populated = false;
 
-  int get baseDemand {
-    final demand = 98000 * (1250 / price) * (1 + (marketing / 2000000));
-    return demand.round();
+  @override
+  void dispose() {
+    _segmentCtrl.dispose();
+    _sizeCtrl.dispose();
+    _demandCtrl.dispose();
+    _competitionCtrl.dispose();
+    _priceCtrl.dispose();
+    _justificationCtrl.dispose();
+    super.dispose();
+  }
+
+  void _populateForm(MarketAssumption assumption) {
+    if (_populated) return;
+    _populated = true;
+    _segmentCtrl.text = assumption.targetSegment ?? '';
+    _sizeCtrl.text = assumption.marketSizeEstimate?.toString() ?? '';
+    _demandCtrl.text = assumption.demandUnitsPerMonth?.toString() ?? '';
+    _competitionCtrl.text = assumption.competitionDescription ?? '';
+    _priceCtrl.text = assumption.estimatedUnitPrice?.toString() ?? '';
+    _justificationCtrl.text = assumption.commercialJustification ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
-    final pessimistic = (baseDemand * 0.85).round();
-    final optimistic = (baseDemand * 1.15).round();
+    final assumptionAsync = ref.watch(marketAssumptionProvider);
+    final projectionAsync = ref.watch(salesProjectionProvider);
+    final marketState = ref.watch(marketNotifierProvider);
+    final isLoading = marketState is AsyncLoading;
+
+    assumptionAsync.whenData((a) {
+      if (a != null) _populateForm(a);
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        PageIntro(
-          title: 'Modulo Mercado',
-          subtitle:
-              'Simulacion de demanda, analisis competitivo e ingesta de datos.',
-          trailing: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.table_chart_outlined),
-            label: const Text('Ingestar Estudio (CSV)'),
-          ),
+        const PageIntro(
+          title: 'Módulo Mercado',
+          subtitle: 'Supuestos comerciales y proyección de ventas.',
         ),
         const SizedBox(height: 24),
-        ResponsiveWrap(
-          children: [
-            const KpiCard(
-                metric: KpiMetric(
-                    title: 'Tamano del Mercado',
-                    value: 42.5,
-                    unit: 'M\$',
-                    delta: 6.8,
-                    trendUp: true,
-                    state: 'success')),
-            KpiCard(
-                metric: KpiMetric(
-                    title: 'Presupuesto Competitivo',
-                    value: marketing,
-                    unit: '\$',
-                    delta: 0,
-                    trendUp: true,
-                    state: 'neutral')),
-            const KpiCard(
-                metric: KpiMetric(
-                    title: 'Elasticidad Proyectada',
-                    value: -1.2,
-                    unit: 'b',
-                    delta: 0,
-                    trendUp: false,
-                    state: 'warning')),
-            KpiCard(
-                metric: KpiMetric(
-                    title: 'Forecast Base',
-                    value: baseDemand / 1000,
-                    unit: 'K',
-                    delta: ((baseDemand / 98000) - 1) * 100,
-                    trendUp: baseDemand >= 98000,
-                    state: baseDemand >= 98000 ? 'success' : 'danger')),
-          ],
-        ),
-        const SizedBox(height: 28),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 390),
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const IconTitle(
-                      icon: Icons.smart_toy_outlined,
-                      title: 'Simulador de Precios',
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                        'Ajusta variables y el motor de IA calculara la cuota estimada en tiempo real.'),
-                    const SizedBox(height: 24),
-                    _SliderField(
-                      label: 'Precio Promedio',
-                      value: price,
-                      min: 800,
-                      max: 2000,
-                      format: (value) => '\$${value.round()}',
-                      onChanged: (value) => setState(() => price = value),
-                    ),
-                    const SizedBox(height: 24),
-                    _SliderField(
-                      label: 'Presupuesto Marketing',
-                      value: marketing,
-                      min: 0,
-                      max: 1000000,
-                      format: (value) => '\$${value.round()}',
-                      onChanged: (value) => setState(() => marketing = value),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () {},
-                      child: const Text('Guardar Decision de Mercado'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 890),
-              child: GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ResponsiveHeaderAction(
-                      title: 'Proyeccion de Demanda',
-                      subtitle:
-                          'Distribucion probabilistica basada en elasticidad precio-demanda.',
-                      action: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: SimcoreColors.surface,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: SimcoreColors.border),
-                        ),
-                        child: const Text('Confianza: 82%',
-                            style: TextStyle(fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    _DemandChart(
-                        pessimistic: pessimistic,
-                        base: baseDemand,
-                        optimistic: optimistic),
-                    const SizedBox(height: 30),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 410),
-                          child: GlassPanel(
-                            backgroundColor: SimcoreColors.surface,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Segmentos del mercado',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 16),
-                                ...marketSegments.map((segment) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16),
-                                      child: MetricBar(
-                                        label:
-                                            '${segment.name} · ${segment.competition}',
-                                        value: segment.size.toDouble(),
-                                        max: 100,
-                                        trailing:
-                                            '${segment.size}% · ${segment.growth.toStringAsFixed(1)}%',
-                                        color: segment.name == 'Premium'
-                                            ? SimcoreColors.accent
-                                            : segment.name == 'Media'
-                                                ? SimcoreColors.success
-                                                : SimcoreColors.warning,
-                                      ),
-                                    )),
-                              ],
-                            ),
-                          ),
-                        ),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 410),
-                          child: GlassPanel(
-                            backgroundColor: SimcoreColors.surface,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Mapa competitivo',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 16),
-                                ...competitors.map((competitor) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 14),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            width: 38,
-                                            height: 38,
-                                            decoration: BoxDecoration(
-                                              color: SimcoreColors.accentSoft,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                                Icons.business_center_outlined,
-                                                color: SimcoreColors.accent),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(competitor.name,
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w700)),
-                                                const SizedBox(height: 4),
-                                                Text(competitor.strategy),
-                                              ],
-                                            ),
-                                          ),
-                                          Text(
-                                            '${competitor.share.toStringAsFixed(1)}%',
-                                            style: GoogleFonts.jetBrainsMono(
-                                                fontWeight: FontWeight.w700),
-                                          ),
-                                        ],
-                                      ),
-                                    )),
-                              ],
-                            ),
-                          ),
+        GlassPanel(
+          child: assumptionAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e', style: const TextStyle(color: SimcoreColors.danger)),
+            data: (assumption) => Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const IconTitle(
+                    icon: Icons.storefront_outlined,
+                    title: 'Supuestos de mercado',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField('Segmento objetivo', _segmentCtrl),
+                  const SizedBox(height: 12),
+                  _buildField('Tamaño de mercado estimado (\$)', _sizeCtrl,
+                      keyboardType: TextInputType.number),
+                  const SizedBox(height: 12),
+                  _buildField('Demanda estimada (unidades/mes)', _demandCtrl,
+                      keyboardType: TextInputType.number),
+                  const SizedBox(height: 12),
+                  _buildField('Descripción de la competencia', _competitionCtrl, maxLines: 2),
+                  const SizedBox(height: 12),
+                  _buildField('Precio unitario estimado (\$)', _priceCtrl,
+                      keyboardType: TextInputType.number),
+                  const SizedBox(height: 12),
+                  _buildField('Justificación comercial', _justificationCtrl,
+                      maxLines: 3, required: true, minLength: 30),
+                  const SizedBox(height: 20),
+                  if (assumption?.hasMinimumData == true)
+                    Row(
+                      children: const [
+                        Icon(Icons.check_circle_rounded, color: SimcoreColors.success, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Datos mínimos completos',
+                          style: TextStyle(color: SimcoreColors.success, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _SliderField extends StatelessWidget {
-  const _SliderField({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.format,
-    required this.onChanged,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final String Function(double value) format;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-                child: Text(label,
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-            Text(format(value),
-                style: GoogleFonts.jetBrainsMono(
-                    fontWeight: FontWeight.w700, color: SimcoreColors.accent)),
-          ],
-        ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          onChanged: onChanged,
-        ),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          runSpacing: 6,
-          children: [
-            Text(format(min),
-                style: const TextStyle(
-                    fontSize: 12, color: SimcoreColors.textTertiary)),
-            Text(format(max),
-                style: const TextStyle(
-                    fontSize: 12, color: SimcoreColors.textTertiary)),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DemandChart extends StatelessWidget {
-  const _DemandChart({
-    required this.pessimistic,
-    required this.base,
-    required this.optimistic,
-  });
-
-  final int pessimistic;
-  final int base;
-  final int optimistic;
-
-  @override
-  Widget build(BuildContext context) {
-    final values = [pessimistic, base, optimistic];
-    final maxValue = values.reduce(math.max).toDouble();
-    final labels = ['Pesimista', 'Base', 'Optimista'];
-    final colors = [
-      SimcoreColors.warning,
-      SimcoreColors.accent,
-      SimcoreColors.success
-    ];
-
-    return SizedBox(
-      height: 280,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(values.length, (index) {
-          final value = values[index];
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text('${(value / 1000).toStringAsFixed(0)}k',
-                      style: GoogleFonts.jetBrainsMono(
-                          fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 350),
-                        width: 120,
-                        height: 180 * (value / maxValue),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              colors[index].withValues(alpha: 0.85),
-                              colors[index].withValues(alpha: 0.25)
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                  FilledButton(
+                    onPressed: isLoading ? null : _saveAssumption,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Guardar supuestos'),
                   ),
-                  const SizedBox(height: 12),
-                  Text(labels[index],
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-          );
-        }),
-      ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        GlassPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconTitle(
+                icon: Icons.show_chart_rounded,
+                title: 'Proyección de ventas',
+              ),
+              const SizedBox(height: 16),
+              projectionAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) =>
+                    Text('Error: $e', style: const TextStyle(color: SimcoreColors.danger)),
+                data: (projection) => _ProjectionSection(projection: projection),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () => ref.read(marketNotifierProvider.notifier).generateProjection(),
+                icon: const Icon(Icons.autorenew_rounded),
+                label: const Text('Generar proyección'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        assumptionAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (assumption) => projectionAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (projection) {
+              final canComplete =
+                  (assumption?.hasMinimumData ?? false) && projection != null;
+              return FilledButton(
+                onPressed: canComplete && !isLoading
+                    ? () => ref.read(marketNotifierProvider.notifier).completeModule()
+                    : null,
+                style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
+                child: const Text('Completar módulo'),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _saveAssumption() {
+    if (!_formKey.currentState!.validate()) return;
+    ref.read(marketNotifierProvider.notifier).saveAssumption({
+      'targetSegment': _segmentCtrl.text.trim(),
+      'marketSizeEstimate': double.tryParse(_sizeCtrl.text.trim()),
+      'demandUnitsPerMonth': int.tryParse(_demandCtrl.text.trim()),
+      'competitionDescription': _competitionCtrl.text.trim(),
+      'estimatedUnitPrice': double.tryParse(_priceCtrl.text.trim()),
+      'commercialJustification': _justificationCtrl.text.trim(),
+    });
+  }
+
+  Widget _buildField(
+    String label,
+    TextEditingController ctrl, {
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    bool required = false,
+    int? minLength,
+  }) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      decoration: InputDecoration(labelText: label),
+      validator: (value) {
+        if (required && (value == null || value.trim().isEmpty)) return 'Campo requerido';
+        if (minLength != null && (value?.trim().length ?? 0) < minLength) {
+          return 'Mínimo $minLength caracteres';
+        }
+        return null;
+      },
+    );
+  }
+}
+
+class _ProjectionSection extends StatelessWidget {
+  const _ProjectionSection({this.projection});
+
+  final SalesProjection? projection;
+
+  @override
+  Widget build(BuildContext context) {
+    if (projection == null) {
+      return const Text(
+        'Sin proyección generada. Guarda los supuestos y luego genera la proyección.',
+        style: TextStyle(color: SimcoreColors.textSecondary),
+      );
+    }
+
+    if (projection!.periods.isEmpty) {
+      return const Text(
+        'La proyección no tiene períodos.',
+        style: TextStyle(color: SimcoreColors.textSecondary),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (projection!.notes != null) ...[
+          Text(projection!.notes!, style: const TextStyle(color: SimcoreColors.textSecondary)),
+          const SizedBox(height: 12),
+        ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Período')),
+              DataColumn(label: Text('Unidades')),
+              DataColumn(label: Text('Ingresos')),
+            ],
+            rows: projection!.periods
+                .map((p) => DataRow(cells: [
+                      DataCell(Text(p.period)),
+                      DataCell(Text('${p.units}')),
+                      DataCell(Text('\$${p.revenue.toStringAsFixed(0)}')),
+                    ]))
+                .toList(),
+          ),
+        ),
+      ],
     );
   }
 }

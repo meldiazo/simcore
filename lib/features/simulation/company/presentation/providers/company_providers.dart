@@ -113,6 +113,58 @@ final companyWorkspaceProvider =
   );
 });
 
+// ── Mutation notifiers ────────────────────────────────────────────────────────
+
+class CompanyFormNotifier extends StateNotifier<AsyncValue<Company?>> {
+  CompanyFormNotifier(this._repo) : super(const AsyncValue.data(null));
+  final CompanyRepository _repo;
+
+  Future<Company?> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final company = await _repo.createCompany(
+        groupId: groupId,
+        name: name,
+        sector: sector,
+        industry: industry,
+        description: description,
+        mission: mission,
+        vision: vision,
+      );
+      state = AsyncValue.data(company);
+      return company;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return null;
+    }
+  }
+
+  Future<Company?> activateCompany({required int companyId}) async {
+    state = const AsyncValue.loading();
+    try {
+      final company = await _repo.activateCompany(companyId: companyId);
+      state = AsyncValue.data(company);
+      return company;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return null;
+    }
+  }
+}
+
+final companyFormNotifierProvider =
+    StateNotifierProvider.autoDispose<CompanyFormNotifier, AsyncValue<Company?>>(
+  (ref) => CompanyFormNotifier(ref.watch(companyRepositoryProvider)),
+);
+
 // Placeholder para cuando el contexto aún no está listo
 class _NoCompany implements Company {
   const _NoCompany();

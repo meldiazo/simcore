@@ -41,4 +41,36 @@ class CompanyRepositoryImpl implements CompanyRepository {
     required int companyId,
   }) =>
       _dataSource.getDecisions(companyId: companyId);
+
+  @override
+  Future<Company> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  }) =>
+      _dataSource.createCompany(
+        groupId: groupId,
+        name: name,
+        sector: sector,
+        industry: industry,
+        description: description,
+        mission: mission,
+        vision: vision,
+      );
+
+  @override
+  Future<Company> activateCompany({required int companyId}) =>
+      _dataSource.activateCompany(companyId: companyId);
+
+  @override
+  Future<Company> closeCompany({required int companyId, required String reason}) =>
+      _dataSource.closeCompany(companyId: companyId, reason: reason);
+
+  @override
+  Future<void> linkGroupToCompany({required int groupId, required int companyId}) =>
+      _dataSource.linkGroupToCompany(groupId: groupId, companyId: companyId);
 }

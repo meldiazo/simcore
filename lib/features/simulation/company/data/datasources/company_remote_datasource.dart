@@ -88,6 +88,62 @@ class CompanyRemoteDataSource {
     );
   }
 
+  Future<Company> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  }) async {
+    final result = await _apiClient.post(
+      '/api/v1/simulation/companies',
+      data: {
+        'groupId': groupId,
+        'name': name,
+        'sector': sector,
+        'industry': industry,
+        'description': description,
+        'mission': mission,
+        'vision': vision,
+      },
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<Company> activateCompany({required int companyId}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/activate',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<Company> closeCompany({required int companyId, required String reason}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/close',
+      data: {'reason': reason},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<void> linkGroupToCompany({required int groupId, required int companyId}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/iam/groups/$groupId/company',
+      data: {'companyId': companyId},
+    );
+    result.fold((e) => throw e, (_) {});
+  }
+
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
       return data

@@ -3,6 +3,7 @@ import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
 import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
 import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
@@ -106,7 +107,7 @@ class SimcoreShellPage extends StatelessWidget {
 
   Widget _buildContent() {
     return switch (section) {
-      SimcoreSection.workspace => const WorkspacePage(),
+      SimcoreSection.workspace => const Scaffold(body: Center(child: Text('Workspace en desarrollo'))),
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
       SimcoreSection.investment => const FinancePage(),

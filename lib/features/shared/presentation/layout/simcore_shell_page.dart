@@ -5,7 +5,7 @@ import 'package:simcore_frontend/features/auth/presentation/providers/auth_notif
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
 import 'package:simcore_frontend/features/modules/market/presentation/pages/market_page.dart';
-import 'package:simcore_frontend/features/modules/finance/presentation/pages/finance_page.dart';
+import 'package:simcore_frontend/features/modules/investment_financing/presentation/pages/investment_financing_page.dart';
 import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
 import 'package:simcore_frontend/features/modules/analysis/presentation/pages/analysis_page.dart';
 import 'package:simcore_frontend/features/ranking/presentation/pages/ranking_page.dart';
@@ -109,7 +109,7 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.workspace => const WorkspacePage(),
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
-      SimcoreSection.investment => const FinancePage(),
+      SimcoreSection.investment => const InvestmentFinancingPage(companyId: '1'),
       SimcoreSection.organization => const OrganizationPage(),
       SimcoreSection.accounting => const AnalysisPage(),
       SimcoreSection.analysis => const AnalysisPage(),

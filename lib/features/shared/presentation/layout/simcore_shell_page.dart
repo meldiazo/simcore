@@ -14,6 +14,7 @@ import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_das
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore/features/modules/accounting/presentation/pages/accounting_page.dart';
 
 enum SimcoreSection {
   workspace,
@@ -111,7 +112,7 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.market => const MarketPage(),
       SimcoreSection.investment => const InvestmentFinancingPage(companyId: '1'),
       SimcoreSection.organization => const OrganizationPage(),
-      SimcoreSection.accounting => const AnalysisPage(),
+      SimcoreSection.accounting => const AccountingPage(),
       SimcoreSection.analysis => const AnalysisPage(),
       SimcoreSection.ranking => const RankingPage(),
       SimcoreSection.profile => const ProfilePage(),

@@ -104,11 +104,10 @@ class InvestmentFinancingNotifier extends StateNotifier<InvestmentFinancingState
       state = state.copyWith(isLoading: false, investmentItems: investments);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
-
     }
+  }
 
-    
-    // NUEVO MÉTODO: AGREGAR OPCIÓN DE FINANCIAMIENTO
+  // NUEVO MÉTODO: AGREGAR OPCIÓN DE FINANCIAMIENTO
   Future<void> addFinancingOption(FinancingType type, double amount, double interestRate, int termInMonths) async {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
@@ -125,7 +124,6 @@ class InvestmentFinancingNotifier extends StateNotifier<InvestmentFinancingState
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
-  }
   }
   
   

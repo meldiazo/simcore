@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/datasources/decision_remote_datasource.dart';
-import 'package:simcore_frontend/features/simulation/decisions/domain/entities/decision.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/models/decision_model.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 final decisionRemoteDataSourceProvider = Provider<DecisionRemoteDataSource>((ref) {
   return DecisionRemoteDataSource(ref.watch(simulationApiClientProvider));
 });
 
-final companyDecisionsProvider = FutureProvider<List<Decision>>((ref) {
+final companyDecisionsProvider = FutureProvider<List<DecisionModel>>((ref) {
   final ctx = ref.watch(simulationContextNotifierProvider).context;
   if (ctx == null) return Future.value(const []);
   return ref
@@ -16,11 +16,11 @@ final companyDecisionsProvider = FutureProvider<List<Decision>>((ref) {
       .getDecisionsByCompany(companyId: ctx.companyId);
 });
 
-class DecisionFormNotifier extends StateNotifier<AsyncValue<Decision?>> {
+class DecisionFormNotifier extends StateNotifier<AsyncValue<DecisionModel?>> {
   DecisionFormNotifier(this._ds) : super(const AsyncValue.data(null));
   final DecisionRemoteDataSource _ds;
 
-  Future<Decision?> createDecision({
+  Future<DecisionModel?> createDecision({
     required int companyId,
     required String module,
     required String decisionType,
@@ -46,6 +46,6 @@ class DecisionFormNotifier extends StateNotifier<AsyncValue<Decision?>> {
 }
 
 final decisionFormNotifierProvider =
-    StateNotifierProvider.autoDispose<DecisionFormNotifier, AsyncValue<Decision?>>(
+    StateNotifierProvider.autoDispose<DecisionFormNotifier, AsyncValue<DecisionModel?>>(
   (ref) => DecisionFormNotifier(ref.watch(decisionRemoteDataSourceProvider)),
 );

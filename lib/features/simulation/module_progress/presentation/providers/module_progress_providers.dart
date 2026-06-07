@@ -25,6 +25,10 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
     }
   }
 
+  Future<void> start(String companyId, String module) {
+    return startModule(int.tryParse(companyId) ?? 0, module);
+  }
+
   Future<void> completeModule(int companyId, String module) async {
     state = const AsyncValue.loading();
     try {
@@ -34,6 +38,10 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  Future<void> complete(String companyId, String module) {
+    return completeModule(int.tryParse(companyId) ?? 0, module);
   }
 
   Future<void> lockModule(int companyId, String module, bool locked) async {
@@ -70,3 +78,5 @@ final moduleProgressNotifierProvider = StateNotifierProvider.autoDispose<
     ref,
   ),
 );
+
+final moduleProgressProvider = moduleProgressNotifierProvider;

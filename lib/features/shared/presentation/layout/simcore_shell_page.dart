@@ -13,6 +13,7 @@ import 'package:simcore_frontend/features/modules/market/presentation/pages/mark
 import 'package:simcore_frontend/features/modules/organization/presentation/pages/organization_page.dart';
 import 'package:simcore_frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:simcore_frontend/features/reports/presentation/pages/company_report_page.dart';
+import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';

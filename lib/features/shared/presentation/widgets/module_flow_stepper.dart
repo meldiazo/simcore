@@ -185,6 +185,7 @@ Color _statusColor(ModuleStatus status) {
     ModuleStatus.inProgress => SimcoreColors.accent,
     ModuleStatus.requiresRevision => SimcoreColors.warning,
     ModuleStatus.outdated => const Color(0xFFEAB308),
+    ModuleStatus.locked => SimcoreColors.danger,
     ModuleStatus.pending => SimcoreColors.textTertiary,
   };
 }
@@ -195,6 +196,7 @@ IconData _statusIcon(ModuleStatus status) {
     ModuleStatus.inProgress => Icons.timelapse_rounded,
     ModuleStatus.requiresRevision => Icons.edit_note_rounded,
     ModuleStatus.outdated => Icons.history_rounded,
+    ModuleStatus.locked => Icons.lock_outline_rounded,
     ModuleStatus.pending => Icons.radio_button_unchecked_rounded,
   };
 }

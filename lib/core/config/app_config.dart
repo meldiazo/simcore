@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:simcore_frontend/core/config/environment.dart';
 
 /// Capa central de configuración de SimCore.
@@ -18,13 +19,20 @@ class AppConfig {
   });
 
   /// Desarrollo con backend local real.
-  /// IAM: http://localhost:8081
-  /// SIM: http://localhost:8082
+  /// Android emulator reaches the host machine through 10.0.2.2.
+  /// Override with --dart-define=API_HOST=host-or-ip for a physical device.
   factory AppConfig.devLocal() {
-    return const AppConfig(
+    const apiHost = String.fromEnvironment('API_HOST');
+    final host = apiHost.isNotEmpty
+        ? apiHost
+        : (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+            ? '10.0.2.2'
+            : 'localhost';
+
+    return AppConfig(
       environment: Environment.dev,
-      iamUrl: 'http://localhost:8081',
-      simUrl: 'http://localhost:8082',
+      iamUrl: 'http://$host:8081',
+      simUrl: 'http://$host:8082',
       useMockData: false,
     );
   }
@@ -32,10 +40,13 @@ class AppConfig {
   /// Desarrollo visual sin backend.
   /// Úsalo solo para pantallas demo o trabajo UI aislado.
   factory AppConfig.devMock() {
-    return const AppConfig(
+    const apiHost = String.fromEnvironment('API_HOST');
+    final host = apiHost.isNotEmpty ? apiHost : 'localhost';
+
+    return AppConfig(
       environment: Environment.dev,
-      iamUrl: 'http://localhost:8081',
-      simUrl: 'http://localhost:8082',
+      iamUrl: 'http://$host:8081',
+      simUrl: 'http://$host:8082',
       useMockData: true,
     );
   }

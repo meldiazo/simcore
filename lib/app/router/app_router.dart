@@ -20,7 +20,7 @@ class AppRouter {
   static const String decisions = '/decisions';
   static const String market = '/market';
   static const String investment = '/investment';
-  static const String legacyFinance = '/finance';
+  static const String legacyFinance = investment;
   static const String organization = '/organization';
   static const String accounting = '/accounting';
   static const String analysis = '/analysis';
@@ -31,7 +31,7 @@ class AppRouter {
   static const String courseManager = '/course-manager';
   static const String groupManager = '/group-manager';
 
-  static const String legacyHr = '/hr';
+  static const String legacyHr = organization;
   static const String legacyAdmin = '/admin';
 
   static const Set<String> _studentRoutes = <String>{

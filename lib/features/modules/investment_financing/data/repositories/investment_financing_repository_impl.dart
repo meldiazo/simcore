@@ -41,6 +41,14 @@ class InvestmentFinancingRepositoryImpl {
     }
   }
 
+  Future<void> completeFinancing(String companyId) async {
+    try {
+      await remoteDataSource.completeFinancing(companyId);
+    } catch (e) {
+      throw Exception('Error al confirmar la estructura de financiamiento.');
+    }
+  }
+
   
 
   Future<List<FinancingOptionModel>> getFinancingOptions(String companyId) async {

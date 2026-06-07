@@ -618,6 +618,11 @@ class StatusBadge extends StatelessWidget {
       SimcoreColors.successSoft,
       SimcoreColors.success,
     ),
+  ModuleStatus.locked => (
+      'Bloqueado',
+      SimcoreColors.dangerSoft,
+      SimcoreColors.danger,
+    ),
   ModuleStatus.requiresRevision => (
       'Requiere revisión',
       SimcoreColors.warningSoft,

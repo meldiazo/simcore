@@ -70,34 +70,47 @@ class _LoginPageState extends ConsumerState<LoginPage>
       backgroundColor: SimcoreColors.bg,
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: Row(
-          children: [
-            _LeftPanel(),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: _LoginForm(
-                      formKey: _formKey,
-                      usernameController: _usernameController,
-                      passwordController: _passwordController,
-                      obscurePassword: _obscurePassword,
-                      onToggleObscure: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                      isLoading: isLoading,
-                      errorMessage: authState.status == AuthStatus.error
-                          ? authState.errorMessage
-                          : null,
-                      onSubmit: _submit,
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 900;
+              final horizontalPadding = constraints.maxWidth < 480 ? 24.0 : 40.0;
+
+              return Row(
+                children: [
+                  if (isWide) _LeftPanel(),
+                  Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                          vertical: 24,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 420),
+                          child: _LoginForm(
+                            formKey: _formKey,
+                            usernameController: _usernameController,
+                            passwordController: _passwordController,
+                            obscurePassword: _obscurePassword,
+                            onToggleObscure: () => setState(
+                                () => _obscurePassword = !_obscurePassword),
+                            isLoading: isLoading,
+                            errorMessage: authState.status == AuthStatus.error
+                                ? authState.errorMessage
+                                : null,
+                            onSubmit: _submit,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
-          ],
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -316,7 +329,7 @@ class _LoginForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'Bienvenido de nuevo',
             style: GoogleFonts.inter(
@@ -334,7 +347,7 @@ class _LoginForm extends StatelessWidget {
               color: SimcoreColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
           // Error banner
           if (errorMessage != null) ...[
@@ -350,13 +363,13 @@ class _LoginForm extends StatelessWidget {
             hint: 'Ingresa tu usuario',
             prefixIcon: Icons.person_outline_rounded,
             enabled: !isLoading,
+            textInputAction: TextInputAction.next,
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
                 return 'El usuario es obligatorio';
               }
               return null;
             },
-            onFieldSubmitted: (_) => onSubmit(),
           ),
           const SizedBox(height: 20),
 
@@ -369,6 +382,7 @@ class _LoginForm extends StatelessWidget {
             prefixIcon: Icons.lock_outline_rounded,
             obscureText: obscurePassword,
             enabled: !isLoading,
+            textInputAction: TextInputAction.done,
             suffixIcon: IconButton(
               icon: Icon(
                 obscurePassword
@@ -433,6 +447,7 @@ class _SimcoreTextField extends StatelessWidget {
     required this.prefixIcon,
     this.obscureText = false,
     this.enabled = true,
+    this.textInputAction,
     this.suffixIcon,
     this.validator,
     this.onFieldSubmitted,
@@ -443,6 +458,7 @@ class _SimcoreTextField extends StatelessWidget {
   final IconData prefixIcon;
   final bool obscureText;
   final bool enabled;
+  final TextInputAction? textInputAction;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
@@ -453,6 +469,9 @@ class _SimcoreTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       enabled: enabled,
+      autocorrect: false,
+      enableSuggestions: !obscureText,
+      textInputAction: textInputAction,
       validator: validator,
       onFieldSubmitted: onFieldSubmitted,
       style: GoogleFonts.inter(

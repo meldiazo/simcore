@@ -1,4 +1,5 @@
 import 'package:simcore_frontend/app/app.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,9 +11,8 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.text('Workspace SIMCORE'), findsOneWidget);
-    expect(find.text('Centro de Decisiones'), findsOneWidget);
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

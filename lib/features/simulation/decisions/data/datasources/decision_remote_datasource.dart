@@ -1,13 +1,12 @@
 import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/models/decision_model.dart';
-import 'package:simcore_frontend/features/simulation/decisions/domain/entities/decision.dart';
 
 class DecisionRemoteDataSource {
   DecisionRemoteDataSource(this._apiClient);
 
   final ApiClient _apiClient;
 
-  Future<List<Decision>> getDecisionsByCompany({required int companyId}) async {
+  Future<List<DecisionModel>> getDecisionsByCompany({required int companyId}) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/decisions/company/$companyId',
     );
@@ -17,7 +16,7 @@ class DecisionRemoteDataSource {
     );
   }
 
-  Future<List<Decision>> getDecisionsByModule({
+  Future<List<DecisionModel>> getDecisionsByModule({
     required int companyId,
     required String module,
   }) async {
@@ -31,7 +30,7 @@ class DecisionRemoteDataSource {
     );
   }
 
-  Future<Decision> createDecision({required Map<String, dynamic> data}) async {
+  Future<DecisionModel> createDecision({required Map<String, dynamic> data}) async {
     final result = await _apiClient.post('/api/v1/simulation/decisions', data: data);
     return result.fold(
       (e) => throw e,

@@ -1,25 +1,13 @@
-class SalesProjectionPeriod {
-  const SalesProjectionPeriod({
-    required this.period,
-    required this.units,
-    required this.revenue,
-  });
-
-  final String period;
-  final int units;
-  final double revenue;
-}
-
 class SalesProjection {
-  const SalesProjection({
-    required this.id,
-    required this.companyId,
-    this.notes,
-    this.periods = const [],
-  });
+  final int monthlyDemand;
+  final double estimatedPrice;
+  final double projectedRevenue;
+  final String scenario;
 
-  final int id;
-  final int companyId;
-  final String? notes;
-  final List<SalesProjectionPeriod> periods;
+  SalesProjection({
+    required this.monthlyDemand,
+    required this.estimatedPrice,
+    required this.projectedRevenue,
+    required this.scenario,
+  });
 }

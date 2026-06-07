@@ -1,23 +1,17 @@
 class MarketAssumption {
-  const MarketAssumption({
-    required this.id,
-    required this.companyId,
-    this.targetSegment,
-    this.marketSizeEstimate,
-    this.demandUnitsPerMonth,
-    this.competitionDescription,
-    this.estimatedUnitPrice,
-    this.commercialJustification,
-    this.hasMinimumData = false,
-  });
+  final String targetSegment;
+  final double marketSizeEstimate;
+  final int demandUnitsPerMonth;
+  final String competitionDescription;
+  final double estimatedUnitPrice;
+  final String commercialJustification;
 
-  final int id;
-  final int companyId;
-  final String? targetSegment;
-  final double? marketSizeEstimate;
-  final int? demandUnitsPerMonth;
-  final String? competitionDescription;
-  final double? estimatedUnitPrice;
-  final String? commercialJustification;
-  final bool hasMinimumData;
+  MarketAssumption({
+    required this.targetSegment,
+    required this.marketSizeEstimate,
+    required this.demandUnitsPerMonth,
+    required this.competitionDescription,
+    required this.estimatedUnitPrice,
+    required this.commercialJustification,
+  });
 }

@@ -1,69 +1,57 @@
-import 'package:simcore_frontend/core/network/api_client.dart';
-import 'package:simcore_frontend/features/modules/market/data/models/market_assumption_model.dart';
-import 'package:simcore_frontend/features/modules/market/data/models/sales_projection_model.dart';
-import 'package:simcore_frontend/features/modules/market/domain/entities/market_assumption.dart';
-import 'package:simcore_frontend/features/modules/market/domain/entities/sales_projection.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/market_assumption_model.dart';
+import '../models/sales_projection_model.dart';
 
-class MarketRemoteDataSource {
-  MarketRemoteDataSource(this._apiClient);
+class MarketRemoteDatasource {
+  final String baseUrl = 'https://simcore-production.up.railway.app/api/v1/simulation/companies';
 
-  final ApiClient _apiClient;
-
-  Future<MarketAssumption?> getAssumption({required int companyId}) async {
-    final result = await _apiClient.get(
-      '/api/v1/simulation/companies/$companyId/market/assumption',
-    );
-    return result.fold(
-      (e) => throw e,
-      (data) {
-        if (data == null) return null;
-        return MarketAssumptionModel.fromJson(Map<String, dynamic>.from(data as Map));
-      },
-    );
+  Future<MarketAssumptionModel?> getAssumption(String companyId) async {
+    final response = await http.get(Uri.parse('$baseUrl/$companyId/market/assumption'));
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      return MarketAssumptionModel.fromJson(json.decode(response.body));
+    }
+    return null;
   }
 
-  Future<MarketAssumption> saveAssumption({
-    required int companyId,
-    required Map<String, dynamic> data,
-  }) async {
-    final result = await _apiClient.put(
-      '/api/v1/simulation/companies/$companyId/market/assumption',
-      data: data,
+  Future<MarketAssumptionModel> updateAssumption(String companyId, MarketAssumptionModel assumption) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/$companyId/market/assumption'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(assumption.toJson()),
     );
-    return result.fold(
-      (e) => throw e,
-      (d) => MarketAssumptionModel.fromJson(Map<String, dynamic>.from(d as Map)),
-    );
+    if (response.statusCode == 200) {
+      return MarketAssumptionModel.fromJson(json.decode(response.body));
+    }
+    throw Exception('Error al actualizar supuestos de mercado');
   }
 
-  Future<SalesProjection?> getProjection({required int companyId}) async {
-    final result = await _apiClient.get(
-      '/api/v1/simulation/companies/$companyId/market/projection',
-    );
-    return result.fold(
-      (e) => throw e,
-      (data) {
-        if (data == null) return null;
-        return SalesProjectionModel.fromJson(Map<String, dynamic>.from(data as Map));
-      },
-    );
+  Future<SalesProjectionModel?> getProjection(String companyId) async {
+    final response = await http.get(Uri.parse('$baseUrl/$companyId/market/projection'));
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      return SalesProjectionModel.fromJson(json.decode(response.body));
+    }
+    return null;
   }
 
-  Future<SalesProjection> generateProjection({required int companyId, int months = 12}) async {
-    final result = await _apiClient.post(
-      '/api/v1/simulation/companies/$companyId/market/projection/generate',
-      data: {'months': months},
+  Future<SalesProjectionModel> generateProjection(String companyId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/$companyId/market/projection/generate'),
+      headers: {'Content-Type': 'application/json'},
     );
-    return result.fold(
-      (e) => throw e,
-      (d) => SalesProjectionModel.fromJson(Map<String, dynamic>.from(d as Map)),
-    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return SalesProjectionModel.fromJson(json.decode(response.body));
+    }
+    throw Exception('Error al generar proyección');
   }
 
-  Future<void> completeModule({required int companyId}) async {
-    final result = await _apiClient.patch(
-      '/api/v1/simulation/companies/$companyId/market/complete',
+  Future<void> completeMarket(String companyId) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/$companyId/market/complete'),
+      headers: {'Content-Type': 'application/json'},
     );
-    result.fold((e) => throw e, (_) {});
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Error al completar el módulo de mercado');
+    }
   }
 }

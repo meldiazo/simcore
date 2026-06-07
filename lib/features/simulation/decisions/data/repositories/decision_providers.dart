@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/models/decision_impact_model.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/models/decision_model.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_repository_impl.dart';
@@ -7,8 +8,9 @@ import 'package:simcore_frontend/features/simulation/decisions/repositories/deci
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 // 1. Inyección del Datasource
-final decisionRemoteDatasourceProvider = Provider<DecisionRemoteDatasource>((ref) {
-  return DecisionRemoteDatasource();
+final decisionRemoteDatasourceProvider =
+    Provider<DecisionRemoteDatasource>((ref) {
+  return DecisionRemoteDatasource(ref.watch(simulationApiClientProvider));
 });
 
 // 2. Inyección del Repositorio
@@ -18,14 +20,17 @@ final decisionRepositoryProvider = Provider<DecisionRepository>((ref) {
 });
 
 // 3. Provider para OBTENER todas las decisiones de la compañía actual
-final companyDecisionsProvider = FutureProvider<List<DecisionModel>>((ref) async {
+final companyDecisionsProvider =
+    FutureProvider<List<DecisionModel>>((ref) async {
   final companyId = ref.watch(currentCompanyIdProvider);
   final repository = ref.watch(decisionRepositoryProvider);
   return repository.getCompanyDecisions(companyId.toString());
 });
 
 // 4. Provider para OBTENER el impacto de una decisión específica
-final decisionImpactProvider = FutureProvider.family<List<DecisionImpactModel>, String>((ref, decisionId) async {
+final decisionImpactProvider =
+    FutureProvider.family<List<DecisionImpactModel>, String>(
+        (ref, decisionId) async {
   final repository = ref.watch(decisionRepositoryProvider);
   return repository.getDecisionImpact(decisionId);
 });
@@ -35,7 +40,8 @@ class DecisionNotifier extends StateNotifier<AsyncValue<void>> {
   final DecisionRepository _repository;
   final Ref _ref;
 
-  DecisionNotifier(this._repository, this._ref) : super(const AsyncValue.data(null));
+  DecisionNotifier(this._repository, this._ref)
+      : super(const AsyncValue.data(null));
 
   Future<bool> createDecision(DecisionModel decision) async {
     state = const AsyncValue.loading();
@@ -53,7 +59,8 @@ class DecisionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final decisionNotifierProvider = StateNotifierProvider<DecisionNotifier, AsyncValue<void>>((ref) {
+final decisionNotifierProvider =
+    StateNotifierProvider<DecisionNotifier, AsyncValue<void>>((ref) {
   final repository = ref.watch(decisionRepositoryProvider);
   return DecisionNotifier(repository, ref);
 });

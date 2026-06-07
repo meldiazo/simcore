@@ -1,24 +1,21 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:simcore_frontend/core/network/api_client.dart';
 
 class ModuleProgressRemoteDatasource {
-  final String baseUrl = 'https://simcore-production.up.railway.app/api/v1/simulation/companies';
+  ModuleProgressRemoteDatasource(this._apiClient);
 
-  Future<Map<String, dynamic>> patchModuleAction(String companyId, String module, String action) async {
-    final url = Uri.parse('$baseUrl/$companyId/modules/$module/$action');
-    
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+  final ApiClient _apiClient;
+
+  Future<Map<String, dynamic>> patchModuleAction(
+      String companyId, String module, String action) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/modules/$module/$action',
     );
 
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      if (response.body.isNotEmpty) {
-        return json.decode(response.body);
-      }
-      return {}; 
-    } else {
-      throw Exception('Error en la acción $action para el módulo $module. Código: ${response.statusCode}');
-    }
+    return result.fold(
+      (exception) => throw exception,
+      (data) => data == null
+          ? <String, dynamic>{}
+          : Map<String, dynamic>.from(data as Map),
+    );
   }
 }

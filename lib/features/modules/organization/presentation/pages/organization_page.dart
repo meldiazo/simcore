@@ -1,336 +1,150 @@
-import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';
-import 'package:simcore_frontend/features/modules/organization/presentation/providers/organization_providers.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-class OrganizationPage extends ConsumerWidget {
+class OrganizationPage extends StatefulWidget {
   const OrganizationPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(organizationSummaryProvider);
-    final notifierState = ref.watch(organizationNotifierProvider);
-    final isLoading = notifierState is AsyncLoading;
+  State<OrganizationPage> createState() => _OrganizationPageState();
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const PageIntro(
-          title: 'Estructuras Organizativas',
-          subtitle: 'Áreas, cargos y análisis de capacidad operativa.',
-        ),
-        const SizedBox(height: 24),
-        summaryAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => GlassPanel(
-            child: Text('Error: $e', style: const TextStyle(color: SimcoreColors.danger)),
-          ),
-          data: (summary) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Capacity vs Demand panel
-              GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const IconTitle(
-                      icon: Icons.speed_outlined,
-                      title: 'Capacidad vs Demanda',
-                    ),
-                    const SizedBox(height: 16),
-                    _MetricRow(
-                      label: 'Capacidad mensual estimada',
-                      value: summary.estimatedMonthlyCapacity,
-                    ),
-                    _MetricRow(
-                      label: 'Demanda mensual proyectada',
-                      value: summary.projectedMonthlyDemand,
-                    ),
-                    _MetricRow(
-                      label: 'Costo de personal mensual',
-                      value: summary.monthlyPersonnelCost,
-                      prefix: '\$',
-                    ),
-                    if (summary.warnings.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: SimcoreColors.warningSoft,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.warning_amber_rounded,
-                                    color: SimcoreColors.warning, size: 16),
-                                SizedBox(width: 6),
-                                Text('Advertencias',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: SimcoreColors.warning)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ...summary.warnings.map((w) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text(w,
-                                      style: const TextStyle(
-                                          color: SimcoreColors.warning)),
-                                )),
-                          ],
-                        ),
+class _OrganizationPageState extends State<OrganizationPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final double projectedMarketDemand = 5000.0; 
+      context.read<OrganizationProvider>().loadOrganization(projectedMarketDemand);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<OrganizationProvider>();
+    final summary = provider.summary;
+
+    if (provider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Estructura Organizativa y Operaciones'),
+      ),
+      body: summary == null 
+        ? const Center(child: Text('Error al cargar la estructura organizativa.'))
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. EL PANEL DE TENSIÓN PEDAGÓGICA (Capacidad vs Demanda)
+                CapacityVsDemandPanel(summary: summary),
+                const SizedBox(height: 16),
+
+                // 2. IMPACTO FINANCIERO VISIBLE
+                GlassPanel(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.attach_money, color: SimcoreColors.danger),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Costo Mensual Total de Nómina: \$${summary.totalMonthlyCost.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: SimcoreColors.danger),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Areas
-              GlassPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 32),
+
+                // 3. GESTIÓN DE ÁREAS Y CARGOS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: IconTitle(
-                            icon: Icons.account_tree_outlined,
-                            title: 'Áreas organizativas',
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => _showAddAreaDialog(context, ref),
-                          icon: const Icon(Icons.add_rounded, size: 16),
-                          label: const Text('Nueva área'),
-                        ),
-                      ],
+                    Text(
+                      'Diseño de Estructura',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 16),
-                    if (summary.areas.isEmpty)
-                      const Text(
-                        'No hay áreas creadas.',
-                        style: TextStyle(color: SimcoreColors.textSecondary),
-                      )
-                    else
-                      ...summary.areas.map((area) => _AreaTile(
-                            area: area,
-                            positions: summary.positions
-                                .where((p) => p.areaId == area.id)
-                                .toList(),
-                            onAddPosition: () =>
-                                _showAddPositionDialog(context, ref, area.id),
-                            onDeletePosition: (posId) => ref
-                                .read(organizationNotifierProvider.notifier)
-                                .deletePosition(posId),
-                          )),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Acción para abrir el modal OrganizationAreaForm
+                        showDialog(
+                          context: context,
+                          builder: (_) => const OrganizationAreaForm(),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Nueva Área'),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: summary.areas.isNotEmpty && !isLoading
-                    ? () => ref
-                        .read(organizationNotifierProvider.notifier)
-                        .completeModule()
-                    : null,
-                style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
-                child: const Text('Completar módulo'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+                const SizedBox(height: 16),
 
-  void _showAddAreaDialog(BuildContext context, WidgetRef ref) {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Nueva área'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Nombre'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Descripción'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () async {
-              if (nameCtrl.text.trim().isEmpty) return;
-              await ref.read(organizationNotifierProvider.notifier).createArea({
-                'name': nameCtrl.text.trim(),
-                'description': descCtrl.text.trim(),
-              });
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Crear'),
-          ),
-        ],
-      ),
-    );
-  }
+                // 4. LISTADO DE LA ESTRUCTURA (Evitando el organigrama decorativo)
+                if (summary.areas.isEmpty)
+                  const Center(child: Text('Aún no has definido áreas organizativas. Empieza creando una.'))
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: summary.areas.length,
+                    itemBuilder: (context, index) {
+                      final area = summary.areas[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: ExpansionTile(
+                          title: Text(area.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('${area.positions.length} cargos definidos'),
+                          children: [
+                            ...area.positions.map((pos) => ListTile(
+                              title: Text(pos.title),
+                              subtitle: Text('Personal: ${pos.headcount} | Salario: \$${pos.monthlySalary} | Capacidad: ${pos.capacityPerPerson} uds/persona'),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  // Llamada al provider para eliminar cargo
+                                },
+                              ),
+                            )),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  // Acción para abrir modal OrganizationPositionForm pasando el areaId
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => OrganizationPositionForm(areaId: area.areaId!),
+                                  );
+                                },
+                                icon: const Icon(Icons.person_add),
+                                label: const Text('Añadir Cargo a esta Área'),
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    },
+                  ),
 
-  void _showAddPositionDialog(BuildContext context, WidgetRef ref, int areaId) {
-    final titleCtrl = TextEditingController();
-    final headcountCtrl = TextEditingController();
-    final salaryCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Nuevo cargo'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Título')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: headcountCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Headcount')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: salaryCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Salario mensual')),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () async {
-              await ref.read(organizationNotifierProvider.notifier).createPosition({
-                'areaId': areaId,
-                'title': titleCtrl.text.trim(),
-                'headcount': int.tryParse(headcountCtrl.text.trim()) ?? 1,
-                'monthlySalary': double.tryParse(salaryCtrl.text.trim()) ?? 0,
-              });
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Crear'),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                const SizedBox(height: 48),
 
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({required this.label, required this.value, this.prefix = ''});
-
-  final String label;
-  final double value;
-  final String prefix;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(child: Text(label)),
-          Text(
-            '$prefix${value.toStringAsFixed(0)}',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AreaTile extends StatelessWidget {
-  const _AreaTile({
-    required this.area,
-    required this.positions,
-    required this.onAddPosition,
-    required this.onDeletePosition,
-  });
-
-  final OrganizationArea area;
-  final List<OrganizationPosition> positions;
-  final VoidCallback onAddPosition;
-  final void Function(int posId) onDeletePosition;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: SimcoreColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: SimcoreColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(area.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                ),
-                TextButton.icon(
-                  onPressed: onAddPosition,
-                  icon: const Icon(Icons.person_add_rounded, size: 14),
-                  label: const Text('Cargo'),
+                // 5. REGISTRO DE DECISIÓN
+                Center(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    ),
+                    onPressed: provider.isCapacitySufficient 
+                      ? () {
+                          provider.confirmOrganizationStructure();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Estructura Organizativa registrada con éxito.')),
+                          );
+                        }
+                      : null, // Bloqueo pedagógico si la capacidad no cubre la demanda
+                    child: const Text('Confirmar y Registrar Estructura Organizativa', style: TextStyle(fontSize: 16)),
+                  ),
                 ),
               ],
             ),
-            if (area.description != null)
-              Text(area.description!,
-                  style: const TextStyle(color: SimcoreColors.textSecondary, fontSize: 12)),
-            if (positions.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              ...positions.map((p) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.person_outline_rounded,
-                            size: 14, color: SimcoreColors.textTertiary),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${p.title} · ${p.headcount} pax · \$${p.monthlySalary.toStringAsFixed(0)}/mes',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded,
-                              size: 14, color: SimcoreColors.danger),
-                          onPressed: () => onDeletePosition(p.id),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                  )),
-            ],
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

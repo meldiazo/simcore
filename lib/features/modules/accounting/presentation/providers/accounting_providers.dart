@@ -1,75 +1,47 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:simcore_frontend/core/network/api_client_providers.dart';
-import 'package:simcore_frontend/features/modules/accounting/data/datasources/accounting_remote_datasource.dart';
-import 'package:simcore_frontend/features/modules/accounting/domain/entities/accounting_entry.dart';
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:dio/dio.dart'; 
+import '../../data/datasources/accounting_remote_datasource.dart';
+import '../../data/repositories/accounting_repository_impl.dart';
+import '../../data/models/accounting_entry_model.dart';
+import '../../data/models/financial_statement_model.dart';
 
-final accountingRemoteDataSourceProvider = Provider<AccountingRemoteDataSource>((ref) {
-  return AccountingRemoteDataSource(ref.watch(simulationApiClientProvider));
+final accountingRepositoryProvider = Provider<AccountingRepository>((ref) {
+  final dio = Dio(); 
+  final dataSource = AccountingRemoteDataSourceImpl(client: dio);
+  return AccountingRepositoryImpl(remoteDataSource: dataSource);
 });
 
-final accountingEntriesProvider = FutureProvider<List<AccountingEntry>>((ref) {
-  final ctx = ref.watch(simulationContextNotifierProvider).context;
-  if (ctx == null) return Future.value(const []);
-  return ref
-      .watch(accountingRemoteDataSourceProvider)
-      .getEntries(companyId: ctx.companyId);
+final accountingEntriesProvider = FutureProvider.family<List<AccountingEntryModel>, String>((ref, companyId) async {
+  final repository = ref.read(accountingRepositoryProvider);
+  return repository.getAccountingEntries(companyId);
 });
 
-final financialStatementsProvider = FutureProvider<List<FinancialStatement>>((ref) {
-  final ctx = ref.watch(simulationContextNotifierProvider).context;
-  if (ctx == null) return Future.value(const []);
-  return ref
-      .watch(accountingRemoteDataSourceProvider)
-      .getStatements(companyId: ctx.companyId);
+final financialStatementsProvider = FutureProvider.family<List<FinancialStatementModel>, String>((ref, companyId) async {
+  final repository = ref.read(accountingRepositoryProvider);
+  return repository.getFinancialStatements(companyId);
 });
 
-class AccountingNotifier extends StateNotifier<AsyncValue<void>> {
-  AccountingNotifier(this._ds, this._ref) : super(const AsyncValue.data(null));
+final accountingActionsProvider = Provider((ref) => AccountingActions(ref));
 
-  final AccountingRemoteDataSource _ds;
-  final Ref _ref;
+class AccountingActions {
+  final Ref ref;
+  AccountingActions(this.ref);
 
-  int get _companyId =>
-      _ref.read(simulationContextNotifierProvider).context?.companyId ?? 0;
-
-  Future<void> generateEntries() async {
-    state = const AsyncValue.loading();
-    try {
-      await _ds.generateEntries(companyId: _companyId);
-      _ref.invalidate(accountingEntriesProvider);
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
+  Future<void> generateEntries(String companyId) async {
+    final repository = ref.read(accountingRepositoryProvider);
+    await repository.generateAccountingEntries(companyId);
+    
+    ref.invalidate(accountingEntriesProvider(companyId));
   }
 
-  Future<void> generateStatements() async {
-    state = const AsyncValue.loading();
-    try {
-      await _ds.generateStatements(companyId: _companyId);
-      _ref.invalidate(financialStatementsProvider);
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
+  Future<void> generateStatements(String companyId) async {
+    final repository = ref.read(accountingRepositoryProvider);
+    await repository.generateFinancialStatements(companyId);
+    ref.invalidate(financialStatementsProvider(companyId));
   }
 
-  Future<void> completeModule() async {
-    state = const AsyncValue.loading();
-    try {
-      await _ds.completeModule(companyId: _companyId);
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
+  Future<void> completeModule(String companyId) async {
+    final repository = ref.read(accountingRepositoryProvider);
+    await repository.completeAccountingModule(companyId);
   }
 }
-
-final accountingNotifierProvider =
-    StateNotifierProvider.autoDispose<AccountingNotifier, AsyncValue<void>>(
-  (ref) => AccountingNotifier(
-    ref.watch(accountingRemoteDataSourceProvider),
-    ref,
-  ),
-);

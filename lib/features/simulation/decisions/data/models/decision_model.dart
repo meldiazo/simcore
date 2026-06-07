@@ -1,35 +1,36 @@
-import 'package:simcore_frontend/features/simulation/decisions/domain/entities/decision.dart';
+
+import 'package:simcore_frontend/features/simulation/decisions/entities/decision.dart';
 
 class DecisionModel extends Decision {
-  const DecisionModel({
+  DecisionModel({
     required super.id,
     required super.companyId,
     required super.module,
     required super.decisionType,
     required super.payload,
     required super.justification,
-    required super.status,
-    super.decisionVersion,
+    super.createdAt,
   });
 
   factory DecisionModel.fromJson(Map<String, dynamic> json) {
     return DecisionModel(
-      id: _parseInt(json, 'id'),
-      companyId: _parseInt(json, 'companyId'),
-      module: json['module']?.toString() ?? '',
-      decisionType: json['decisionType']?.toString() ?? '',
-      payload: json['payload']?.toString() ?? '',
-      justification: json['justification']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'DRAFT',
-      decisionVersion: _parseInt(json, 'decisionVersion', defaultValue: 1),
+      id: json['id'] ?? '',
+      companyId: json['companyId'] ?? '',
+      module: json['module'] ?? '',
+      decisionType: json['decisionType'] ?? '',
+      payload: json['payload'] ?? {},
+      justification: json['justification'] ?? '',
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 
-  static int _parseInt(Map<String, dynamic> json, String key, {int defaultValue = 0}) {
-    final v = json[key];
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? defaultValue;
-    return defaultValue;
+  Map<String, dynamic> toJson() {
+    return {
+      'companyId': companyId,
+      'module': module,
+      'decisionType': decisionType,
+      'payload': payload,
+      'justification': justification,
+    };
   }
 }

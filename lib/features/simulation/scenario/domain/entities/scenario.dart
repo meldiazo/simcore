@@ -1,46 +1,32 @@
-enum ScenarioType { OPTIMISTIC, PROBABLE, PESSIMISTIC, UNKNOWN }
+import 'package:equatable/equatable.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
-class ScenarioVariable {
+class ScenarioVariable extends Equatable {
+  const ScenarioVariable({required this.code, required this.value, this.description});
   final String code;
-  final String name;
-  final double value;
-  final bool isLocked;
-
-  const ScenarioVariable({
-    required this.code,
-    required this.name,
-    required this.value,
-    this.isLocked = false,
-  });
+  final String value;
+  final String? description;
+  @override
+  List<Object?> get props => [code, value];
 }
 
-class Scenario {
-  final int id;
-  final int courseId;
-  final String name;
-  final String description;
-  final ScenarioType type;
-  final bool isActive;
-  final List<ScenarioVariable> variables;
-
+class Scenario extends Equatable {
   const Scenario({
     required this.id,
     required this.courseId,
     required this.name,
-    required this.description,
     required this.type,
-    this.isActive = false,
+    required this.status,
+    this.description,
     this.variables = const [],
   });
-}
-
-abstract class ScenarioRepository {
-  Future<List<Scenario>> getScenariosByCourse(int courseId);
-  Future<Scenario> getActiveScenario(int groupId);
-  Future<Scenario> getScenarioById(int id);
-  Future<Scenario> createScenario(Scenario scenario);
-  Future<void> activateScenario(int id);
-  Future<void> deactivateScenario(int id);
-  Future<void> assignScenario(int id, int groupId);
-  Future<void> updateVariable(int scenarioId, String code, double value);
+  final int id;
+  final int courseId;
+  final String name;
+  final ScenarioType type;
+  final String status;
+  final String? description;
+  final List<ScenarioVariable> variables;
+  @override
+  List<Object?> get props => [id, courseId, name, type, status];
 }

@@ -76,7 +76,12 @@ class SimulationRepositoryImpl implements SimulationRepository {
   }
 
   @override
-Future<SimulationContext> getSimulationContext({required int companyId}) {
-  return _dataSource.getSimulationContext(companyId: companyId);
-}
+  Future<SimulationContext> getSimulationContext({required int companyId}) {
+    return _dataSource.getSimulationContext(companyId: companyId);
+  }
+
+  @override
+  Future<SimulationContext> getSimulationContextByGroupId({required int groupId}) {
+    return _dataSource.getSimulationContextByGroupId(groupId: groupId);
+  }
 }

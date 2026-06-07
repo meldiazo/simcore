@@ -52,7 +52,12 @@ class SimulationMockDataSource implements SimulationDataSource {
   Future<List<AdminTeamStatus>> getAdminTeams() async => adminTeams;
   
   @override
-Future<SimulationContext> getSimulationContext({required int companyId}) async {
-  return SimulationContextModel.devDefault();
-}
+  Future<SimulationContext> getSimulationContext({required int companyId}) async {
+    return SimulationContextModel.devDefault();
+  }
+
+  @override
+  Future<SimulationContext> getSimulationContextByGroupId({required int groupId}) async {
+    return SimulationContextModel.devDefault();
+  }
 }

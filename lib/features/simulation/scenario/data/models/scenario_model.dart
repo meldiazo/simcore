@@ -1,28 +1,16 @@
-// CORRECCIÓN: Importación relativa para que siempre encuentre el archivo
-import '../../domain/entities/scenario.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/simulation/scenario/domain/entities/scenario.dart';
 
 class ScenarioVariableModel extends ScenarioVariable {
-  const ScenarioVariableModel({
-    required super.code,
-    required super.name,
-    required super.value,
-    super.isLocked,
-  });
+  const ScenarioVariableModel({required super.code, required super.value, super.description});
 
-  factory ScenarioVariableModel.fromJson(Map<String, dynamic> json) => ScenarioVariableModel(
-    code: json['code'] ?? '',
-    name: json['name'] ?? '',
-    // Nos aseguramos de castear de forma segura el double desde el JSON
-    value: (json['value'] ?? 0.0).toDouble(),
-    isLocked: json['isLocked'] ?? false,
-  );
-
-  Map<String, dynamic> toJson() => {
-    'code': code,
-    'name': name,
-    'value': value,
-    'isLocked': isLocked,
-  };
+  factory ScenarioVariableModel.fromJson(Map<String, dynamic> json) {
+    return ScenarioVariableModel(
+      code: json['code'] as String? ?? '',
+      value: json['value']?.toString() ?? '',
+      description: json['description'] as String?,
+    );
+  }
 }
 
 class ScenarioModel extends Scenario {
@@ -30,36 +18,35 @@ class ScenarioModel extends Scenario {
     required super.id,
     required super.courseId,
     required super.name,
-    required super.description,
     required super.type,
-    super.isActive,
+    required super.status,
+    super.description,
     super.variables,
   });
 
   factory ScenarioModel.fromJson(Map<String, dynamic> json) {
+    final vars = (json['variables'] as List<dynamic>? ?? [])
+        .whereType<Map>()
+        .map((v) => ScenarioVariableModel.fromJson(Map<String, dynamic>.from(v)))
+        .toList();
     return ScenarioModel(
-      id: json['id'] ?? 0,
-      courseId: json['courseId'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      type: ScenarioType.values.firstWhere(
-        (e) => e.name == json['type'], 
-        orElse: () => ScenarioType.UNKNOWN
-      ),
-      isActive: json['isActive'] ?? false,
-      variables: (json['variables'] as List?)
-          ?.map((e) => ScenarioVariableModel.fromJson(e))
-          .toList() ?? const [],
+      id: json['id'] as int? ?? 0,
+      courseId: json['courseId'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      type: ScenarioType.fromApi(json['type']?.toString() ?? 'PROBABLE'),
+      status: json['status']?.toString() ?? 'DRAFT',
+      description: json['description'] as String?,
+      variables: vars,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
+  Map<String, dynamic> toCreateJson() => {
     'courseId': courseId,
     'name': name,
     'description': description,
-    'type': type.name,
-    'isActive': isActive,
-    'variables': variables.map((v) => (v as ScenarioVariableModel).toJson()).toList(),
+    'type': type.toApi(),
+    'variables': variables
+        .map((v) => {'code': v.code, 'value': v.value, 'description': v.description})
+        .toList(),
   };
 }

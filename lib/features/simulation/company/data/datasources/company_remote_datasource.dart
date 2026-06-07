@@ -1,89 +1,168 @@
-import 'package:dio/dio.dart';
-import '../models/company_model.dart';
-import '../models/module_progress_model.dart';
-
-abstract class ApiClient {
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters});
-  Future<Response<T>> post<T>(String path, {dynamic data});
-  Future<Response<T>> put<T>(String path, {dynamic data});
-  Future<Response<T>> patch<T>(String path, {dynamic data});
-}
-
-// Modelos internos con validación de nulidad para evitar "undefined getters"
-class SimulationScenarioModel {
-  final int id;
-  final String name;
-  final String description;
-  SimulationScenarioModel({required this.id, required this.name, required this.description});
-  factory SimulationScenarioModel.fromJson(Map<String, dynamic> json) => 
-    SimulationScenarioModel(id: json['id'] ?? 0, name: json['name'] ?? '', description: json['description'] ?? '');
-}
-
-class IncoherenceModel {
-  final int id;
-  final String title;
-  final String message;
-  IncoherenceModel({required this.id, required this.title, required this.message});
-  factory IncoherenceModel.fromJson(Map<String, dynamic> json) => 
-    IncoherenceModel(id: json['id'] ?? 0, title: json['title'] ?? 'Alerta', message: json['message'] ?? '');
-}
-
-class DecisionLogModel {
-  final int id;
-  final String module;
-  final String description;
-  DecisionLogModel({required this.id, required this.module, required this.description});
-  factory DecisionLogModel.fromJson(Map<String, dynamic> json) => 
-    DecisionLogModel(id: json['id'] ?? 0, module: json['module'] ?? 'Sistema', description: json['description'] ?? '');
-}
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/simulation/company/data/models/company_model.dart';
+import 'package:simcore_frontend/features/simulation/company/data/models/module_progress_model.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 
 class CompanyRemoteDataSource {
-  final ApiClient dio;
-  CompanyRemoteDataSource(this.dio);
+  CompanyRemoteDataSource(this._apiClient);
 
-  // MÉTODOS DE LECTURA (HU-FE-08)
-  Future<List<CompanyModel>> getCompaniesByGroup(int groupId) async {
-    final response = await dio.get('/api/v1/simulation/companies?groupId=$groupId');
-    return (response.data as List).map((e) => CompanyModel.fromJson(e)).toList();
+  final ApiClient _apiClient;
+
+  Future<List<Company>> getCompaniesByGroup({required int groupId}) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies',
+      queryParameters: {'groupId': groupId},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => _extractList(data)
+          .map(CompanyModel.fromJson)
+          .toList(),
+    );
   }
 
-  Future<CompanyModel> getCompany(int id) async {
-    final response = await dio.get('/api/v1/simulation/companies/$id');
-    return CompanyModel.fromJson(response.data);
+  Future<Company> getCompanyById({required int companyId}) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
   }
 
-  Future<List<ModuleProgressModel>> getModules(int id) async {
-    final response = await dio.get('/api/v1/simulation/companies/$id/modules');
-    return (response.data as List).map((e) => ModuleProgressModel.fromJson(e)).toList();
+  Future<List<CompanyModuleProgress>> getModuleProgress({
+    required int companyId,
+  }) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId/modules',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => _extractList(data)
+          .map(CompanyModuleProgressModel.fromJson)
+          .toList(),
+    );
   }
 
-  Future<SimulationScenarioModel> getActiveScenario(int groupId) async {
-    final response = await dio.get('/api/v1/simulation/scenarios/active?groupId=$groupId');
-    return SimulationScenarioModel.fromJson(response.data);
+  Future<Map<String, dynamic>?> getActiveScenario({
+    required int groupId,
+  }) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/scenarios/active',
+      queryParameters: {'groupId': groupId},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) {
+        if (data == null) return null;
+        return Map<String, dynamic>.from(data as Map);
+      },
+    );
   }
 
-  Future<List<IncoherenceModel>> getIncoherences(int companyId) async {
-    final response = await dio.get('/api/v1/simulation/companies/$companyId/incoherences');
-    return (response.data as List).map((e) => IncoherenceModel.fromJson(e)).toList();
+  Future<List<Map<String, dynamic>>> getIncoherences({
+    required int companyId,
+    String scenarioType = 'PROBABLE',
+  }) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId/incoherences',
+      queryParameters: {'scenarioType': scenarioType},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => _extractList(data),
+    );
   }
 
-  Future<List<DecisionLogModel>> getDecisions(int companyId) async {
-    final response = await dio.get('/api/v1/simulation/decisions/company/$companyId');
-    return (response.data as List).map((e) => DecisionLogModel.fromJson(e)).toList();
+  Future<List<Map<String, dynamic>>> getDecisions({
+    required int companyId,
+  }) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/decisions/company/$companyId',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => _extractList(data),
+    );
   }
 
-  // MÉTODOS DE ACCIÓN (HU-FE-09)
-  Future<CompanyModel> createCompany(CompanyModel model) async {
-    final response = await dio.post('/api/v1/simulation/companies', data: model.toJson());
-    return CompanyModel.fromJson(response.data);
+  Future<Company> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  }) async {
+    final result = await _apiClient.post(
+      '/api/v1/simulation/companies',
+      data: {
+        'groupId': groupId,
+        'name': name,
+        'sector': sector,
+        'industry': industry,
+        'description': description,
+        'mission': mission,
+        'vision': vision,
+      },
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
   }
 
-  Future<CompanyModel> updateCompany(CompanyModel model) async {
-    final response = await dio.put('/api/v1/simulation/companies/${model.id}', data: model.toJson());
-    return CompanyModel.fromJson(response.data);
+  Future<Company> activateCompany({required int companyId}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/activate',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
   }
 
-  Future<void> activateCompany(int id) async {
-    await dio.patch('/api/v1/simulation/companies/$id/activate');
+  Future<Company> closeCompany({required int companyId, required String reason}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/close',
+      data: {'reason': reason},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => CompanyModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<void> linkGroupToCompany({required int groupId, required int companyId}) async {
+    final result = await _apiClient.patch(
+      '/api/v1/iam/groups/$groupId/company',
+      data: {'companyId': companyId},
+    );
+    result.fold((e) => throw e, (_) {});
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) {
+      final json = Map<String, dynamic>.from(data);
+      for (final key in ['data', 'content', 'items', 'modules', 'companies']) {
+        final value = json[key];
+        if (value is List) {
+          return value
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+      }
+    }
+    return const [];
   }
 }

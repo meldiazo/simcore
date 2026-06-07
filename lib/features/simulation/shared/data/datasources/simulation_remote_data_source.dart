@@ -66,19 +66,35 @@ class SimulationRemoteDataSource implements SimulationDataSource {
     );
   }
   @override
-Future<SimulationContext> getSimulationContext({required int companyId}) async {
-  final result = await _apiClient.get(
-    '/api/v1/simulation/companies/$companyId',
-  );
+  Future<SimulationContext> getSimulationContext({required int companyId}) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId',
+    );
 
-  return result.fold(
-    (failure) => throw failure,
-    (data) {
-      final json = Map<String, dynamic>.from(data as Map);
-      return SimulationContextModel.fromCompanyJson(json);
-    },
-  );
-}
+    return result.fold(
+      (failure) => throw failure,
+      (data) {
+        final json = Map<String, dynamic>.from(data as Map);
+        return SimulationContextModel.fromCompanyJson(json);
+      },
+    );
+  }
+
+  @override
+  Future<SimulationContext> getSimulationContextByGroupId({required int groupId}) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies',
+      queryParameters: {'groupId': groupId},
+    );
+
+    return result.fold(
+      (failure) => throw failure,
+      (data) {
+        final json = Map<String, dynamic>.from(data as Map);
+        return SimulationContextModel.fromCompanyJson(json);
+      },
+    );
+  }
 
   @override
   Future<List<RankingTeam>> getRanking() {

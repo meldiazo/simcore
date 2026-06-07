@@ -1,18 +1,39 @@
-import '../entities/company.dart';
-import '../entities/module_progress.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 
 abstract class CompanyRepository {
-  Future<List<Company>> getCompaniesByGroup(int groupId);
-  Future<Company> getCompany(int id);
-  Future<List<ModuleProgress>> getModules(int companyId);
-  Future<SimulationScenario> getActiveScenario(int groupId);
-  Future<List<Incoherence>> getIncoherences(int companyId);
-  Future<List<DecisionLog>> getDecisions(int companyId);
-  
-  // Métodos de escritura de la HU-FE-09
-  Future<Company> createCompany(Company company);
-  Future<Company> updateCompany(Company company);
-  
-  // SOLUCIÓN AL ÚLTIMO ERROR: Agregamos la firma del método que le faltaba a la interfaz
-  Future<void> activateCompany(int id);
+  Future<List<Company>> getCompaniesByGroup({required int groupId});
+
+  Future<Company> getCompanyById({required int companyId});
+
+  Future<List<CompanyModuleProgress>> getModuleProgress({
+    required int companyId,
+  });
+
+  Future<Map<String, dynamic>?> getActiveScenario({required int groupId});
+
+  Future<List<Map<String, dynamic>>> getIncoherences({
+    required int companyId,
+    String scenarioType = 'PROBABLE',
+  });
+
+  Future<List<Map<String, dynamic>>> getDecisions({
+    required int companyId,
+  });
+
+  Future<Company> createCompany({
+    required int groupId,
+    required String name,
+    required String sector,
+    required String industry,
+    required String description,
+    required String mission,
+    required String vision,
+  });
+
+  Future<Company> activateCompany({required int companyId});
+
+  Future<Company> closeCompany({required int companyId, required String reason});
+
+  Future<void> linkGroupToCompany({required int groupId, required int companyId});
 }

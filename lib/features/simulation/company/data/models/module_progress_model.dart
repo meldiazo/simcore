@@ -1,33 +1,54 @@
-import '../../domain/entities/module_progress.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 
-class ModuleProgressModel extends ModuleProgress {
-  const ModuleProgressModel({
-    required super.id,
-    required super.moduleType,
+class CompanyModuleProgressModel extends CompanyModuleProgress {
+  const CompanyModuleProgressModel({
+    required super.module,
     required super.status,
-    required super.progressPercentage,
-    super.reason,
+    required super.progress,
+    super.revisionReason,
+    super.updatedAt,
   });
 
-  factory ModuleProgressModel.fromJson(Map<String, dynamic> json) {
-    final statusStr = json['status'] as String? ?? '';
-    ModuleProgressStatus parsedStatus;
+  factory CompanyModuleProgressModel.fromJson(Map<String, dynamic> json) {
+    final moduleValue = _readString(json, ['module', 'id', 'moduleId', 'moduleCode', 'code']);
+    final statusValue = _readString(json, ['status', 'state']);
 
-    switch (statusStr.toUpperCase()) {
-      case 'PENDING': parsedStatus = ModuleProgressStatus.pending; break;
-      case 'IN_PROGRESS': parsedStatus = ModuleProgressStatus.inProgress; break;
-      case 'COMPLETE': parsedStatus = ModuleProgressStatus.complete; break;
-      case 'REQUIRES_REVISION': parsedStatus = ModuleProgressStatus.requiresRevision; break;
-      case 'OUTDATED': parsedStatus = ModuleProgressStatus.outdated; break;
-      default: parsedStatus = ModuleProgressStatus.unknown; break;
-    }
+    final module = SimModule.fromApi(moduleValue);
+    final status = ModuleStatus.fromApi(statusValue);
 
-    return ModuleProgressModel(
-      id: json['id'] as int? ?? 0,
-      moduleType: json['moduleType'] as String? ?? 'Modulo General',
-      status: parsedStatus,
-      progressPercentage: (json['progressPercentage'] as num? ?? 0).toDouble(),
-      reason: json['reason'] as String?,
+    final rawProgress = _readInt(json, ['progress', 'completionPercentage', 'percentage']);
+    final progress = rawProgress > 0 ? rawProgress : status.progressHint;
+
+    final revisionReason = json['revisionReason']?.toString() ??
+        json['teacherComment']?.toString() ??
+        json['comment']?.toString();
+
+    return CompanyModuleProgressModel(
+      module: module,
+      status: status,
+      progress: progress,
+      revisionReason: status == ModuleStatus.requiresRevision ? revisionReason : null,
+      updatedAt: json['updatedAt']?.toString(),
     );
+  }
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v != null) return v.toString();
+    }
+    return '';
+  }
+
+  static int _readInt(Map<String, dynamic> json, List<String> keys) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v is int) return v;
+      if (v is double) return v.round();
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? 0;
+    }
+    return 0;
   }
 }

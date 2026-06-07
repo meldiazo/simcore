@@ -30,4 +30,5 @@ abstract class SimulationRepository {
 
   Future<List<AdminTeamStatus>> getAdminTeams();
   Future<SimulationContext> getSimulationContext({required int companyId});
+  Future<SimulationContext> getSimulationContextByGroupId({required int groupId});
 }

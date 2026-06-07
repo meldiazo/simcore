@@ -1,227 +1,164 @@
-import 'package:simcore_frontend/core/domain/simcore_enums.dart';
-import 'package:simcore_frontend/core/network/api_client.dart';
-import 'package:simcore_frontend/features/modules/investment_financing/domain/entities/financing_option.dart';
-import 'package:simcore_frontend/features/modules/investment_financing/domain/entities/investment_item.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/investment_item_model.dart';
+import '../models/financing_option_model.dart';
 
-class InvestmentFinancingRemoteDataSource {
-  InvestmentFinancingRemoteDataSource(this._apiClient);
+abstract class InvestmentFinancingRemoteDataSource {
+  // Endpoints de Inversión
+  Future<List<InvestmentItemModel>> getInvestmentItems(String companyId);
+  Future<InvestmentItemModel> addInvestmentItem(String companyId, Map<String, dynamic> itemData);
+  Future<InvestmentItemModel> updateInvestmentItem(String companyId, String itemId, Map<String, dynamic> itemData);
+  Future<void> deleteInvestmentItem(String companyId, String itemId);
+  Future<void> completeInvestment(String companyId);
 
-  final ApiClient _apiClient;
+  // Endpoints de Financiamiento
+  Future<List<FinancingOptionModel>> getFinancingOptions(String companyId);
+  Future<FinancingOptionModel> addFinancingOption(String companyId, Map<String, dynamic> optionData);
+  Future<FinancingOptionModel> updateFinancingOption(String companyId, String optionId, Map<String, dynamic> optionData);
+  Future<void> deleteFinancingOption(String companyId, String optionId);
+  Future<void> selectFinancingOption(String companyId, String optionId);
+  Future<void> completeFinancing(String companyId);
+  
+  // Progreso Global del Módulo
+  Future<void> completeModuleProgress(String companyId);
+}
 
-  // ── Investment ──────────────────────────────────────────────────────────────
+class InvestmentFinancingRemoteDataSourceImpl implements InvestmentFinancingRemoteDataSource {
+  final http.Client client;
+  final String baseUrl = 'https://simcore-production.up.railway.app/api/v1';
 
-  Future<InvestmentSummary> getInvestmentSummary({required int companyId}) async {
-    final result = await _apiClient.get(
-      '/api/v1/simulation/companies/$companyId/investment/summary',
-    );
-    return result.fold(
-      (e) => throw e,
-      (data) => _parseInvestmentSummary(companyId, data),
-    );
-  }
+  InvestmentFinancingRemoteDataSourceImpl({required this.client});
 
-  Future<InvestmentItem> createInvestmentItem({
-    required int companyId,
-    required Map<String, dynamic> data,
-  }) async {
-    final result = await _apiClient.post(
-      '/api/v1/simulation/companies/$companyId/investment/items',
-      data: data,
-    );
-    return result.fold(
-      (e) => throw e,
-      (d) => _parseItem(Map<String, dynamic>.from(d as Map)),
-    );
-  }
-
-  Future<InvestmentItem> updateInvestmentItem({
-    required int companyId,
-    required int itemId,
-    required Map<String, dynamic> data,
-  }) async {
-    final result = await _apiClient.put(
-      '/api/v1/simulation/companies/$companyId/investment/items/$itemId',
-      data: data,
-    );
-    return result.fold(
-      (e) => throw e,
-      (d) => _parseItem(Map<String, dynamic>.from(d as Map)),
-    );
-  }
-
-  Future<void> deleteInvestmentItem({required int companyId, required int itemId}) async {
-    final result = await _apiClient.delete(
-      '/api/v1/simulation/companies/$companyId/investment/items/$itemId',
-    );
-    result.fold((e) => throw e, (_) {});
-  }
-
-  Future<void> completeInvestment({required int companyId}) async {
-    final result = await _apiClient.patch(
-      '/api/v1/simulation/companies/$companyId/investment/complete',
-    );
-    result.fold((e) => throw e, (_) {});
-  }
-
-  // ── Financing ───────────────────────────────────────────────────────────────
-
-  Future<FinancingSummary> getFinancingSummary({required int companyId}) async {
-    final result = await _apiClient.get(
-      '/api/v1/simulation/companies/$companyId/financing/summary',
-    );
-    return result.fold(
-      (e) => throw e,
-      (data) => _parseFinancingSummary(companyId, data),
-    );
-  }
-
-  Future<FinancingOption> createFinancingOption({
-    required int companyId,
-    required Map<String, dynamic> data,
-  }) async {
-    final result = await _apiClient.post(
-      '/api/v1/simulation/companies/$companyId/financing/options',
-      data: data,
-    );
-    return result.fold(
-      (e) => throw e,
-      (d) => _parseOption(Map<String, dynamic>.from(d as Map)),
-    );
-  }
-
-  Future<FinancingOption> updateFinancingOption({
-    required int companyId,
-    required int optionId,
-    required Map<String, dynamic> data,
-  }) async {
-    final result = await _apiClient.put(
-      '/api/v1/simulation/companies/$companyId/financing/options/$optionId',
-      data: data,
-    );
-    return result.fold(
-      (e) => throw e,
-      (d) => _parseOption(Map<String, dynamic>.from(d as Map)),
-    );
-  }
-
-  Future<void> deleteFinancingOption({required int companyId, required int optionId}) async {
-    final result = await _apiClient.delete(
-      '/api/v1/simulation/companies/$companyId/financing/options/$optionId',
-    );
-    result.fold((e) => throw e, (_) {});
-  }
-
-  Future<void> selectFinancingOption({required int companyId, required int optionId}) async {
-    final result = await _apiClient.patch(
-      '/api/v1/simulation/companies/$companyId/financing/options/$optionId/select',
-    );
-    result.fold((e) => throw e, (_) {});
-  }
-
-  Future<void> completeFinancing({required int companyId}) async {
-    final result = await _apiClient.patch(
-      '/api/v1/simulation/companies/$companyId/financing/complete',
-    );
-    result.fold((e) => throw e, (_) {});
-  }
-
-  // ── Parsers ─────────────────────────────────────────────────────────────────
-
-  InvestmentItem _parseItem(Map<String, dynamic> json) {
-    return InvestmentItem(
-      id: _parseInt(json, 'id'),
-      companyId: _parseInt(json, 'companyId'),
-      itemType: InvestmentItemType.fromApi(json['itemType']?.toString() ?? 'FIXED_ASSET'),
-      name: json['name']?.toString() ?? '',
-      quantity: _parseInt(json, 'quantity'),
-      unitCost: _parseDouble(json, 'unitCost'),
-      totalCost: _parseDouble(json, 'totalCost'),
-      usefulLifeYears: json['usefulLifeYears'] is int ? json['usefulLifeYears'] as int : null,
-    );
-  }
-
-  InvestmentSummary _parseInvestmentSummary(int companyId, dynamic data) {
-    if (data == null) {
-      return InvestmentSummary(
-        companyId: companyId,
-        items: const [],
-        totalFixedAssets: 0,
-        totalWorkingCapital: 0,
-        totalPreOperative: 0,
-        grandTotal: 0,
-        hasMinimumData: false,
-      );
+   
+   
+  @override
+  Future<List<InvestmentItemModel>> getInvestmentItems(String companyId) async {
+    final response = await client.get(Uri.parse('$baseUrl/simulation/companies/$companyId/investment'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => InvestmentItemModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar items de inversión');
     }
-    final json = Map<String, dynamic>.from(data as Map);
-    final rawItems = json['items'] as List<dynamic>? ?? [];
-    final items = rawItems
-        .whereType<Map>()
-        .map((e) => _parseItem(Map<String, dynamic>.from(e)))
-        .toList();
-    return InvestmentSummary(
-      companyId: companyId,
-      items: items,
-      totalFixedAssets: _parseDouble(json, 'totalFixedAssets'),
-      totalWorkingCapital: _parseDouble(json, 'totalWorkingCapital'),
-      totalPreOperative: _parseDouble(json, 'totalPreOperative'),
-      grandTotal: _parseDouble(json, 'grandTotal'),
-      hasMinimumData: json['hasMinimumData'] as bool? ?? false,
-    );
   }
 
-  FinancingOption _parseOption(Map<String, dynamic> json) {
-    return FinancingOption(
-      id: _parseInt(json, 'id'),
-      companyId: _parseInt(json, 'companyId'),
-      sourceName: json['sourceName']?.toString() ?? '',
-      sourceType: FinancingSourceType.fromApi(json['sourceType']?.toString() ?? 'OTHER'),
-      principalAmount: _parseDouble(json, 'principalAmount'),
-      annualInterestRate: _parseDouble(json, 'annualInterestRate'),
-      termMonths: _parseInt(json, 'termMonths'),
-      isSelected: json['isSelected'] as bool? ?? false,
+  @override
+  Future<InvestmentItemModel> addInvestmentItem(String companyId, Map<String, dynamic> itemData) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/simulation/companies/$companyId/investment/items'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(itemData),
     );
-  }
-
-  FinancingSummary _parseFinancingSummary(int companyId, dynamic data) {
-    if (data == null) {
-      return FinancingSummary(
-        companyId: companyId,
-        options: const [],
-        totalPrincipal: 0,
-        hasMinimumData: false,
-        hasSelectedOption: false,
-      );
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return InvestmentItemModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al agregar item de inversión');
     }
-    final json = Map<String, dynamic>.from(data as Map);
-    final rawOptions = json['options'] as List<dynamic>? ?? [];
-    final options = rawOptions
-        .whereType<Map>()
-        .map((e) => _parseOption(Map<String, dynamic>.from(e)))
-        .toList();
-    final selected = options.where((o) => o.isSelected).firstOrNull;
-    return FinancingSummary(
-      companyId: companyId,
-      options: options,
-      selectedOption: selected,
-      totalPrincipal: _parseDouble(json, 'totalPrincipal'),
-      hasMinimumData: json['hasMinimumData'] as bool? ?? false,
-      hasSelectedOption: selected != null,
+  }
+
+  @override
+  Future<InvestmentItemModel> updateInvestmentItem(String companyId, String itemId, Map<String, dynamic> itemData) async {
+    final response = await client.put(
+      Uri.parse('$baseUrl/simulation/companies/$companyId/investment/items/$itemId'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(itemData),
     );
+    if (response.statusCode == 200) {
+      return InvestmentItemModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al actualizar item de inversión');
+    }
   }
 
-  static int _parseInt(Map<String, dynamic> json, String key) {
-    final v = json[key];
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
+  @override
+  Future<void> deleteInvestmentItem(String companyId, String itemId) async {
+    final response = await client.delete(Uri.parse('$baseUrl/simulation/companies/$companyId/investment/items/$itemId'));
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Error al eliminar item de inversión');
+    }
   }
 
-  static double _parseDouble(Map<String, dynamic> json, String key) {
-    final v = json[key];
-    if (v is double) return v;
-    if (v is num) return v.toDouble();
-    if (v is String) return double.tryParse(v) ?? 0;
-    return 0;
+  @override
+  Future<void> completeInvestment(String companyId) async {
+    final response = await client.patch(Uri.parse('$baseUrl/simulation/companies/$companyId/investment/complete'));
+    if (response.statusCode != 200) {
+      throw Exception('Error al completar inversión');
+    }
+  }
+
+
+
+  @override
+  Future<List<FinancingOptionModel>> getFinancingOptions(String companyId) async {
+    final response = await client.get(Uri.parse('$baseUrl/simulation/companies/$companyId/financing'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => FinancingOptionModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar opciones de financiamiento');
+    }
+  }
+
+  @override
+  Future<FinancingOptionModel> addFinancingOption(String companyId, Map<String, dynamic> optionData) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/simulation/companies/$companyId/financing/options'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(optionData),
+    );
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return FinancingOptionModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al agregar opción de financiamiento');
+    }
+  }
+
+  @override
+  Future<FinancingOptionModel> updateFinancingOption(String companyId, String optionId, Map<String, dynamic> optionData) async {
+    final response = await client.put(
+      Uri.parse('$baseUrl/simulation/companies/$companyId/financing/options/$optionId'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(optionData),
+    );
+    if (response.statusCode == 200) {
+      return FinancingOptionModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al actualizar opción de financiamiento');
+    }
+  }
+
+  @override
+  Future<void> deleteFinancingOption(String companyId, String optionId) async {
+    final response = await client.delete(Uri.parse('$baseUrl/simulation/companies/$companyId/financing/options/$optionId'));
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Error al eliminar opción de financiamiento');
+    }
+  }
+
+  @override
+  Future<void> selectFinancingOption(String companyId, String optionId) async {
+    final response = await client.patch(Uri.parse('$baseUrl/simulation/companies/$companyId/financing/options/$optionId/select'));
+    if (response.statusCode != 200) {
+      throw Exception('Error al seleccionar opción de financiamiento');
+    }
+  }
+
+  @override
+  Future<void> completeFinancing(String companyId) async {
+    final response = await client.patch(Uri.parse('$baseUrl/simulation/companies/$companyId/financing/complete'));
+    if (response.statusCode != 200) {
+      throw Exception('Error al completar financiamiento');
+    }
+  }
+
+  
+  
+  @override
+  Future<void> completeModuleProgress(String companyId) async {
+    // Endpoint general para marcar el módulo INVESTMENT como completado en el progreso del estudiante
+    final response = await client.patch(Uri.parse('$baseUrl/modules/INVESTMENT/complete'));
+    if (response.statusCode != 200) {
+      throw Exception('Error al registrar el progreso del módulo');
+    }
   }
 }

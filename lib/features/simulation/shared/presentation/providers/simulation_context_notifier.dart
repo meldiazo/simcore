@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/simulation/shared/data/models/simulation_context_model.dart';
 import 'package:simcore_frontend/features/simulation/shared/domain/entities/simulation_context.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
 
-enum SimulationContextStatus { initial, loading, ready, error }
+enum SimulationContextStatus { initial, loading, needsGroupId, ready, error }
 
 class SimulationContextState {
   const SimulationContextState({
@@ -18,6 +19,9 @@ class SimulationContextState {
   final String? errorMessage;
 
   bool get isReady => status == SimulationContextStatus.ready;
+  bool get needsGroupId => status == SimulationContextStatus.needsGroupId;
+
+  get currentCompany => null;
 
   SimulationContextState copyWith({
     SimulationContextStatus? status,
@@ -52,10 +56,27 @@ class SimulationContextNotifier
       return;
     }
 
-    const companyId =
-        int.fromEnvironment('COMPANY_ID', defaultValue: 1);
+    final authState = _ref.read(authNotifierProvider);
+    final user = authState.user;
 
-    await load(companyId: companyId);
+    // ADMIN y DOCENTE usan companyId desde env (para gestión global)
+    if (user != null && (user.isAdmin || user.isDocente)) {
+      const companyId = int.fromEnvironment('COMPANY_ID', defaultValue: 0);
+      if (companyId > 0) {
+        await load(companyId: companyId);
+        return;
+      }
+      // Sin COMPANY_ID configurado: admin/docente no necesita contexto de empresa
+      state = const SimulationContextState(
+        status: SimulationContextStatus.needsGroupId,
+      );
+      return;
+    }
+
+    // ESTUDIANTE: necesita ingresar su groupId
+    state = const SimulationContextState(
+      status: SimulationContextStatus.needsGroupId,
+    );
   }
 
   Future<void> load({required int companyId}) async {
@@ -63,8 +84,7 @@ class SimulationContextNotifier
 
     try {
       final repo = _ref.read(simulationRepositoryProvider);
-      final context =
-          await repo.getSimulationContext(companyId: companyId);
+      final context = await repo.getSimulationContext(companyId: companyId);
       state = SimulationContextState(
         status: SimulationContextStatus.ready,
         context: context,
@@ -72,6 +92,24 @@ class SimulationContextNotifier
     } catch (e) {
       state = SimulationContextState(
         status: SimulationContextStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> loadByGroupId({required int groupId}) async {
+    state = state.copyWith(status: SimulationContextStatus.loading);
+
+    try {
+      final repo = _ref.read(simulationRepositoryProvider);
+      final context = await repo.getSimulationContextByGroupId(groupId: groupId);
+      state = SimulationContextState(
+        status: SimulationContextStatus.ready,
+        context: context,
+      );
+    } catch (e) {
+      state = SimulationContextState(
+        status: SimulationContextStatus.needsGroupId,
         errorMessage: e.toString(),
       );
     }

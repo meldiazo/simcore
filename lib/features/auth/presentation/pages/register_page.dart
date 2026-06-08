@@ -458,8 +458,9 @@ class _RegisterForm extends StatelessWidget {
             enabled: !isLoading,
             backendError: fieldErrors['username'],
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'El usuario es obligatorio';
+              }
               if (v.trim().length < 3) return 'Mínimo 3 caracteres';
               return null;
             },
@@ -475,8 +476,9 @@ class _RegisterForm extends StatelessWidget {
             enabled: !isLoading,
             backendError: fieldErrors['email'],
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'El correo es obligatorio';
+              }
               final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
               if (!emailRegex.hasMatch(v.trim())) return 'Correo inválido';
               return null;

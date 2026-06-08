@@ -1,11 +1,69 @@
 import 'dart:ui';
 
+import 'package:equatable/equatable.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+
+class KpiMetric extends Equatable {
+  const KpiMetric({
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.delta,
+    required this.trendUp,
+    required this.state,
+  });
+
+  final String title;
+  final double value;
+  final String unit;
+  final double delta;
+  final bool trendUp;
+  final String state;
+
+  @override
+  List<Object?> get props => [title, value, unit, delta, trendUp, state];
+}
+
+enum AlertKind { info, success, warning, danger }
+
+class AlertItem extends Equatable {
+  const AlertItem({
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.module,
+  });
+
+  final AlertKind type;
+  final String title;
+  final String message;
+  final String module;
+
+  @override
+  List<Object?> get props => [type, title, message, module];
+}
+
+class CurrentCycle extends Equatable {
+  const CurrentCycle({
+    required this.number,
+    required this.name,
+    required this.isOpen,
+    required this.timeRemaining,
+    required this.totalCycles,
+  });
+
+  final int number;
+  final String name;
+  final bool isOpen;
+  final String timeRemaining;
+  final int totalCycles;
+
+  @override
+  List<Object?> get props => [number, name, isOpen, timeRemaining, totalCycles];
+}
 
 class GlassPanel extends StatelessWidget {
   const GlassPanel({
@@ -490,7 +548,10 @@ class KpiCard extends StatelessWidget {
 }
 
 class CycleChip extends StatelessWidget {
-  const CycleChip({super.key});
+  const CycleChip({super.key, this.cycleNumber = 1, this.timeRemaining = ''});
+
+  final int cycleNumber;
+  final String timeRemaining;
 
   @override
   Widget build(BuildContext context) {
@@ -504,7 +565,7 @@ class CycleChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Ciclo ${currentCycle.number}',
+          Text('Ciclo $cycleNumber',
               style: const TextStyle(color: SimcoreColors.textSecondary)),
           const SizedBox(width: 10),
           Container(width: 1, height: 16, color: SimcoreColors.border),
@@ -520,12 +581,14 @@ class CycleChip extends StatelessWidget {
               style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: SimcoreColors.textPrimary)),
-          const SizedBox(width: 10),
-          Text(
-            currentCycle.timeRemaining,
-            style: GoogleFonts.jetBrainsMono(
-                fontSize: 12, color: SimcoreColors.textTertiary),
-          ),
+          if (timeRemaining.isNotEmpty) ...[
+            const SizedBox(width: 10),
+            Text(
+              timeRemaining,
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 12, color: SimcoreColors.textTertiary),
+            ),
+          ],
         ],
       ),
     );
@@ -554,6 +617,11 @@ class StatusBadge extends StatelessWidget {
       'Completo',
       SimcoreColors.successSoft,
       SimcoreColors.success,
+    ),
+  ModuleStatus.locked => (
+      'Bloqueado',
+      SimcoreColors.dangerSoft,
+      SimcoreColors.danger,
     ),
   ModuleStatus.requiresRevision => (
       'Requiere revisión',

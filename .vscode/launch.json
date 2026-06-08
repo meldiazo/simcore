@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SimCore – Railway",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=APP_ENV=railway"]
+    },
+    {
+      "name": "SimCore – Local",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=APP_ENV=local"]
+    },
+    {
+      "name": "SimCore – Mock (sin backend)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=USE_MOCK_DATA=true"]
+    }
+  ]
+}

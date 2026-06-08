@@ -7,7 +7,8 @@ enum SimModule {
   investment('INVESTMENT', 'Inversiones y Financiamiento'),
   organization('ORGANIZATION', 'Estructuras Organizativas'),
   accounting('ACCOUNTING', 'Módulo Contabilidad'),
-  analysis('ANALYSIS', 'Análisis General');
+  analysis('ANALYSIS', 'Análisis General'),
+  decisions('DECISIONS', 'Centro de Decisiones'); // Módulo especial para la firma
 
   const SimModule(this.apiValue, this.label);
 
@@ -23,6 +24,7 @@ enum SimModule {
       'ORGANIZATION' => SimModule.organization,
       'ACCOUNTING' => SimModule.accounting,
       'ANALYSIS' => SimModule.analysis,
+      'DECISIONS' => SimModule.decisions,
       _ => throw ArgumentError.value(value, 'value', 'SimModule no soportado'),
     };
   }
@@ -54,6 +56,7 @@ enum ModuleStatus {
   pending('PENDING', 'Pendiente', 0),
   inProgress('IN_PROGRESS', 'En progreso', 50),
   complete('COMPLETE', 'Completo', 100),
+  locked('LOCKED', 'Bloqueado', 100),
   requiresRevision('REQUIRES_REVISION', 'Requiere revisión', 25),
   outdated('OUTDATED', 'Desactualizado', 25);
 
@@ -72,6 +75,7 @@ enum ModuleStatus {
       'PENDING' => ModuleStatus.pending,
       'IN_PROGRESS' => ModuleStatus.inProgress,
       'COMPLETE' => ModuleStatus.complete,
+      'LOCKED' => ModuleStatus.locked,
       'REQUIRES_REVISION' => ModuleStatus.requiresRevision,
       'OUTDATED' => ModuleStatus.outdated,
       _ => throw ArgumentError.value(value, 'value', 'ModuleStatus no soportado'),
@@ -215,6 +219,36 @@ enum IncoherenceLevel {
       'MEDIUM' => IncoherenceLevel.medium,
       'HIGH' => IncoherenceLevel.high,
       _ => throw ArgumentError.value(value, 'value', 'IncoherenceLevel no soportado'),
+    };
+  }
+}
+
+enum CompanySector {
+  technology('TECHNOLOGY', 'Tecnología'),
+  services('SERVICES', 'Servicios'),
+  manufacturing('MANUFACTURING', 'Manufactura'),
+  commerce('COMMERCE', 'Comercio'),
+  agriculture('AGRICULTURE', 'Agricultura'),
+  construction('CONSTRUCTION', 'Construcción'),
+  health('HEALTH', 'Salud'),
+  education('EDUCATION', 'Educación'),
+  other('OTHER', 'Otro');
+
+  const CompanySector(this.apiValue, this.label);
+  final String apiValue;
+  final String label;
+  String toApi() => apiValue;
+  static CompanySector fromApi(String value) {
+    return switch (_normalizeApiEnum(value)) {
+      'TECHNOLOGY' => CompanySector.technology,
+      'SERVICES' => CompanySector.services,
+      'MANUFACTURING' => CompanySector.manufacturing,
+      'COMMERCE' => CompanySector.commerce,
+      'AGRICULTURE' => CompanySector.agriculture,
+      'CONSTRUCTION' => CompanySector.construction,
+      'HEALTH' => CompanySector.health,
+      'EDUCATION' => CompanySector.education,
+      _ => CompanySector.other,
     };
   }
 }

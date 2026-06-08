@@ -1,14 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
-import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/module_flow_stepper.dart';
+import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 class WorkspacePage extends ConsumerWidget {
@@ -16,37 +17,65 @@ class WorkspacePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modulesAsync = ref.watch(moduleProgressProvider);
     final contextState = ref.watch(simulationContextNotifierProvider);
 
-if (contextState.status == SimulationContextStatus.loading ||
-    contextState.status == SimulationContextStatus.initial) {
-  return const Center(child: CircularProgressIndicator());
+    if (contextState.status == SimulationContextStatus.loading ||
+        contextState.status == SimulationContextStatus.initial) {
+      return const LoadingState(message: 'Cargando contexto de simulación...');
+    }
+
+    if (contextState.status == SimulationContextStatus.error) {
+      return ApiErrorState(
+        title: 'No se pudo cargar el contexto de simulación',
+        message: contextState.errorMessage ?? 'Error desconocido',
+        onRetry: () => ref
+            .read(simulationContextNotifierProvider.notifier)
+            .load(companyId: 1),
+      );
+    }
+
+    final workspaceAsync = ref.watch(companyWorkspaceProvider);
+
+    return workspaceAsync.when(
+      loading: () =>
+          const LoadingState(message: 'Cargando workspace de empresa...'),
+      error: (error, _) => ApiErrorState(
+        title: 'No se pudo cargar el workspace',
+        message: error.toString(),
+        onRetry: () => ref.invalidate(companyWorkspaceProvider),
+      ),
+      data: (workspace) => _WorkspaceBody(workspace: workspace),
+    );
+  }
 }
 
-if (contextState.status == SimulationContextStatus.error) {
-  return ApiErrorState(
-    title: 'No se pudo cargar el contexto de simulación',
-    message: contextState.errorMessage ?? 'Error desconocido',
-    onRetry: () =>
-        ref.read(simulationContextNotifierProvider.notifier).load(companyId: 1),
-  );
-}
-    final modules = modulesAsync.valueOrNull ?? const <ModuleProgress>[];
+// ── Body ──────────────────────────────────────────────────────────────────────
 
-    final completedModules = modules
-        .where((module) => module.status == ModuleStatus.complete)
-        .length;
+class _WorkspaceBody extends StatelessWidget {
+  const _WorkspaceBody({required this.workspace});
+
+  final CompanyWorkspaceData workspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final scenario = workspace.activeScenario;
+    final scenarioName = scenario?['name']?.toString() ??
+        scenario?['type']?.toString() ??
+        'Escenario activo';
+    final cycleLabel = scenario?['cycle']?.toString() ??
+        scenario?['period']?.toString() ??
+        'Ciclo actual';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const PageIntro(
+        PageIntro(
           title: 'Workspace Ejecutivo',
-          subtitle: 'Panel de control y metricas clave para Equipo Alpha',
+          subtitle: 'Panel de control — ${workspace.company.name}',
         ),
-        
         const SizedBox(height: 28),
+
+        // ── Hero banner ──────────────────────────────────────────────────────
         GlassPanel(
           padding: const EdgeInsets.all(28),
           backgroundColor: Colors.white.withValues(alpha: 0.78),
@@ -74,41 +103,43 @@ if (contextState.status == SimulationContextStatus.error) {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            currentCycle.name.toUpperCase(),
+                            cycleLabel.toUpperCase(),
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 12),
                           ),
                         ),
-                        const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.circle,
-                                size: 10, color: SimcoreColors.success),
-                            SizedBox(width: 8),
-                            Text('Recibiendo decisiones',
-                                style: TextStyle(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
+                        if (scenario != null)
+                          const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.circle,
+                                  size: 10, color: SimcoreColors.success),
+                              SizedBox(width: 8),
+                              Text('Escenario activo',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 20),
                     LayoutBuilder(builder: (context, constraints) {
                       final headlineSize =
                           constraints.maxWidth < 380 ? 32.0 : 46.0;
-
                       return RichText(
                         softWrap: true,
                         text: TextSpan(
                           style: Theme.of(context)
                               .textTheme
                               .displaySmall
-                              ?.copyWith(fontSize: headlineSize, height: 1.08),
+                              ?.copyWith(
+                                  fontSize: headlineSize, height: 1.08),
                           children: [
-                            const TextSpan(text: 'Cierre en '),
+                            const TextSpan(text: 'Escenario '),
                             TextSpan(
-                              text: currentCycle.timeRemaining,
+                              text: scenarioName,
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: headlineSize,
                                 fontWeight: FontWeight.w700,
@@ -121,7 +152,9 @@ if (contextState.status == SimulationContextStatus.error) {
                     }),
                     const SizedBox(height: 14),
                     Text(
-                      "El motor de simulacion procesara las estrategias al finalizar. Tu equipo ha completado $completedModules de ${modules.length} modulos obligatorios.",
+                      'Tu equipo ha completado ${workspace.completedModules} '
+                      'de ${workspace.modules.length} módulos. '
+                      '${workspace.incoherences.isEmpty ? 'Sin incoherencias detectadas.' : '${workspace.incoherences.length} incoherencia(s) detectada(s).'}',
                       style: const TextStyle(
                           fontSize: 15,
                           color: SimcoreColors.textSecondary,
@@ -130,34 +163,29 @@ if (contextState.status == SimulationContextStatus.error) {
                   ],
                 ),
               ),
+
+              // Progreso compacto
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 340),
                 child: GlassPanel(
                   backgroundColor: Colors.white.withValues(alpha: 0.56),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Wrap(
+                    children: [
+                      const Wrap(
                         spacing: 8,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Icon(Icons.insights_rounded,
                               color: SimcoreColors.accent),
-                          Text('Resumen Ciclo Anterior',
+                          Text('Progreso por Módulo',
                               style: TextStyle(fontWeight: FontWeight.w700)),
                         ],
                       ),
-                      SizedBox(height: 18),
-                      _MiniMetric(
-                          label: 'Rentabilidad',
-                          value: '+2.3%',
-                          positive: true),
-                      _MiniMetric(
-                          label: 'Cuota Mrc.', value: '+1.2%', positive: true),
-                      _MiniMetric(
-                          label: 'Liquidez', value: '-0.3x', positive: false),
-                      _MiniMetric(
-                          label: 'Ranking', value: '#2 / 5', positive: true),
+                      const SizedBox(height: 18),
+                      ModuleFlowStepper(modules: workspace.modules),
+                      const SizedBox(height: 18),
+                      ...workspace.modules.map((m) => _MiniModuleRow(module: m)),
                     ],
                   ),
                 ),
@@ -165,13 +193,35 @@ if (contextState.status == SimulationContextStatus.error) {
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        ResponsiveWrap(
-            children: kpiData
-                .take(4)
-                .map((metric) => KpiCard(metric: metric))
-                .toList(growable: false)),
+
         const SizedBox(height: 28),
+
+        // ── Alertas de incoherencia ──────────────────────────────────────────
+        if (workspace.incoherences.isNotEmpty) ...[
+          ResponsiveSectionWrap(
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionLabel('Incoherencias Detectadas'),
+                    const SizedBox(height: 14),
+                    ...workspace.incoherences.map(
+                      (inc) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _IncoherenceRibbon(data: inc),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+        ],
+
+        // ── Progreso detallado + decisiones pendientes ───────────────────────
         ResponsiveSectionWrap(
           children: [
             ConstrainedBox(
@@ -179,12 +229,13 @@ if (contextState.status == SimulationContextStatus.error) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SectionLabel('Alertas Criticas'),
+                  const SectionLabel('Resumen por Módulo'),
                   const SizedBox(height: 14),
-                  ...alerts.map((alert) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: AlertRibbon(alert: alert),
-                      )),
+                  ResponsiveWrap(
+                    children: workspace.modules
+                        .map((m) => _ModuleCard(module: m))
+                        .toList(growable: false),
+                  ),
                 ],
               ),
             ),
@@ -199,21 +250,21 @@ if (contextState.status == SimulationContextStatus.error) {
                             fontWeight: FontWeight.w700, fontSize: 16)),
                     const SizedBox(height: 6),
                     Text(
-                      '$completedModules de ${modules.length} modulos completados',
-                      style:
-                          const TextStyle(color: SimcoreColors.textSecondary),
+                      '${workspace.completedModules} de ${workspace.modules.length} módulos completados',
+                      style: const TextStyle(
+                          color: SimcoreColors.textSecondary),
                     ),
                     const SizedBox(height: 20),
-                    ...modules.map((module) => Padding(
+                    ...workspace.modules.map((m) => Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: MetricBar(
-                            label: module.name,
-                            value: module.progress.toDouble(),
+                            label: m.name,
+                            value: m.progress.toDouble(),
                             max: 100,
-                            trailing: '${module.progress}%',
-                            color: module.status == ModuleStatus.complete
+                            trailing: '${m.progress}%',
+                            color: m.status == ModuleStatus.complete
                                 ? SimcoreColors.success
-                                : module.status == ModuleStatus.inProgress
+                                : m.status == ModuleStatus.inProgress
                                     ? SimcoreColors.accent
                                     : SimcoreColors.textTertiary,
                           ),
@@ -231,77 +282,39 @@ if (contextState.status == SimulationContextStatus.error) {
             ),
           ],
         ),
+
+        // ── Trazabilidad reciente ────────────────────────────────────────────
+        if (workspace.decisions.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          const SectionLabel('Trazabilidad Reciente'),
+          const SizedBox(height: 14),
+          ...workspace.decisions
+              .take(5)
+              .map((d) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _DecisionTraceRow(data: d),
+                  )),
+        ],
+
         const SizedBox(height: 28),
-        modulesAsync.when(
-          loading: () => const LoadingState(
-            message:
-                'Cargando progreso real de módulos desde Simulation Service...',
-          ),
-          error: (error, _) => ApiErrorState(
-            title: 'No se pudo cargar el progreso real de módulos',
-            message:
-                'La app está en modo backend real. No se usaron datos mock. '
-                'Error recibido: $error',
-            onRetry: () => ref.invalidate(moduleProgressProvider),
-          ),
-          data: (_) => const SizedBox.shrink(),
-        ),
-        const SizedBox(height: 12),
-        const SectionLabel('Resumen por Modulo'),
-        const SizedBox(height: 14),
-        ResponsiveWrap(
-          children: modules.map((module) {
-            return GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(module.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16)),
-                      ),
-                      StatusBadge(status: module.status),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ...module.summary.map((line) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(line,
-                            style: const TextStyle(
-                                color: SimcoreColors.textSecondary)),
-                      )),
-                  const SizedBox(height: 12),
-                  MetricBar(
-                    label: 'Progreso',
-                    value: module.progress.toDouble(),
-                    max: 100,
-                    trailing: '${module.progress}%',
-                  ),
-                ],
-              ),
-            );
-          }).toList(growable: false),
-        ),
       ],
     );
   }
 }
 
-class _MiniMetric extends StatelessWidget {
-  const _MiniMetric({
-    required this.label,
-    required this.value,
-    required this.positive,
-  });
+// ── Widgets auxiliares ────────────────────────────────────────────────────────
 
-  final String label;
-  final String value;
-  final bool positive;
+class _MiniModuleRow extends StatelessWidget {
+  const _MiniModuleRow({required this.module});
+
+  final CompanyModuleProgress module;
 
   @override
   Widget build(BuildContext context) {
+    final positive = module.status == ModuleStatus.complete ||
+        module.status == ModuleStatus.inProgress;
+    final color = _statusColor(module.status);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -312,30 +325,261 @@ class _MiniMetric extends StatelessWidget {
             decoration: BoxDecoration(
               color: positive
                   ? SimcoreColors.successSoft
-                  : SimcoreColors.warningSoft,
+                  : module.status == ModuleStatus.requiresRevision
+                      ? SimcoreColors.warningSoft
+                      : SimcoreColors.textTertiary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              positive
-                  ? Icons.trending_up_rounded
-                  : Icons.trending_down_rounded,
-              size: 18,
-              color: positive ? SimcoreColors.success : SimcoreColors.warning,
-            ),
+            child: Icon(_statusIcon(module.status), size: 16, color: color),
           ),
           const SizedBox(width: 10),
           Expanded(
-              child: Text(label,
+              child: Text(module.name,
                   style: const TextStyle(fontWeight: FontWeight.w500))),
           Text(
-            value,
+            '${module.progress}%',
             style: GoogleFonts.jetBrainsMono(
-              color: positive ? SimcoreColors.success : SimcoreColors.warning,
-              fontWeight: FontWeight.w700,
+                color: color, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({required this.module});
+
+  final CompanyModuleProgress module;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(module.name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 16)),
+              ),
+              StatusBadge(status: module.status),
+            ],
+          ),
+          if (module.status == ModuleStatus.requiresRevision &&
+              module.revisionReason != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: SimcoreColors.warningSoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 16, color: SimcoreColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      module.revisionReason!,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: SimcoreColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          MetricBar(
+            label: 'Progreso',
+            value: module.progress.toDouble(),
+            max: 100,
+            trailing: '${module.progress}%',
+          ),
+          if (module.updatedAt != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Actualizado: ${module.updatedAt}',
+              style: const TextStyle(
+                  fontSize: 12, color: SimcoreColors.textTertiary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _IncoherenceRibbon extends StatelessWidget {
+  const _IncoherenceRibbon({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = (data['level'] ?? data['severity'] ?? 'MEDIUM').toString();
+    final message =
+        (data['message'] ?? data['description'] ?? 'Incoherencia detectada')
+            .toString();
+    final module = (data['module'] ?? data['moduleType'] ?? '').toString();
+
+    final isHigh =
+        level.toUpperCase() == 'HIGH' || level.toUpperCase() == 'ALTA';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isHigh
+            ? SimcoreColors.dangerSoft
+            : SimcoreColors.warningSoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isHigh ? SimcoreColors.danger : SimcoreColors.warning,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isHigh
+                ? Icons.error_outline_rounded
+                : Icons.warning_amber_rounded,
+            color: isHigh ? SimcoreColors.danger : SimcoreColors.warning,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                if (module.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Módulo: $module',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: SimcoreColors.textSecondary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: isHigh ? SimcoreColors.danger : SimcoreColors.warning,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              level.toUpperCase(),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _DecisionTraceRow extends StatelessWidget {
+  const _DecisionTraceRow({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final module =
+        (data['moduleType'] ?? data['module'] ?? 'Módulo').toString();
+    final status =
+        (data['status'] ?? 'DRAFT').toString().toUpperCase();
+    final updatedAt =
+        (data['updatedAt'] ?? data['createdAt'] ?? '').toString();
+
+    Color statusColor;
+    if (status == 'SUBMITTED') {
+      statusColor = SimcoreColors.success;
+    } else if (status == 'SUPERSEDED') {
+      statusColor = SimcoreColors.textTertiary;
+    } else {
+      statusColor = SimcoreColors.warning;
+    }
+
+    return GlassPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      backgroundColor: Colors.white.withValues(alpha: 0.6),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              module,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            status,
+            style: GoogleFonts.jetBrainsMono(
+                fontSize: 12,
+                color: statusColor,
+                fontWeight: FontWeight.w700),
+          ),
+          if (updatedAt.isNotEmpty) ...[
+            const SizedBox(width: 12),
+            Text(
+              updatedAt,
+              style: const TextStyle(
+                  fontSize: 11, color: SimcoreColors.textTertiary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+Color _statusColor(ModuleStatus status) {
+  return switch (status) {
+    ModuleStatus.complete => SimcoreColors.success,
+    ModuleStatus.inProgress => SimcoreColors.accent,
+    ModuleStatus.requiresRevision => SimcoreColors.warning,
+    ModuleStatus.outdated => SimcoreColors.textTertiary,
+    ModuleStatus.locked => SimcoreColors.danger,
+    ModuleStatus.pending => SimcoreColors.textTertiary,
+  };
+}
+
+IconData _statusIcon(ModuleStatus status) {
+  return switch (status) {
+    ModuleStatus.complete => Icons.check_circle_outline_rounded,
+    ModuleStatus.inProgress => Icons.timelapse_rounded,
+    ModuleStatus.requiresRevision => Icons.edit_note_rounded,
+    ModuleStatus.outdated => Icons.history_rounded,
+    ModuleStatus.locked => Icons.lock_outline_rounded,
+    ModuleStatus.pending => Icons.radio_button_unchecked_rounded,
+  };
 }

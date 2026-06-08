@@ -1,300 +1,333 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
-import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dart';
+import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';
+import 'package:simcore_frontend/features/modules/organization/presentation/providers/organization_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class OrganizationPage extends StatefulWidget {
+class OrganizationPage extends ConsumerWidget {
   const OrganizationPage({super.key});
 
   @override
-  State<OrganizationPage> createState() => _OrganizationPageState();
-}
-
-class _OrganizationPageState extends State<OrganizationPage> {
-  int hiringCount = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final projectedPayroll = 154166 + (hiringCount * 2500);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(organizationSummaryProvider);
+    final notifierState = ref.watch(organizationNotifierProvider);
+    final isLoading = notifierState is AsyncLoading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
           title: 'Estructuras Organizativas',
-          subtitle:
-              'Diseno de estructura, contrataciones y simulacion de nomina.',
+          subtitle: 'Áreas, cargos y análisis de capacidad operativa.',
         ),
         const SizedBox(height: 24),
-        ResponsiveWrap(
-          children: [
-            KpiCard(
-                metric: KpiMetric(
-                    title: 'Headcount Total',
-                    value: 145 + hiringCount.toDouble(),
-                    unit: 'pax',
-                    delta: 5.2,
-                    trendUp: true,
-                    state: 'neutral')),
-            const KpiCard(
-                metric: KpiMetric(
-                    title: 'Productividad Media',
-                    value: 87.3,
-                    unit: '%',
-                    delta: 3.8,
-                    trendUp: true,
-                    state: 'success')),
-            KpiCard(
-                metric: KpiMetric(
-                    title: 'Costo Laboral Proyectado',
-                    value: projectedPayroll.toDouble(),
-                    unit: '\$',
-                    delta: 0,
-                    trendUp: true,
-                    state: 'warning')),
-            const KpiCard(
-                metric: KpiMetric(
-                    title: 'Eficiencia Estructural',
-                    value: 82.4,
-                    unit: 'pts',
-                    delta: 1.2,
-                    trendUp: false,
-                    state: 'danger')),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 820),
-              child: GlassPanel(
+        summaryAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => GlassPanel(
+            child: Text('Error: $e', style: const TextStyle(color: SimcoreColors.danger)),
+          ),
+          data: (summary) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Capacity vs Demand panel
+              GlassPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const IconTitle(
-                      icon: Icons.account_tree_outlined,
-                      title: 'Editor de Organigrama',
+                      icon: Icons.speed_outlined,
+                      title: 'Capacidad vs Demanda',
                     ),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 32,
-                      runSpacing: 24,
-                      children: const [
-                        _OrgNode('CEO / Dir. General', primary: true),
-                        _OrgNode('Dir. Finanzas'),
-                        _OrgNode('Dirección de Talento y Procesos'),
-                        _OrgNode('Responsable de Capacidad Operativa'),
-                        _OrgNode('Planta y Logistica', dashed: true),
-                      ],
+                    const SizedBox(height: 16),
+                    _MetricRow(
+                      label: 'Capacidad mensual estimada',
+                      value: summary.estimatedMonthlyCapacity,
                     ),
-                    const SizedBox(height: 20),
-                    GlassPanel(
-                      backgroundColor: SimcoreColors.surface,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Simulador rapido de contratacion',
-                              style: TextStyle(fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              IconButton.filledTonal(
-                                onPressed: () => setState(() => hiringCount =
-                                    hiringCount == 0 ? 0 : hiringCount - 1),
-                                icon: const Icon(Icons.remove_rounded),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text('Contratar $hiringCount pax',
+                    _MetricRow(
+                      label: 'Demanda mensual proyectada',
+                      value: summary.projectedMonthlyDemand,
+                    ),
+                    _MetricRow(
+                      label: 'Costo de personal mensual',
+                      value: summary.monthlyPersonnelCost,
+                      prefix: '\$',
+                    ),
+                    if (summary.warnings.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: SimcoreColors.warningSoft,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded,
+                                    color: SimcoreColors.warning, size: 16),
+                                SizedBox(width: 6),
+                                Text('Advertencias',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: SimcoreColors.warning)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ...summary.warnings.map((w) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(w,
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                              ),
-                              IconButton.filled(
-                                onPressed: () =>
-                                    setState(() => hiringCount += 1),
-                                icon: const Icon(Icons.add_rounded),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            'Gasto estimado Mes 1: \$${projectedPayroll.toString()}',
-                            style: GoogleFonts.jetBrainsMono(
-                                fontWeight: FontWeight.w700,
-                                color: SimcoreColors.accent),
-                          ),
-                        ],
+                                          color: SimcoreColors.warning)),
+                                )),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(
-                children: [
-                  GlassPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Candidatos sugeridos por IA',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16)),
-                        SizedBox(height: 16),
-                        _CandidateTile(
-                            name: 'Carlos Mendoza',
-                            role: 'Especialista Financiero',
-                            salary: '\$2,500/m'),
-                        _CandidateTile(
-                            name: 'Ana Torres',
-                            role: 'Jefe de Planta',
-                            salary: '\$3,200/m'),
-                        _CandidateTile(
-                            name: 'Luis Vargas',
-                            role: 'Analista de Datos',
-                            salary: '\$2,100/m'),
-                        _CandidateTile(
-                            name: 'Sofia Robles',
-                            role: 'Coordinador de Marketing',
-                            salary: '\$2,800/m'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  GlassPanel(
-                    backgroundColor:
-                        SimcoreColors.warningSoft.withValues(alpha: 0.5),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 20),
+              // Areas
+              GlassPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded,
-                                color: SimcoreColors.warning),
-                            SizedBox(width: 8),
-                            Text('Ineficiencias detectadas',
-                                style: TextStyle(fontWeight: FontWeight.w700)),
-                          ],
+                        const Expanded(
+                          child: IconTitle(
+                            icon: Icons.account_tree_outlined,
+                            title: 'Áreas organizativas',
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ...organizationalInefficiencies.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.area,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w700)),
-                                  const SizedBox(height: 4),
-                                  Text(item.issue),
-                                  const SizedBox(height: 4),
-                                  Text(item.impact,
-                                      style: const TextStyle(
-                                          color: SimcoreColors.warning)),
-                                ],
-                              ),
-                            )),
+                        OutlinedButton.icon(
+                          onPressed: () => _showAddAreaDialog(context, ref),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text('Nueva área'),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    if (summary.areas.isEmpty)
+                      const Text(
+                        'No hay áreas creadas.',
+                        style: TextStyle(color: SimcoreColors.textSecondary),
+                      )
+                    else
+                      ...summary.areas.map((area) => _AreaTile(
+                            area: area,
+                            positions: summary.positions
+                                .where((p) => p.areaId == area.id)
+                                .toList(),
+                            onAddPosition: () =>
+                                _showAddPositionDialog(context, ref, area.id),
+                            onDeletePosition: (posId) => ref
+                                .read(organizationNotifierProvider.notifier)
+                                .deletePosition(posId),
+                          )),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: summary.areas.isNotEmpty && !isLoading
+                    ? () => ref
+                        .read(organizationNotifierProvider.notifier)
+                        .completeModule()
+                    : null,
+                style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
+                child: const Text('Completar módulo'),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
-}
 
-class _OrgNode extends StatelessWidget {
-  const _OrgNode(this.label, {this.primary = false, this.dashed = false});
-
-  final String label;
-  final bool primary;
-  final bool dashed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      decoration: BoxDecoration(
-        color: primary ? SimcoreColors.accent : SimcoreColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: dashed ? SimcoreColors.textTertiary : SimcoreColors.border,
-          style: dashed ? BorderStyle.solid : BorderStyle.solid,
+  void _showAddAreaDialog(BuildContext context, WidgetRef ref) {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Nueva área'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(labelText: 'Descripción'),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () async {
+              if (nameCtrl.text.trim().isEmpty) return;
+              await ref.read(organizationNotifierProvider.notifier).createArea({
+                'name': nameCtrl.text.trim(),
+                'description': descCtrl.text.trim(),
+              });
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Crear'),
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: primary ? Colors.white : SimcoreColors.textPrimary,
-          fontWeight: FontWeight.w700,
+    );
+  }
+
+  void _showAddPositionDialog(BuildContext context, WidgetRef ref, int areaId) {
+    final titleCtrl = TextEditingController();
+    final headcountCtrl = TextEditingController();
+    final salaryCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Nuevo cargo'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Título')),
+            const SizedBox(height: 10),
+            TextField(
+                controller: headcountCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Headcount')),
+            const SizedBox(height: 10),
+            TextField(
+                controller: salaryCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Salario mensual')),
+          ],
         ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(organizationNotifierProvider.notifier).createPosition({
+                'areaId': areaId,
+                'title': titleCtrl.text.trim(),
+                'headcount': int.tryParse(headcountCtrl.text.trim()) ?? 1,
+                'monthlySalary': double.tryParse(salaryCtrl.text.trim()) ?? 0,
+              });
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Crear'),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _CandidateTile extends StatelessWidget {
-  const _CandidateTile({
-    required this.name,
-    required this.role,
-    required this.salary,
-  });
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({required this.label, required this.value, this.prefix = ''});
 
-  final String name;
-  final String role;
-  final String salary;
+  final String label;
+  final double value;
+  final String prefix;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(
+            '$prefix${value.toStringAsFixed(0)}',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AreaTile extends StatelessWidget {
+  const _AreaTile({
+    required this.area,
+    required this.positions,
+    required this.onAddPosition,
+    required this.onDeletePosition,
+  });
+
+  final OrganizationArea area;
+  final List<OrganizationPosition> positions;
+  final VoidCallback onAddPosition;
+  final void Function(int posId) onDeletePosition;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: SimcoreColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: SimcoreColors.border),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircleAvatar(
-                backgroundColor: SimcoreColors.accentSoft,
-                child: Icon(Icons.person_outline_rounded,
-                    color: SimcoreColors.accent)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Text(role,
-                      style: const TextStyle(
-                          fontSize: 12, color: SimcoreColors.textTertiary)),
-                ],
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(area.name,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+                TextButton.icon(
+                  onPressed: onAddPosition,
+                  icon: const Icon(Icons.person_add_rounded, size: 14),
+                  label: const Text('Cargo'),
+                ),
+              ],
             ),
-            Flexible(
-              child: Text(
-                salary,
-                textAlign: TextAlign.end,
-                softWrap: true,
-                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700),
-              ),
-            ),
+            if (area.description != null)
+              Text(area.description!,
+                  style: const TextStyle(color: SimcoreColors.textSecondary, fontSize: 12)),
+            if (positions.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ...positions.map((p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded,
+                            size: 14, color: SimcoreColors.textTertiary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${p.title} · ${p.headcount} pax · \$${p.monthlySalary.toStringAsFixed(0)}/mes',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded,
+                              size: 14, color: SimcoreColors.danger),
+                          onPressed: () => onDeletePosition(p.id),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
           ],
         ),
       ),

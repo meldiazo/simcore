@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 
-
-
-enum AlertKind { info, success, warning, danger }
+export 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart'
+    show AlertKind, AlertItem, CurrentCycle, KpiMetric;
 
 class StudentUser extends Equatable {
   const StudentUser({
@@ -27,63 +27,6 @@ class StudentUser extends Equatable {
   @override
   List<Object?> get props =>
       [name, email, institution, role, avatar, team, cohort];
-}
-
-class CurrentCycle extends Equatable {
-  const CurrentCycle({
-    required this.number,
-    required this.name,
-    required this.isOpen,
-    required this.timeRemaining,
-    required this.totalCycles,
-  });
-
-  final int number;
-  final String name;
-  final bool isOpen;
-  final String timeRemaining;
-  final int totalCycles;
-
-  @override
-  List<Object?> get props => [number, name, isOpen, timeRemaining, totalCycles];
-}
-
-class KpiMetric extends Equatable {
-  const KpiMetric({
-    required this.title,
-    required this.value,
-    required this.unit,
-    required this.delta,
-    required this.trendUp,
-    required this.state,
-  });
-
-  final String title;
-  final double value;
-  final String unit;
-  final double delta;
-  final bool trendUp;
-  final String state;
-
-  @override
-  List<Object?> get props => [title, value, unit, delta, trendUp, state];
-}
-
-class AlertItem extends Equatable {
-  const AlertItem({
-    required this.type,
-    required this.title,
-    required this.message,
-    required this.module,
-  });
-
-  final AlertKind type;
-  final String title;
-  final String message;
-  final String module;
-
-  @override
-  List<Object?> get props => [type, title, message, module];
 }
 
 class TeamMember extends Equatable {

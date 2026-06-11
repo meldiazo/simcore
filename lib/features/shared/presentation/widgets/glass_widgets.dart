@@ -134,7 +134,7 @@ class ResponsiveSectionWrap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      final isMobile = constraints.maxWidth < 700;
+      final isMobile = constraints.maxWidth < 1100;
 
       return Wrap(
         spacing: spacing,

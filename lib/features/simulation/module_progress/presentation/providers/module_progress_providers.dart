@@ -18,9 +18,11 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
     state = const AsyncValue.loading();
     try {
       final result = await _ds.startModule(companyId: companyId, module: module);
+      if (!mounted) return;
       state = AsyncValue.data(result);
       _ref.invalidate(companyModuleProgressProvider);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
@@ -33,9 +35,11 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
     state = const AsyncValue.loading();
     try {
       final result = await _ds.completeModule(companyId: companyId, module: module);
+      if (!mounted) return;
       state = AsyncValue.data(result);
       _ref.invalidate(companyModuleProgressProvider);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
@@ -48,9 +52,11 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
     state = const AsyncValue.loading();
     try {
       final result = await _ds.lockModule(companyId: companyId, module: module, locked: locked);
+      if (!mounted) return;
       state = AsyncValue.data(result);
       _ref.invalidate(companyModuleProgressProvider);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
@@ -63,15 +69,17 @@ class ModuleProgressNotifier extends StateNotifier<AsyncValue<Map<String, dynami
         module: module,
         message: message,
       );
+      if (!mounted) return;
       state = AsyncValue.data(result);
       _ref.invalidate(companyModuleProgressProvider);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
 }
 
-final moduleProgressNotifierProvider = StateNotifierProvider.autoDispose<
+final moduleProgressNotifierProvider = StateNotifierProvider<
     ModuleProgressNotifier, AsyncValue<Map<String, dynamic>?>>(
   (ref) => ModuleProgressNotifier(
     ref.watch(moduleProgressRemoteDataSourceProvider),

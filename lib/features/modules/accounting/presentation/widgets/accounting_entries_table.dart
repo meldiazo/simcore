@@ -52,33 +52,38 @@ class AccountingEntriesTable extends ConsumerWidget {
                 ),
               ),
             
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(Colors.blueGrey.shade50),
-                columns: const [
-                  DataColumn(label: Text('Fecha')),
-                  DataColumn(label: Text('Código')),
-                  DataColumn(label: Text('Cuenta')),
-                  DataColumn(label: Text('Descripción')),
-                  DataColumn(label: Text('Debe', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Haber', style: TextStyle(fontWeight: FontWeight.bold))),
-                ],
-                rows: entries.map((entry) {
-                  return DataRow(
-                    color: entry.status == AccountingStatus.outdated 
-                        ? WidgetStateProperty.all(Colors.grey.shade200) 
-                        : null,
-                    cells: [
-                      DataCell(Text('${entry.date.day}/${entry.date.month}/${entry.date.year}')),
-                      DataCell(Text(entry.accountCode)),
-                      DataCell(Text(entry.accountName)),
-                      DataCell(Text(entry.description)),
-                      DataCell(Text('\$${entry.debit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))),
-                      DataCell(Text('\$${entry.credit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red))),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(Colors.blueGrey.shade50),
+                    columns: const [
+                      DataColumn(label: Text('Fecha')),
+                      DataColumn(label: Text('Código')),
+                      DataColumn(label: Text('Cuenta')),
+                      DataColumn(label: Text('Descripción')),
+                      DataColumn(label: Text('Debe', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Haber', style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
-                  );
-                }).toList(),
+                    rows: entries.map((entry) {
+                      return DataRow(
+                        color: entry.status == AccountingStatus.outdated 
+                            ? WidgetStateProperty.all(Colors.grey.shade200) 
+                            : null,
+                        cells: [
+                          DataCell(Text('${entry.date.day}/${entry.date.month}/${entry.date.year}')),
+                          DataCell(Text(entry.accountCode)),
+                          DataCell(Text(entry.accountName)),
+                          DataCell(Text(entry.description)),
+                          DataCell(Text('\$${entry.debit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))),
+                          DataCell(Text('\$${entry.credit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red))),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
             ),
           ],

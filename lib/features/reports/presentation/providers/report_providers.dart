@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/core/utils/download_helper.dart';
 import 'package:simcore_frontend/features/reports/data/datasources/reports_remote_datasource.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
@@ -31,8 +32,9 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     if (id == null) return;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await _ds.exportCompanyPdf(companyId: id);
-      return 'PDF generado correctamente.';
+      final bytes = await _ds.exportCompanyPdf(companyId: id);
+      downloadFile(bytes, 'reporte_empresa_$id.pdf');
+      return 'PDF generado y descargado correctamente.';
     });
   }
 
@@ -42,8 +44,9 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     if (id == null) return;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await _ds.exportCourseCsv(courseId: id);
-      return 'CSV del curso generado correctamente.';
+      final bytes = await _ds.exportCourseCsv(courseId: id);
+      downloadFile(bytes, 'reporte_curso_$id.csv');
+      return 'CSV del curso generado y descargado correctamente.';
     });
   }
 }

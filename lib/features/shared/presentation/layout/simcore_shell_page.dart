@@ -308,6 +308,30 @@ class SimcoreShellPage extends ConsumerWidget {
         final isDesktop = constraints.maxWidth >= 1100;
 
         return Scaffold(
+          appBar: isDesktop
+              ? null
+              : AppBar(
+                  title: const Text(
+                    'SIMCORE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      letterSpacing: -0.5,
+                      color: SimcoreColors.textPrimary,
+                    ),
+                  ),
+                  centerTitle: true,
+                  backgroundColor: Colors.white.withValues(alpha: 0.88),
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  bottom: const PreferredSize(
+                    preferredSize: Size.fromHeight(1),
+                    child: Divider(
+                      height: 1,
+                      color: SimcoreColors.border,
+                    ),
+                  ),
+                ),
           drawer: isDesktop
               ? null
               : Drawer(

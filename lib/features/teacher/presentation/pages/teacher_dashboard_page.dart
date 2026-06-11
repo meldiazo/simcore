@@ -157,14 +157,15 @@ class _GroupCardState extends State<_GroupCard> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _Chip(
                 icon: Icons.check_circle_outline_rounded,
                 label: '${group.completedModules} módulos completos',
                 color: SimcoreColors.success,
               ),
-              const SizedBox(width: 8),
               if (incoherenceTotal > 0)
                 _Chip(
                   icon: Icons.warning_amber_rounded,

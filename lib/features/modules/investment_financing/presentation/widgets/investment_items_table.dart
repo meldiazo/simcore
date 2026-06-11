@@ -28,22 +28,25 @@ class InvestmentItemsTable extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DataTable(
-          headingTextStyle: const TextStyle(fontWeight: FontWeight.bold),
-          columns: const [
-            DataColumn(label: Text('Tipo de Inversión')),
-            DataColumn(label: Text('Descripción')),
-            DataColumn(label: Text('Monto Requerido'), numeric: true),
-          ],
-          rows: items.map((item) {
-            return DataRow(
-              cells: [
-                DataCell(Text(item.type.displayName)),
-                DataCell(Text(item.description)),
-                DataCell(Text('\$${item.amount.toStringAsFixed(2)}')),
-              ],
-            );
-          }).toList(),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingTextStyle: const TextStyle(fontWeight: FontWeight.bold),
+            columns: const [
+              DataColumn(label: Text('Tipo de Inversión')),
+              DataColumn(label: Text('Descripción')),
+              DataColumn(label: Text('Monto Requerido'), numeric: true),
+            ],
+            rows: items.map((item) {
+              return DataRow(
+                cells: [
+                  DataCell(Text(item.type.displayName)),
+                  DataCell(Text(item.description)),
+                  DataCell(Text('\$${item.amount.toStringAsFixed(2)}')),
+                ],
+              );
+            }).toList(),
+          ),
         ),
         const Divider(height: 1),
         Padding(

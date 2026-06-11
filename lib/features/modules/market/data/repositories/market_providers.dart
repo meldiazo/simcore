@@ -58,10 +58,12 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _repository.updateAssumption(_companyId, assumption);
+      if (!mounted) return false;
       state = const AsyncValue.data(null);
       _ref.invalidate(marketAssumptionProvider);
       return true;
     } catch (e, stack) {
+      if (!mounted) return false;
       state = AsyncValue.error(e, stack);
       return false;
     }
@@ -72,10 +74,12 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _repository.generateProjection(_companyId);
+      if (!mounted) return false;
       state = const AsyncValue.data(null);
       _ref.invalidate(salesProjectionProvider);
       return true;
     } catch (e, stack) {
+      if (!mounted) return false;
       state = AsyncValue.error(e, stack);
       return false;
     }
@@ -86,12 +90,14 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _repository.completeMarket(_companyId);
+      if (!mounted) return false;
       state = const AsyncValue.data(null);
       _ref.invalidate(global_providers.moduleProgressProvider);
       _ref.invalidate(company_providers.companyModuleProgressProvider);
       _ref.invalidate(company_providers.companyWorkspaceProvider);
       return true;
     } catch (e, stack) {
+      if (!mounted) return false;
       state = AsyncValue.error(e, stack);
       return false;
     }

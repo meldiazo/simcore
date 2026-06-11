@@ -60,19 +60,19 @@ class FinancingOptionsTable extends StatelessWidget {
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 8.0),
-              child: Row(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   _InfoChip(
                     icon: Icons.attach_money,
                     label: 'Monto: \$${option.amount.toStringAsFixed(2)}',
                   ),
-                  const SizedBox(width: 12),
                   _InfoChip(
                     icon: Icons.percent,
                     label: 'Costo (TEA): ${option.interestRate.toStringAsFixed(1)}%',
                     isWarning: option.interestRate > 15.0, // Alerta pedagógica visual
                   ),
-                  const SizedBox(width: 12),
                   _InfoChip(
                     icon: Icons.calendar_month,
                     label: 'Plazo: ${option.termInMonths} meses',

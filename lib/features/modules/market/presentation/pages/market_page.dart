@@ -86,6 +86,12 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         await ref.read(marketNotifierProvider.notifier).completeMarketModule();
 
     if (mounted && success) {
+      // 3. COMPLETAMOS EL PROGRESO DEL MÓDULO A NIVEL GLOBAL
+      await ref.read(module_actions.moduleProgressProvider.notifier).complete(
+            companyId,
+            SimModule.market.toApi(),
+          );
+
       // Invalida estados para refrescar UI
       ref.invalidate(company_providers.companyModuleProgressProvider);
       ref.invalidate(company_providers.companyWorkspaceProvider);

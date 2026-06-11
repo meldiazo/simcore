@@ -29,7 +29,12 @@ class ReportsRemoteDataSource {
     final result = await _client.get(
       '/api/v1/simulation/companies/$companyId/export/pdf',
       queryParameters: {'scenarioType': scenarioType},
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {
+          'Accept': 'application/pdf',
+        },
+      ),
     );
     return result.fold(
       (e) => throw Exception(e.message),
@@ -44,7 +49,12 @@ class ReportsRemoteDataSource {
     final result = await _client.get(
       '/api/v1/simulation/courses/$courseId/export/csv',
       queryParameters: {'scenarioType': scenarioType},
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {
+          'Accept': 'text/csv',
+        },
+      ),
     );
     return result.fold(
       (e) => throw Exception(e.message),

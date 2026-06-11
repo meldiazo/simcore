@@ -9,8 +9,15 @@ import 'package:simcore_frontend/features/auth/domain/usecases/login_usecase.dar
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:simcore_frontend/core/config/app_config.dart';
+import 'package:simcore_frontend/features/auth/data/datasources/auth_mock_datasource.dart';
+
 final Provider<AuthRemoteDataSource> _authDataSourceProvider =
     Provider<AuthRemoteDataSource>((ref) {
+  final config = ref.watch(appConfigProvider);
+  if (config.useMockData) {
+    return AuthMockDataSource(ref.watch(tokenStorageProvider));
+  }
   return AuthRemoteDataSourceImpl(ref.watch(iamApiClientProvider));
 });
 

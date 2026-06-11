@@ -5,9 +5,11 @@ import 'package:simcore_frontend/features/modules/market/data/models/market_assu
 import 'package:simcore_frontend/features/modules/market/data/models/sales_projection_model.dart';
 import 'package:simcore_frontend/features/modules/market/data/repositories/market_repository_impl.dart';
 import 'package:simcore_frontend/features/modules/market/domain/entities/repositories/market_repository.dart';
+import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart'
     as global_providers;
+    import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
 
 // 1. Inyección del Datasource
 final marketRemoteDatasourceProvider = Provider<MarketRemoteDatasource>((ref) {
@@ -86,6 +88,8 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
       // Invalida el provider global para refrescar el estado en el Sidebar
       _ref.invalidate(global_providers.moduleProgressProvider);
+_ref.invalidate(company_providers.companyModuleProgressProvider);
+_ref.invalidate(company_providers.companyWorkspaceProvider);
       return true;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);

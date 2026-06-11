@@ -1,6 +1,7 @@
 import 'package:simcore_frontend/core/network/api_client.dart';
-import '../models/market_assumption_model.dart';
-import '../models/sales_projection_model.dart';
+import 'package:simcore_frontend/core/network/api_exception.dart';
+import 'package:simcore_frontend/features/modules/market/data/models/market_assumption_model.dart';
+import 'package:simcore_frontend/features/modules/market/data/models/sales_projection_model.dart';
 
 class MarketRemoteDatasource {
   MarketRemoteDatasource(this._apiClient);
@@ -8,40 +9,72 @@ class MarketRemoteDatasource {
   final ApiClient _apiClient;
 
   Future<MarketAssumptionModel?> getAssumption(String companyId) async {
-    final result = await _apiClient
-        .get('/api/v1/simulation/companies/$companyId/market/assumption');
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId/market/assumption',
+    );
+
     return result.fold(
-      (exception) => throw exception,
+      (failure) {
+        if (failure is ApiException && failure.type == ErrorType.notFound) {
+          return null;
+        }
+        throw failure;
+      },
       (data) {
         if (data == null) return null;
-        return MarketAssumptionModel.fromJson(
-            Map<String, dynamic>.from(data as Map));
+        if (data is Map) {
+          return MarketAssumptionModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+        }
+        return null;
       },
     );
   }
 
   Future<MarketAssumptionModel> updateAssumption(
-      String companyId, MarketAssumptionModel assumption) async {
+    String companyId,
+    MarketAssumptionModel assumption,
+  ) async {
     final result = await _apiClient.put(
       '/api/v1/simulation/companies/$companyId/market/assumption',
       data: assumption.toJson(),
     );
+
     return result.fold(
-      (exception) => throw exception,
-      (data) => MarketAssumptionModel.fromJson(
-          Map<String, dynamic>.from(data as Map)),
+      (failure) => throw failure,
+      (data) {
+        if (data is Map) {
+          return MarketAssumptionModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+        }
+
+        return assumption;
+      },
     );
   }
 
   Future<SalesProjectionModel?> getProjection(String companyId) async {
-    final result = await _apiClient
-        .get('/api/v1/simulation/companies/$companyId/market/projection');
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies/$companyId/market/projection',
+    );
+
     return result.fold(
-      (exception) => throw exception,
+      (failure) {
+        if (failure is ApiException && failure.type == ErrorType.notFound) {
+          return null;
+        }
+        throw failure;
+      },
       (data) {
         if (data == null) return null;
-        return SalesProjectionModel.fromJson(
-            Map<String, dynamic>.from(data as Map));
+        if (data is Map) {
+          return SalesProjectionModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+        }
+        return null;
       },
     );
   }
@@ -49,11 +82,23 @@ class MarketRemoteDatasource {
   Future<SalesProjectionModel> generateProjection(String companyId) async {
     final result = await _apiClient.post(
       '/api/v1/simulation/companies/$companyId/market/projection/generate',
+      data: {
+        'companyId': int.tryParse(companyId) ?? companyId,
+        'scenarioType': 'PROBABLE',
+      },
     );
+
     return result.fold(
-      (exception) => throw exception,
-      (data) =>
-          SalesProjectionModel.fromJson(Map<String, dynamic>.from(data as Map)),
+      (failure) => throw failure,
+      (data) {
+        if (data is Map) {
+          return SalesProjectionModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+        }
+
+        throw StateError('El backend no devolvió una proyección válida.');
+      },
     );
   }
 
@@ -61,6 +106,10 @@ class MarketRemoteDatasource {
     final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/market/complete',
     );
-    result.fold((exception) => throw exception, (_) => null);
+
+    result.fold(
+      (failure) => throw failure,
+      (_) => null,
+    );
   }
 }

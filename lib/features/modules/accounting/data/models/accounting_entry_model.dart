@@ -4,11 +4,11 @@ class AccountingEntryModel {
   final String id;
   final String accountName;
   final String accountCode;
-  final double debit; 
-  final double credit; 
-  final String description; 
+  final double debit;
+  final double credit;
+  final String description;
   final DateTime date;
-  final AccountingStatus status; 
+  final AccountingStatus status;
 
   AccountingEntryModel({
     required this.id,
@@ -23,16 +23,50 @@ class AccountingEntryModel {
 
   factory AccountingEntryModel.fromJson(Map<String, dynamic> json) {
     return AccountingEntryModel(
-      id: json['id'] ?? '',
-      accountName: json['accountName'] ?? '',
-      accountCode: json['accountCode'] ?? '',
-      debit: (json['debit'] ?? 0).toDouble(),
-      credit: (json['credit'] ?? 0).toDouble(),
-      description: json['description'] ?? '',
-      date: DateTime.parse(json['date']),
-      status: json['status'] == 'OUTDATED' 
-          ? AccountingStatus.outdated 
+      id: _readString(json, ['id']),
+      accountName: _readString(json, ['accountName', 'account', 'name']),
+      accountCode: _readString(json, ['accountCode', 'code']),
+      debit: _readDouble(json, ['debit', 'debitAmount']),
+      credit: _readDouble(json, ['credit', 'creditAmount']),
+      description: _readString(json, ['description', 'concept', 'detail']),
+      date: _readDate(json, ['date', 'entryDate', 'createdAt', 'generatedAt']),
+      status: _readString(json, ['status']) == 'OUTDATED'
+          ? AccountingStatus.outdated
           : AccountingStatus.current,
     );
+  }
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+
+      if (value != null) return value.toString();
+    }
+
+    return '';
+  }
+
+  static double _readDouble(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+
+      if (value is double) return value;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+    }
+
+    return 0.0;
+  }
+
+  static DateTime _readDate(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+
+      if (value != null) {
+        return DateTime.tryParse(value.toString()) ?? DateTime.now();
+      }
+    }
+
+    return DateTime.now();
   }
 }

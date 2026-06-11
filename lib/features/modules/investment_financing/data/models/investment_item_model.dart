@@ -31,18 +31,22 @@ class InvestmentItemModel {
   final double amount;
 
   factory InvestmentItemModel.fromJson(Map<String, dynamic> json) {
-    final quantity = (json['quantity'] as num?)?.toDouble();
-    final unitCost = (json['unitCost'] as num?)?.toDouble();
-    final totalCost = (json['totalCost'] as num?)?.toDouble();
+    final quantity = _readDouble(json, 'quantity');
+    final unitCost = _readDouble(json, 'unitCost');
+    final backendTotal =
+        _readDouble(json, 'total') ?? _readDouble(json, 'totalCost');
+
+    final description = _readString(json, 'description');
+    final name = _readString(json, 'name');
 
     return InvestmentItemModel(
       id: (json['id'] ?? '').toString(),
       type: InvestmentType.fromJson(
         (json['type'] ?? json['itemType'])?.toString(),
       ),
-      description: (json['description'] ?? json['name'] ?? '').toString(),
-      amount: (json['amount'] as num?)?.toDouble() ??
-          totalCost ??
+      description: description.isNotEmpty ? description : name,
+      amount: _readDouble(json, 'amount') ??
+          backendTotal ??
           ((quantity ?? 0) * (unitCost ?? 0)),
     );
   }
@@ -53,4 +57,15 @@ class InvestmentItemModel {
         'description': description,
         'amount': amount,
       };
+
+  static double? _readDouble(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static String _readString(Map<String, dynamic> json, String key) {
+    return (json[key] ?? '').toString().trim();
+  }
 }

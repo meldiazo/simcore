@@ -10,25 +10,35 @@ class AcademicRemoteDataSource {
   // ── Cursos ─────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> createCourse({
-    required String code,
-    required String title,
-    required String description,
-    required int teacherId,
-  }) async {
-    final result = await _client.post(
-      '/api/v1/iam/courses',
-      data: {
-        'code': code,
-        'title': title,
-        'description': description,
-        'teacherId': teacherId,
-      },
-    );
-    return result.fold(
-      (e) => throw Exception(e.message),
-      (data) => Map<String, dynamic>.from(data as Map),
-    );
+  required String code,
+  required String name,
+  required String description,
+  String? academicPeriod,
+  required int teacherId,
+}) async {
+  final payload = <String, dynamic>{
+    'code': code,
+    'name': name,
+    'description': description,
+    'teacherId': teacherId,
+  };
+
+  final normalizedAcademicPeriod = academicPeriod?.trim();
+  if (normalizedAcademicPeriod != null &&
+      normalizedAcademicPeriod.isNotEmpty) {
+    payload['academicPeriod'] = normalizedAcademicPeriod;
   }
+
+  final result = await _client.post(
+    '/api/v1/iam/courses',
+    data: payload,
+  );
+
+  return result.fold(
+    (e) => throw Exception(e.message),
+    (data) => Map<String, dynamic>.from(data as Map),
+  );
+}
 
   Future<Map<String, dynamic>> getCourse(int id) async {
     final result = await _client.get('/api/v1/iam/courses/$id');

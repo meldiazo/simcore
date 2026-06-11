@@ -38,17 +38,59 @@ class _InvestmentFinancingPageState extends ConsumerState<InvestmentFinancingPag
             ),
             const SizedBox(height: 24),
             
-            // Manejo de errores globales del Provider
-            if (state.errorMessage != null)
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.all(16),
-                color: Colors.red.withOpacity(0.1),
-                child: Text(
-                  state.errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                ),
-              ),
+            // Mensaje de error del Provider
+if (state.errorMessage != null)
+  Container(
+    margin: const EdgeInsets.only(bottom: 24),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: SimcoreColors.danger.withOpacity(0.1),
+      border: Border.all(color: SimcoreColors.danger.withOpacity(0.35)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: SimcoreColors.danger),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            state.errorMessage!,
+            style: const TextStyle(
+              color: SimcoreColors.danger,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+
+// Mensaje de éxito del Provider
+if (state.successMessage != null)
+  Container(
+    margin: const EdgeInsets.only(bottom: 24),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: SimcoreColors.success.withOpacity(0.1),
+      border: Border.all(color: SimcoreColors.success.withOpacity(0.35)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.check_circle_outline, color: SimcoreColors.success),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            state.successMessage!,
+            style: const TextStyle(
+              color: SimcoreColors.success,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
             
             // 2. BLOQUEO PEDAGÓGICO REAL
             if (!state.isMarketComplete && !state.isLoading)

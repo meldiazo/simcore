@@ -12,9 +12,10 @@ class ModuleProgressRemoteDataSource {
     final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/modules/$module/start',
     );
+
     return result.fold(
       (e) => throw e,
-      (data) => data != null ? Map<String, dynamic>.from(data as Map) : {},
+      _safeMap,
     );
   }
 
@@ -25,9 +26,10 @@ class ModuleProgressRemoteDataSource {
     final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/modules/$module/complete',
     );
+
     return result.fold(
       (e) => throw e,
-      (data) => data != null ? Map<String, dynamic>.from(data as Map) : {},
+      _safeMap,
     );
   }
 
@@ -40,9 +42,10 @@ class ModuleProgressRemoteDataSource {
       '/api/v1/simulation/companies/$companyId/modules/$module/lock',
       data: {'locked': locked},
     );
+
     return result.fold(
       (e) => throw e,
-      (data) => data != null ? Map<String, dynamic>.from(data as Map) : {},
+      _safeMap,
     );
   }
 
@@ -53,11 +56,28 @@ class ModuleProgressRemoteDataSource {
   }) async {
     final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/modules/$module/requires-revision',
-      data: {'message': message},
+      data: {'reason': message},
     );
+
     return result.fold(
       (e) => throw e,
-      (data) => data != null ? Map<String, dynamic>.from(data as Map) : {},
+      _safeMap,
     );
+  }
+
+  Map<String, dynamic> _safeMap(dynamic data) {
+    if (data == null) return <String, dynamic>{};
+
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    // Algunos PATCH pueden devolver texto o body vacío.
+    // Eso no debe tumbar Flutter.
+    return <String, dynamic>{};
   }
 }

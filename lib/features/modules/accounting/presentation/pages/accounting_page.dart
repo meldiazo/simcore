@@ -1,93 +1,148 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../widgets/accounting_entries_table.dart';
-import '../widgets/financial_statement_viewer.dart';
-import '../providers/accounting_providers.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/modules/accounting/presentation/providers/accounting_providers.dart';
+import 'package:simcore_frontend/features/modules/accounting/presentation/widgets/accounting_entries_table.dart';
+import 'package:simcore_frontend/features/modules/accounting/presentation/widgets/financial_statement_viewer.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 class AccountingPage extends ConsumerWidget {
   const AccountingPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const companyId = 'COMP-12345'; 
+    final companyId = ref.watch(currentCompanyIdProvider).toString();
 
     return DefaultTabController(
-      length: 2, 
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Módulo de Contabilidad'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.table_rows), text: 'Libro Diario (Asientos)'),
-              Tab(icon: Icon(Icons.analytics), text: 'Estados Financieros'),
-            ],
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const PageIntro(
+            title: 'Módulo de Contabilidad',
+            subtitle:
+                'Genera asientos automáticos y estados financieros a partir de las decisiones previas.',
           ),
-        ),
-        body: const TabBarView(
-          children: [
-            _EntriesTab(companyId: companyId),
-            _StatementsTab(companyId: companyId),
-          ],
-        ),
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            label: const Text(
-              'Finalizar Revisión Contable',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              try {
-                await ref.read(accountingActionsProvider).completeModule(companyId);
-                
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Revisión contable registrada con éxito. Avanzando...'),
-                      backgroundColor: Colors.green,
+          const SizedBox(height: 20),
+          GlassPanel(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                const TabBar(
+  labelColor: SimcoreColors.accent,
+  unselectedLabelColor: SimcoreColors.textSecondary,
+  indicatorColor: SimcoreColors.accent,
+  tabs: [
+                    Tab(
+                      icon: Icon(Icons.table_rows_rounded),
+                      text: 'Libro Diario',
                     ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
+                    Tab(
+                      icon: Icon(Icons.analytics_rounded),
+                      text: 'Estados Financieros',
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 560,
+                  child: TabBarView(
+                    children: [
+                      _EntriesTab(companyId: companyId),
+                      _StatementsTab(companyId: companyId),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: SimcoreColors.success,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 16,
+                ),
+              ),
+              icon: const Icon(Icons.check_circle_outline_rounded),
+              label: const Text('Finalizar Revisión Contable'),
+              onPressed: () async {
+                try {
+                  await ref.read(accountingActionsProvider).completeModule(companyId);
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Módulo de Contabilidad completado.'),
+                        backgroundColor: SimcoreColors.success,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al completar contabilidad: $e'),
+                        backgroundColor: SimcoreColors.danger,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _EntriesTab extends ConsumerWidget {
-  final String companyId;
   const _EntriesTab({required this.companyId});
+
+  final String companyId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ElevatedButton.icon(
-            icon: const Icon(Icons.autorenew),
+          FilledButton.icon(
+            icon: const Icon(Icons.autorenew_rounded),
             label: const Text('Generar Asientos Automáticos'),
             onPressed: () async {
-              await ref.read(accountingActionsProvider).generateEntries(companyId);
+              try {
+                await ref.read(accountingActionsProvider).generateEntries(companyId);
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Asientos generados correctamente.'),
+                      backgroundColor: SimcoreColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al generar asientos: $e'),
+                      backgroundColor: SimcoreColors.danger,
+                    ),
+                  );
+                }
+              }
             },
           ),
           const SizedBox(height: 16),
-          Expanded(child: AccountingEntriesTable(companyId: companyId)),
+          Expanded(
+            child: AccountingEntriesTable(companyId: companyId),
+          ),
         ],
       ),
     );
@@ -95,25 +150,48 @@ class _EntriesTab extends ConsumerWidget {
 }
 
 class _StatementsTab extends ConsumerWidget {
-  final String companyId;
   const _StatementsTab({required this.companyId});
+
+  final String companyId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add_chart),
+          FilledButton.icon(
+            icon: const Icon(Icons.add_chart_rounded),
             label: const Text('Generar Estados Financieros'),
             onPressed: () async {
-              await ref.read(accountingActionsProvider).generateStatements(companyId);
+              try {
+                await ref.read(accountingActionsProvider).generateStatements(companyId);
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Estados financieros generados correctamente.'),
+                      backgroundColor: SimcoreColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al generar estados financieros: $e'),
+                      backgroundColor: SimcoreColors.danger,
+                    ),
+                  );
+                }
+              }
             },
           ),
           const SizedBox(height: 16),
-          Expanded(child: FinancialStatementViewer(companyId: companyId)),
+          Expanded(
+            child: FinancialStatementViewer(companyId: companyId),
+          ),
         ],
       ),
     );

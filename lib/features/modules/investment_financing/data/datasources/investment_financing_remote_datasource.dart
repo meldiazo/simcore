@@ -163,12 +163,13 @@ class InvestmentFinancingRemoteDataSourceImpl
     if (data is Map) {
       final json = Map<String, dynamic>.from(data);
       for (final key in [
-        'data',
-        'content',
-        'items',
-        'investmentItems',
-        'financingOptions'
-      ]) {
+  'data',
+  'content',
+  'items',
+  'options',
+  'investmentItems',
+  'financingOptions',
+]) {
         final value = json[key];
         if (value is List) {
           return value

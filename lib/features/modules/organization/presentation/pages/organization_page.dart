@@ -25,8 +25,23 @@ class OrganizationPage extends ConsumerWidget {
         summaryAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => GlassPanel(
-            child: Text('Error: $e', style: const TextStyle(color: SimcoreColors.danger)),
-          ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Icon(
+        Icons.error_outline_rounded,
+        color: SimcoreColors.danger,
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Text(
+          'No se pudo cargar Organización.\n$e',
+          style: const TextStyle(color: SimcoreColors.danger),
+        ),
+      ),
+    ],
+  ),
+),
           data: (summary) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -189,50 +204,123 @@ class OrganizationPage extends ConsumerWidget {
   }
 
   void _showAddPositionDialog(BuildContext context, WidgetRef ref, int areaId) {
-    final titleCtrl = TextEditingController();
-    final headcountCtrl = TextEditingController();
-    final salaryCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Nuevo cargo'),
-        content: Column(
+  final titleCtrl = TextEditingController();
+  final responsibilitiesCtrl = TextEditingController();
+  final headcountCtrl = TextEditingController(text: '1');
+  final salaryCtrl = TextEditingController();
+  final capacityCtrl = TextEditingController(text: '0');
+
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Nuevo cargo'),
+      content: SingleChildScrollView(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-                controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Título')),
+              controller: titleCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Título del cargo',
+              ),
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: headcountCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Headcount')),
+              controller: responsibilitiesCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Responsabilidades',
+              ),
+              maxLines: 2,
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: salaryCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Salario mensual')),
+              controller: headcountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Cantidad de personas',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: salaryCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Salario mensual',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: capacityCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Capacidad por persona al mes',
+                helperText: 'Puede ser 0 si todavía no aplica.',
+              ),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () async {
-              await ref.read(organizationNotifierProvider.notifier).createPosition({
-                'areaId': areaId,
-                'title': titleCtrl.text.trim(),
-                'headcount': int.tryParse(headcountCtrl.text.trim()) ?? 1,
-                'monthlySalary': double.tryParse(salaryCtrl.text.trim()) ?? 0,
-              });
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Crear'),
-          ),
-        ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final title = titleCtrl.text.trim();
+            final headcount = int.tryParse(headcountCtrl.text.trim()) ?? 1;
+            final monthlySalary =
+                double.tryParse(salaryCtrl.text.trim()) ?? 0;
+            final capacityPerPerson =
+                double.tryParse(capacityCtrl.text.trim()) ?? 0;
+
+            if (title.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('El título del cargo es obligatorio.'),
+                  backgroundColor: SimcoreColors.danger,
+                ),
+              );
+              return;
+            }
+
+            if (headcount <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('La cantidad de personas debe ser mayor a 0.'),
+                  backgroundColor: SimcoreColors.danger,
+                ),
+              );
+              return;
+            }
+
+            if (monthlySalary <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('El salario mensual debe ser mayor a 0.'),
+                  backgroundColor: SimcoreColors.danger,
+                ),
+              );
+              return;
+            }
+
+            await ref.read(organizationNotifierProvider.notifier).createPosition({
+              'areaId': areaId,
+              'title': title,
+              'responsibilities': responsibilitiesCtrl.text.trim(),
+              'headcount': headcount,
+              'monthlySalary': monthlySalary,
+              'capacityPerPerson': capacityPerPerson,
+            });
+
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: const Text('Crear'),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 class _MetricRow extends StatelessWidget {

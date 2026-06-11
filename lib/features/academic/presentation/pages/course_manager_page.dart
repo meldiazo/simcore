@@ -16,37 +16,42 @@ class CourseManagerPage extends ConsumerStatefulWidget {
 class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
   final _formKey = GlobalKey<FormState>();
   final _codeCtrl = TextEditingController();
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _teacherIdCtrl = TextEditingController();
-  final _studentIdCtrl = TextEditingController();
+final _nameCtrl = TextEditingController();
+final _descCtrl = TextEditingController();
+final _academicPeriodCtrl = TextEditingController();
+final _teacherIdCtrl = TextEditingController();
+final _studentIdCtrl = TextEditingController();
   final List<int> _pendingStudentIds = [];
   Map<String, String> _fieldErrors = {};
 
   @override
-  void dispose() {
-    _codeCtrl.dispose();
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
-    _teacherIdCtrl.dispose();
-    _studentIdCtrl.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _codeCtrl.dispose();
+  _nameCtrl.dispose();
+  _descCtrl.dispose();
+  _academicPeriodCtrl.dispose();
+  _teacherIdCtrl.dispose();
+  _studentIdCtrl.dispose();
+  super.dispose();
+}
 
   Future<void> _create() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _fieldErrors = {});
-    try {
-      await ref.read(courseNotifierProvider.notifier).createCourse(
-            code: _codeCtrl.text.trim(),
-            title: _titleCtrl.text.trim(),
-            description: _descCtrl.text.trim(),
-            teacherId: int.parse(_teacherIdCtrl.text.trim()),
-          );
-    } catch (e) {
-      setState(() => _fieldErrors = {'error': e.toString()});
-    }
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() => _fieldErrors = {});
+
+  try {
+    await ref.read(courseNotifierProvider.notifier).createCourse(
+          code: _codeCtrl.text.trim(),
+          name: _nameCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+          academicPeriod: _academicPeriodCtrl.text.trim(),
+          teacherId: int.parse(_teacherIdCtrl.text.trim()),
+        );
+  } catch (e) {
+    setState(() => _fieldErrors = {'error': e.toString()});
   }
+}
 
   Future<void> _closeCourse(int id) async {
     await ref.read(courseNotifierProvider.notifier).closeCourse(id);
@@ -101,20 +106,29 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Título'),
-                  validator: (v) => FormValidators.minLength(v, 3, fieldName: 'Título'),
-                ),
+  controller: _nameCtrl,
+  decoration: const InputDecoration(labelText: 'Nombre del curso'),
+  validator: (v) =>
+      FormValidators.minLength(v, 3, fieldName: 'Nombre del curso'),
+),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
-                  maxLines: 2,
-                  validator: (v) => FormValidators.required(v, fieldName: 'Descripción'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _teacherIdCtrl,
+  controller: _descCtrl,
+  decoration: const InputDecoration(labelText: 'Descripción'),
+  maxLines: 2,
+  validator: (v) => FormValidators.required(v, fieldName: 'Descripción'),
+),
+const SizedBox(height: 12),
+TextFormField(
+  controller: _academicPeriodCtrl,
+  decoration: const InputDecoration(
+    labelText: 'Periodo académico',
+    hintText: 'Ejemplo: 2026-I',
+  ),
+),
+const SizedBox(height: 12),
+TextFormField(
+  controller: _teacherIdCtrl,
                   decoration: const InputDecoration(labelText: 'ID Docente'),
                   keyboardType: TextInputType.number,
                   validator: (v) => FormValidators.positiveInt(v, fieldName: 'ID Docente'),
@@ -189,8 +203,10 @@ class _CourseResultPanel extends StatelessWidget {
             children: [
               const Icon(Icons.check_circle_rounded, color: SimcoreColors.success),
               const SizedBox(width: 8),
-              Text('Curso #$id creado: ${data['title'] ?? ''}',
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+  'Curso #$id creado: ${data['name'] ?? data['title'] ?? ''}',
+  style: const TextStyle(fontWeight: FontWeight.w700),
+),
             ],
           ),
           const SizedBox(height: 16),

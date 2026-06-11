@@ -25,14 +25,12 @@ class WorkspacePage extends ConsumerWidget {
     }
 
     if (contextState.status == SimulationContextStatus.error) {
-      return ApiErrorState(
-        title: 'No se pudo cargar el contexto de simulación',
-        message: contextState.errorMessage ?? 'Error desconocido',
-        onRetry: () => ref
-            .read(simulationContextNotifierProvider.notifier)
-            .load(companyId: 1),
-      );
-    }
+  return ApiErrorState(
+    title: 'No se pudo cargar el contexto de simulación',
+    message: contextState.errorMessage ?? 'Error desconocido',
+    onRetry: () => ref.invalidate(simulationContextNotifierProvider),
+  );
+}
 
     final workspaceAsync = ref.watch(companyWorkspaceProvider);
 

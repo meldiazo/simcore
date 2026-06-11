@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/validation/form_validators.dart';
 import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
@@ -196,11 +197,24 @@ class _GroupResultPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            'Comparte este ID con los estudiantes del grupo.',
-            style: const TextStyle(color: SimcoreColors.textSecondary),
-          ),
-          const Divider(height: 24),
+Text(
+  'Comparte este ID con los estudiantes del grupo.',
+  style: const TextStyle(color: SimcoreColors.textSecondary),
+),
+const SizedBox(height: 12),
+FilledButton.icon(
+  onPressed: groupId <= 0
+      ? null
+      : () {
+          Navigator.of(context).pushNamed(
+            AppRouter.companyForm,
+            arguments: {'groupId': groupId},
+          );
+        },
+  icon: const Icon(Icons.business_rounded),
+  label: const Text('Crear empresa para este grupo'),
+),
+const Divider(height: 24),
 
           // Agregar miembros
           const Text('Agregar Miembros',
@@ -249,8 +263,11 @@ class _GroupResultPanel extends StatelessWidget {
           const Divider(height: 24),
 
           // Vincular empresa
-          const Text('Vincular Empresa',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          // Vincular empresa existente
+const Text(
+  'Vincular empresa existente',
+  style: TextStyle(fontWeight: FontWeight.w600),
+),
           const SizedBox(height: 8),
           Row(
             children: [

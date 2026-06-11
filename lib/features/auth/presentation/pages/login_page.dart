@@ -43,12 +43,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
     super.dispose();
   }
 
-  @override
+    @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     ref.listenManual(authNotifierProvider, (prev, next) {
       if (next.status == AuthStatus.authenticated) {
-        Navigator.of(context).pushReplacementNamed(AppRouter.workspace);
+        final user = next.user;
+
+        final targetRoute = user != null && (user.isAdmin || user.isDocente)
+            ? AppRouter.teacher
+            : AppRouter.workspace;
+
+        Navigator.of(context).pushReplacementNamed(targetRoute);
       }
     });
   }

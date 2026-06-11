@@ -5,11 +5,11 @@ import 'package:simcore_frontend/features/simulation/decisions/data/models/decis
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_repository_impl.dart';
 import 'package:simcore_frontend/features/simulation/decisions/datasources/decision_remote_datasource.dart';
 import 'package:simcore_frontend/features/simulation/decisions/repositories/decision_repository.dart';
+import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 // 1. Inyección del Datasource
-final decisionRemoteDatasourceProvider =
-    Provider<DecisionRemoteDatasource>((ref) {
+final decisionRemoteDatasourceProvider = Provider<DecisionRemoteDatasource>((ref) {
   return DecisionRemoteDatasource(ref.watch(simulationApiClientProvider));
 });
 

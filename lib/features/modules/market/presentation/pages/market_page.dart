@@ -14,6 +14,8 @@ import 'package:simcore_frontend/features/simulation/shared/presentation/provide
 import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
 // Import for global state invalidation
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
+import 'package:simcore_frontend/features/modules/investment_financing/presentation/providers/investment_financing_providers.dart';
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
 
 class MarketPage extends ConsumerStatefulWidget {
   const MarketPage({super.key});
@@ -80,23 +82,32 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   }
 
   Future<void> _completeModule() async {
-    final success = await ref.read(marketNotifierProvider.notifier).completeMarketModule();
-    if (mounted && success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Módulo de Mercado completado.'),
-          backgroundColor: SimcoreColors.success,
-        ),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error al completar el módulo.'),
-          backgroundColor: SimcoreColors.danger,
-        ),
-      );
-    }
+  final companyId = ref.read(currentCompanyIdProvider).toString();
+
+  final success =
+      await ref.read(marketNotifierProvider.notifier).completeMarketModule();
+
+  if (mounted && success) {
+    ref.invalidate(company_providers.companyModuleProgressProvider);
+    ref.invalidate(company_providers.companyWorkspaceProvider);
+    ref.invalidate(global_providers.moduleProgressProvider);
+    ref.invalidate(investmentFinancingProvider(companyId));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Módulo de Mercado completado. Ya puedes continuar con Inversión y Financiamiento.'),
+        backgroundColor: SimcoreColors.success,
+      ),
+    );
+  } else if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error al completar el módulo.'),
+        backgroundColor: SimcoreColors.danger,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

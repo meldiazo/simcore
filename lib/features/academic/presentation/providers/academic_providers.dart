@@ -10,19 +10,21 @@ class CourseNotifier
   final AcademicRemoteDataSource _ds;
 
   Future<void> createCourse({
-    required String code,
-    required String title,
-    required String description,
-    required int teacherId,
-  }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _ds.createCourse(
-          code: code,
-          title: title,
-          description: description,
-          teacherId: teacherId,
-        ));
-  }
+  required String code,
+  required String name,
+  required String description,
+  String? academicPeriod,
+  required int teacherId,
+}) async {
+  state = const AsyncValue.loading();
+  state = await AsyncValue.guard(() => _ds.createCourse(
+        code: code,
+        name: name,
+        description: description,
+        academicPeriod: academicPeriod,
+        teacherId: teacherId,
+      ));
+}
 
   Future<void> getCourse(int id) async {
     state = const AsyncValue.loading();

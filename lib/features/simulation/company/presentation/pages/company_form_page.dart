@@ -4,6 +4,7 @@ import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
+import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
 
 class CompanyFormPage extends ConsumerStatefulWidget {
   const CompanyFormPage({super.key, required this.groupId});
@@ -21,7 +22,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   final _descriptionCtrl = TextEditingController();
   final _missionCtrl = TextEditingController();
   final _visionCtrl = TextEditingController();
-  CompanySector _sector = CompanySector.technology;
+  CompanySector _sector = CompanySector.services;
   Company? _createdCompany;
 
   @override
@@ -52,22 +53,27 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   }
 
   Future<void> _activate() async {
-    if (_createdCompany == null) return;
-    final notifier = ref.read(companyFormNotifierProvider.notifier);
-    final activated = await notifier.activateCompany(companyId: _createdCompany!.id);
-    if (activated != null) {
-      await ref.read(companyRepositoryProvider).linkGroupToCompany(
-        groupId: widget.groupId,
-        companyId: activated.id,
-      );
-      if (mounted) {
-        setState(() => _createdCompany = activated);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Empresa activada y vinculada al grupo')),
+  if (_createdCompany == null) return;
+
+  final notifier = ref.read(companyFormNotifierProvider.notifier);
+  final activated = await notifier.activateCompany(
+    companyId: _createdCompany!.id,
+  );
+
+  if (activated != null) {
+    await ref.read(groupNotifierProvider.notifier).linkCompany(
+          groupId: widget.groupId,
+          companyId: activated.id,
         );
-      }
+
+    if (mounted) {
+      setState(() => _createdCompany = activated);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Empresa activada y vinculada al grupo')),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

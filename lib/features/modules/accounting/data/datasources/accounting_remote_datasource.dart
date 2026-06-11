@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
-import '../models/accounting_entry_model.dart';
-import '../models/financial_statement_model.dart';
+import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/modules/accounting/data/models/accounting_entry_model.dart';
+import 'package:simcore_frontend/features/modules/accounting/data/models/financial_statement_model.dart';
 
 abstract class AccountingRemoteDataSource {
   Future<void> generateAccountingEntries(String companyId);
@@ -11,59 +11,109 @@ abstract class AccountingRemoteDataSource {
 }
 
 class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
-  final Dio client;
+  AccountingRemoteDataSourceImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
-  AccountingRemoteDataSourceImpl({required this.client});
+  final ApiClient _apiClient;
 
   @override
   Future<void> generateAccountingEntries(String companyId) async {
-    // Endpoint: POST /accounting-entries/generate
-    await client.post(
+    final result = await _apiClient.post(
       '/api/v1/simulation/accounting-entries/generate',
-      data: {'companyId': companyId}, 
+      data: {
+        'companyId': int.tryParse(companyId) ?? companyId,
+        'scenarioType': 'PROBABLE',
+      },
+    );
+
+    result.fold(
+      (failure) => throw failure,
+      (_) => null,
     );
   }
 
   @override
   Future<List<AccountingEntryModel>> getAccountingEntries(String companyId) async {
-    final response = await client.get(
+    final result = await _apiClient.get(
       '/api/v1/simulation/accounting-entries/company/$companyId/scenario',
-      queryParameters: {'scenarioType': 'PROBABLE'},
+      queryParameters: {
+        'scenarioType': 'PROBABLE',
+      },
     );
-    
-    return (response.data as List)
-        .map((json) => AccountingEntryModel.fromJson(json))
-        .toList();
+
+    return result.fold(
+      (failure) => throw failure,
+      (data) => _extractList(data).map(AccountingEntryModel.fromJson).toList(),
+    );
   }
 
   @override
   Future<void> generateFinancialStatements(String companyId) async {
-    await client.post(
+    final result = await _apiClient.post(
       '/api/v1/simulation/financial-statements/generate',
-      data: {'companyId': companyId},
+      data: {
+        'companyId': int.tryParse(companyId) ?? companyId,
+        'scenarioType': 'PROBABLE',
+      },
+    );
+
+    result.fold(
+      (failure) => throw failure,
+      (_) => null,
     );
   }
 
   @override
   Future<List<FinancialStatementModel>> getFinancialStatements(String companyId) async {
-    final response = await client.get(
+    final result = await _apiClient.get(
       '/api/v1/simulation/financial-statements/company/$companyId/scenario',
-      queryParameters: {'scenarioType': 'PROBABLE'},
+      queryParameters: {
+        'scenarioType': 'PROBABLE',
+      },
     );
 
-    return (response.data as List)
-        .map((json) => FinancialStatementModel.fromJson(json))
-        .toList();
+    return result.fold(
+      (failure) => throw failure,
+      (data) => _extractList(data).map(FinancialStatementModel.fromJson).toList(),
+    );
   }
 
   @override
   Future<void> completeAccountingModule(String companyId) async {
-    await client.patch(
+    final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/modules/ACCOUNTING/complete',
-      data: {
-        'module': 'ACCOUNTING',
-        'decisionType': 'ACCOUNTING_REVIEW'
-      }
     );
+
+    result.fold(
+      (failure) => throw failure,
+      (_) => null,
+    );
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data == null) return const [];
+
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+
+    if (data is Map) {
+      final json = Map<String, dynamic>.from(data);
+
+      for (final key in ['data', 'content', 'items', 'entries', 'statements']) {
+        final value = json[key];
+        if (value is List) {
+          return value
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      }
+    }
+
+    return const [];
   }
 }

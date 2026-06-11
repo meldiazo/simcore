@@ -11,8 +11,7 @@ import 'package:simcore_frontend/features/simulation/decisions/data/models/decis
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_impact_tree.dart';
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
+
 
 class DecisionsPage extends ConsumerStatefulWidget {
   const DecisionsPage({super.key});
@@ -27,19 +26,6 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   double signProgress = 0;
   Timer? _signTimer;
 
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      final companyId = ref.read(currentCompanyIdProvider).toString();
-      if (companyId.isNotEmpty) {
-        ref.read(module_actions.moduleProgressProvider.notifier).start(
-              companyId,
-              SimModule.decisions.toApi(),
-            );
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -48,29 +34,31 @@ class _DecisionsPageState extends ConsumerState<DecisionsPage> {
   }
 
   void _startSigning() {
-    if (isSubmitted) {
+  if (isSubmitted) {
+    return;
+  }
+
+  _signTimer?.cancel();
+
+  _signTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+    if (!mounted) {
+      timer.cancel();
       return;
     }
-    _signTimer?.cancel();
-    _signTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
-      setState(() {
-        signProgress += 2;
-        if (signProgress >= 100) {
-          signProgress = 100;
-          isSubmitted = true;
-          final companyId = ref.read(currentCompanyIdProvider).toString();
-          if (companyId.isNotEmpty) {
-            ref.read(module_actions.moduleProgressProvider.notifier).complete(
-                  companyId,
-                  SimModule.decisions.toApi(),
-                );
-            ref.invalidate(global_providers.moduleProgressProvider);
-          }
-          timer.cancel();
-        }
-      });
+
+    final nextProgress = signProgress + 2;
+    final shouldSubmit = nextProgress >= 100;
+
+    setState(() {
+      signProgress = shouldSubmit ? 100 : nextProgress;
+      isSubmitted = shouldSubmit;
     });
-  }
+
+    if (shouldSubmit) {
+      timer.cancel();
+    }
+  });
+}
 
   void _stopSigning() {
     _signTimer?.cancel();
@@ -440,11 +428,11 @@ class _SignTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                isSubmitted
-                    ? 'Las decisiones quedaron bloqueadas y listas para ser procesadas por el motor de simulacion.'
-                    : 'La firma ejecutiva sella la estrategia consolidada y bloquea cambios en todos los modulos.',
-                textAlign: TextAlign.center,
-              ),
+  isSubmitted
+      ? 'La estrategia quedó firmada en esta sesión y lista para su revisión académica.'
+      : 'La firma ejecutiva confirma la estrategia consolidada del ciclo sin crear un módulo adicional de progreso.',
+  textAlign: TextAlign.center,
+),
               const SizedBox(height: 28),
               GestureDetector(
                 onLongPressStart: (_) => onStart(),

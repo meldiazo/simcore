@@ -5,6 +5,7 @@ import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/scenario/domain/entities/scenario.dart';
 import 'package:simcore_frontend/features/simulation/scenario/presentation/providers/scenario_providers.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 class ScenarioManagerPage extends ConsumerWidget {
   const ScenarioManagerPage({super.key});
@@ -72,36 +73,79 @@ class ScenarioManagerPage extends ConsumerWidget {
   }
 
   void _showAssignDialog(BuildContext context, WidgetRef ref, int scenarioId) {
-    final ctrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Asignar escenario a grupo'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Group ID'),
+  final currentContext = ref.read(simulationContextNotifierProvider).context;
+  final ctrl = TextEditingController(
+    text: currentContext?.groupId.toString() ?? '',
+  );
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Asignar escenario a grupo'),
+      content: TextField(
+        controller: ctrl,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: 'ID del grupo',
+          helperText: 'Usa el grupo del curso que quieres evaluar.',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final groupId = int.tryParse(ctrl.text);
-              if (groupId == null) return;
-              await ref
-                  .read(scenarioFormNotifierProvider.notifier)
-                  .assignToGroup(scenarioId: scenarioId, groupId: groupId);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Asignar'),
-          ),
-        ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final groupId = int.tryParse(ctrl.text.trim());
+
+            if (groupId == null || groupId <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Ingresa un ID de grupo válido.'),
+                ),
+              );
+              return;
+            }
+
+            final success = await ref
+                .read(scenarioFormNotifierProvider.notifier)
+                .assignToGroup(
+                  scenarioId: scenarioId,
+                  groupId: groupId,
+                );
+
+            if (!context.mounted || !dialogContext.mounted) return;
+
+            if (success) {
+              ref.invalidate(activeScenarioProvider);
+              ref.invalidate(scenariosByCourseProvider);
+
+              Navigator.pop(dialogContext);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Escenario $scenarioId asignado correctamente al grupo $groupId.',
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'No se pudo asignar el escenario. Revisa si pertenece al curso del grupo.',
+                  ),
+                ),
+              );
+            }
+          },
+          child: const Text('Asignar'),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 class _ScenarioCard extends StatelessWidget {
@@ -258,20 +302,43 @@ class _CreateScenarioDialogState extends ConsumerState<_CreateScenarioDialog> {
         ),
         FilledButton(
           onPressed: isLoading
-              ? null
-              : () async {
-                  if (!_formKey.currentState!.validate()) return;
-                  final notifier = ref.read(scenarioFormNotifierProvider.notifier);
-                  final scenario = await notifier.createScenario({
-                    'name': _nameCtrl.text.trim(),
-                    'description': _descCtrl.text.trim(),
-                    'type': _type.toApi(),
-                  });
-                  if (scenario != null && context.mounted) {
-                    widget.onCreated();
-                    Navigator.pop(context);
-                  }
-                },
+    ? null
+    : () async {
+        if (!_formKey.currentState!.validate()) return;
+
+        final simulationContext =
+            ref.read(simulationContextNotifierProvider).context;
+
+        final courseId = simulationContext?.courseId;
+
+        if (courseId == null || courseId <= 0) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'No se pudo determinar el curso actual para crear el escenario.',
+                ),
+              ),
+            );
+          }
+          return;
+        }
+
+        final notifier = ref.read(scenarioFormNotifierProvider.notifier);
+
+        final scenario = await notifier.createScenario({
+          'courseId': courseId,
+          'name': _nameCtrl.text.trim(),
+          'description': _descCtrl.text.trim(),
+          'type': _type.toApi(),
+          'variables': const <Map<String, dynamic>>[],
+        });
+
+        if (scenario != null && context.mounted) {
+          widget.onCreated();
+          Navigator.pop(context);
+        }
+      },
           child: isLoading
               ? const SizedBox(
                   width: 16,

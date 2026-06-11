@@ -60,11 +60,19 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
                         const Text('Costo (TEA %):', style: TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         TextFormField(
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(border: OutlineInputBorder(), suffixIcon: Icon(Icons.percent, size: 18)),
-                          validator: (value) => (value == null || double.tryParse(value) == null) ? 'Inválido' : null,
-                          onSaved: (value) => _interestRate = double.parse(value!),
-                        ),
+  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+  decoration: const InputDecoration(
+    border: OutlineInputBorder(),
+    suffixIcon: Icon(Icons.percent, size: 18),
+  ),
+  validator: (value) {
+    final rate = double.tryParse(value ?? '');
+    if (rate == null) return 'Inválido';
+    if (rate < 0 || rate > 100) return 'Debe estar entre 0 y 100';
+    return null;
+  },
+  onSaved: (value) => _interestRate = double.parse(value!),
+),
                       ],
                     ),
                   ),

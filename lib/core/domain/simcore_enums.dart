@@ -7,8 +7,7 @@ enum SimModule {
   investment('INVESTMENT', 'Inversiones y Financiamiento'),
   organization('ORGANIZATION', 'Estructuras Organizativas'),
   accounting('ACCOUNTING', 'Módulo Contabilidad'),
-  analysis('ANALYSIS', 'Análisis General'),
-  decisions('DECISIONS', 'Centro de Decisiones'); // Módulo especial para la firma
+  analysis('ANALYSIS', 'Análisis General');
 
   const SimModule(this.apiValue, this.label);
 
@@ -24,7 +23,6 @@ enum SimModule {
       'ORGANIZATION' => SimModule.organization,
       'ACCOUNTING' => SimModule.accounting,
       'ANALYSIS' => SimModule.analysis,
-      'DECISIONS' => SimModule.decisions,
       _ => throw ArgumentError.value(value, 'value', 'SimModule no soportado'),
     };
   }
@@ -224,30 +222,28 @@ enum IncoherenceLevel {
 }
 
 enum CompanySector {
-  technology('TECHNOLOGY', 'Tecnología'),
-  services('SERVICES', 'Servicios'),
-  manufacturing('MANUFACTURING', 'Manufactura'),
-  commerce('COMMERCE', 'Comercio'),
-  agriculture('AGRICULTURE', 'Agricultura'),
-  construction('CONSTRUCTION', 'Construcción'),
-  health('HEALTH', 'Salud'),
-  education('EDUCATION', 'Educación'),
-  other('OTHER', 'Otro');
+  commerce('COMERCIO', 'Comercio'),
+  services('SERVICIOS', 'Servicios'),
+  manufacturing('MANUFACTURA', 'Manufactura'),
+  technology('TECNOLOGIA', 'Tecnología'),
+  agriculture('AGRO', 'Agro'),
+  other('OTRO', 'Otro');
 
   const CompanySector(this.apiValue, this.label);
+
   final String apiValue;
   final String label;
+
   String toApi() => apiValue;
+
   static CompanySector fromApi(String value) {
     return switch (_normalizeApiEnum(value)) {
-      'TECHNOLOGY' => CompanySector.technology,
-      'SERVICES' => CompanySector.services,
-      'MANUFACTURING' => CompanySector.manufacturing,
-      'COMMERCE' => CompanySector.commerce,
-      'AGRICULTURE' => CompanySector.agriculture,
-      'CONSTRUCTION' => CompanySector.construction,
-      'HEALTH' => CompanySector.health,
-      'EDUCATION' => CompanySector.education,
+      'COMERCIO' || 'COMMERCE' => CompanySector.commerce,
+      'SERVICIOS' || 'SERVICES' => CompanySector.services,
+      'MANUFACTURA' || 'MANUFACTURING' => CompanySector.manufacturing,
+      'TECNOLOGIA' || 'TECHNOLOGY' => CompanySector.technology,
+      'AGRO' || 'AGRICULTURE' => CompanySector.agriculture,
+      'OTRO' || 'OTHER' => CompanySector.other,
       _ => CompanySector.other,
     };
   }

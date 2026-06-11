@@ -17,7 +17,9 @@ import 'package:simcore_frontend/features/shared/data/demo/simcore_demo_data.dar
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/pages/company_workspace_page.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/pages/decisions_center_page.dart';
+import 'package:simcore_frontend/features/simulation/scenario/presentation/pages/scenario_manager_page.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 import 'package:simcore_frontend/features/teacher/presentation/pages/teacher_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +37,7 @@ enum SimcoreSection {
   teacher,
   courseManager,
   groupManager,
+  scenarioManager,
   report,
 }
 
@@ -52,7 +55,7 @@ class SimcoreDestination {
   final IconData icon;
 }
 
-const destinations = [
+const _studentDestinations = [
   SimcoreDestination(
     section: SimcoreSection.workspace,
     label: 'Workspace Ejecutivo',
@@ -96,20 +99,17 @@ const destinations = [
     icon: Icons.insert_chart_outlined_rounded,
   ),
   SimcoreDestination(
-    section: SimcoreSection.ranking,
-    label: 'Comparación',
-    route: AppRouter.ranking,
-    icon: Icons.compare_arrows_rounded,
-  ),
-  SimcoreDestination(
     section: SimcoreSection.report,
     label: 'Reporte Final',
     route: AppRouter.report,
     icon: Icons.description_rounded,
   ),
+];
+
+const _teacherDestinations = [
   SimcoreDestination(
     section: SimcoreSection.teacher,
-    label: '[Docente] Panel',
+    label: 'Panel Docente',
     route: AppRouter.teacher,
     icon: Icons.admin_panel_settings_rounded,
   ),
@@ -125,19 +125,148 @@ const destinations = [
     route: AppRouter.groupManager,
     icon: Icons.group_work_rounded,
   ),
+  SimcoreDestination(
+    section: SimcoreSection.scenarioManager,
+    label: 'Gestión de Escenarios',
+    route: AppRouter.scenarioManager,
+    icon: Icons.tune_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.ranking,
+    label: 'Comparación',
+    route: AppRouter.ranking,
+    icon: Icons.compare_arrows_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.report,
+    label: 'Reporte Final',
+    route: AppRouter.report,
+    icon: Icons.description_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.workspace,
+    label: 'Workspace de Empresa',
+    route: AppRouter.workspace,
+    icon: Icons.space_dashboard_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.market,
+    label: 'Revisar Mercado',
+    route: AppRouter.market,
+    icon: Icons.trending_up_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.investment,
+    label: 'Revisar Inversión',
+    route: AppRouter.investment,
+    icon: Icons.attach_money_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.organization,
+    label: 'Revisar Organización',
+    route: AppRouter.organization,
+    icon: Icons.groups_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.accounting,
+    label: 'Revisar Contabilidad',
+    route: AppRouter.accounting,
+    icon: Icons.receipt_long_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.analysis,
+    label: 'Revisar Análisis',
+    route: AppRouter.analysis,
+    icon: Icons.insert_chart_outlined_rounded,
+  ),
 ];
 
-class SimcoreShellPage extends StatelessWidget {
+const _adminDestinations = [
+  SimcoreDestination(
+    section: SimcoreSection.teacher,
+    label: 'Panel de Control',
+    route: AppRouter.teacher,
+    icon: Icons.admin_panel_settings_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.courseManager,
+    label: 'Gestión de Cursos',
+    route: AppRouter.courseManager,
+    icon: Icons.school_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.groupManager,
+    label: 'Gestión de Grupos',
+    route: AppRouter.groupManager,
+    icon: Icons.group_work_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.scenarioManager,
+    label: 'Gestión de Escenarios',
+    route: AppRouter.scenarioManager,
+    icon: Icons.tune_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.ranking,
+    label: 'Comparación',
+    route: AppRouter.ranking,
+    icon: Icons.compare_arrows_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.report,
+    label: 'Reporte Final',
+    route: AppRouter.report,
+    icon: Icons.description_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.workspace,
+    label: 'Workspace de Empresa',
+    route: AppRouter.workspace,
+    icon: Icons.space_dashboard_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.market,
+    label: 'Revisar Mercado',
+    route: AppRouter.market,
+    icon: Icons.trending_up_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.investment,
+    label: 'Revisar Inversión',
+    route: AppRouter.investment,
+    icon: Icons.attach_money_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.organization,
+    label: 'Revisar Organización',
+    route: AppRouter.organization,
+    icon: Icons.groups_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.accounting,
+    label: 'Revisar Contabilidad',
+    route: AppRouter.accounting,
+    icon: Icons.receipt_long_rounded,
+  ),
+  SimcoreDestination(
+    section: SimcoreSection.analysis,
+    label: 'Revisar Análisis',
+    route: AppRouter.analysis,
+    icon: Icons.insert_chart_outlined_rounded,
+  ),
+];
+
+class SimcoreShellPage extends ConsumerWidget {
   const SimcoreShellPage({super.key, required this.section});
 
   final SimcoreSection section;
 
-  Widget _buildContent() {
+  Widget _buildContent(WidgetRef ref) {
     return switch (section) {
       SimcoreSection.workspace => const WorkspacePage(),
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
-      SimcoreSection.investment => const InvestmentFinancingPage(companyId: '1'),
+      SimcoreSection.investment => _buildInvestmentContent(ref),
       SimcoreSection.organization => const OrganizationPage(),
       SimcoreSection.accounting => const AccountingPage(),
       SimcoreSection.analysis => const AnalysisPage(),
@@ -146,8 +275,22 @@ class SimcoreShellPage extends StatelessWidget {
       SimcoreSection.teacher => const TeacherDashboardPage(),
       SimcoreSection.courseManager => const CourseManagerPage(),
       SimcoreSection.groupManager => const GroupManagerPage(),
+      SimcoreSection.scenarioManager => const ScenarioManagerPage(),
       SimcoreSection.report => const CompanyReportPage(),
     };
+  }
+
+  Widget _buildInvestmentContent(WidgetRef ref) {
+    final contextState = ref.watch(simulationContextNotifierProvider);
+    final simulationContext = contextState.context;
+
+    if (simulationContext == null) {
+      return _SimulationContextRequiredState(status: contextState.status);
+    }
+
+    return InvestmentFinancingPage(
+      companyId: simulationContext.companyId.toString(),
+    );
   }
 
   void _navigate(BuildContext context, SimcoreDestination destination) {
@@ -159,7 +302,7 @@ class SimcoreShellPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 1100;
@@ -187,7 +330,7 @@ class SimcoreShellPage extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: _buildContent(),
+                    child: _buildContent(ref),
                   ),
                 ),
               ),
@@ -195,6 +338,61 @@ class SimcoreShellPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SimulationContextRequiredState extends StatelessWidget {
+  const _SimulationContextRequiredState({required this.status});
+
+  final SimulationContextStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = status == SimulationContextStatus.initial ||
+        status == SimulationContextStatus.loading;
+
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Contexto de simulación requerido',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: SimcoreColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Para abrir Inversiones y Financiamiento primero debes cargar una empresa o grupo. '
+            'Así el módulo usará el companyId real del flujo y no una empresa fija.',
+            style: TextStyle(
+              color: SimcoreColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushReplacementNamed(AppRouter.groupSetup);
+            },
+            icon: const Icon(Icons.business_rounded),
+            label: const Text('Seleccionar grupo o empresa'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -208,9 +406,16 @@ class _Sidebar extends ConsumerWidget {
   final SimcoreSection section;
   final ValueChanged<SimcoreDestination> onTap;
 
-  List<SimcoreDestination> _filterDestinations(AuthUser? user) {
+    List<SimcoreDestination> _filterDestinations(AuthUser? user) {
     if (user == null) return const [];
-    return destinations
+
+    final baseDestinations = user.isAdmin
+        ? _adminDestinations
+        : user.isDocente
+            ? _teacherDestinations
+            : _studentDestinations;
+
+    return baseDestinations
         .where((destination) => AppRouter.canAccessRoute(destination.route, user))
         .toList(growable: false);
   }
@@ -323,7 +528,7 @@ class _Sidebar extends ConsumerWidget {
                 }).toList(growable: false),
               ),
             ),
-            if (user != null && user.canManageUsers)
+                        if (user != null && user.isAdmin)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: FilledButton.icon(

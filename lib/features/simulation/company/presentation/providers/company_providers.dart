@@ -165,6 +165,12 @@ final companyFormNotifierProvider =
   (ref) => CompanyFormNotifier(ref.watch(companyRepositoryProvider)),
 );
 
+final companiesByCourseProvider =
+    FutureProvider.family.autoDispose<List<Company>, int>((ref, courseId) async {
+  final repo = ref.watch(companyRepositoryProvider);
+  return repo.getCompaniesByCourse(courseId: courseId);
+});
+
 // Placeholder para cuando el contexto aún no está listo
 class _NoCompany implements Company {
   const _NoCompany();

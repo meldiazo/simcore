@@ -10,9 +10,7 @@ import 'package:simcore_frontend/features/simulation/decisions/data/models/decis
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-// Import for module progress actions
 import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
-// Import for global state invalidation
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 import 'package:simcore_frontend/features/modules/investment_financing/presentation/providers/investment_financing_providers.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
@@ -25,20 +23,10 @@ class MarketPage extends ConsumerStatefulWidget {
 }
 
 class _MarketPageState extends ConsumerState<MarketPage> {
+  bool _hasStarted = false;
   @override
   void initState() {
     super.initState();
-    
-    // Start module progress tracking
-    Future.microtask(() {
-      final companyId = ref.read(currentCompanyIdProvider).toString();
-      if (companyId.isNotEmpty) {
-        ref.read(module_actions.moduleProgressProvider.notifier).start(
-              companyId,
-              SimModule.market.toApi(),
-            );
-      }
-    });
   }
 
   Future<void> _saveAssumptions(MarketAssumptionModel assumption) async {
@@ -49,7 +37,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         const SnackBar(content: Text('Supuestos de mercado guardados.'), backgroundColor: SimcoreColors.success),
       );
 
-      // Integración HU-FE-12: Registrar la decisión tomada.
       final decision = DecisionModel(
         id: '', // El backend lo genera
         companyId: ref.read(currentCompanyIdProvider).toString(),
@@ -58,7 +45,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         payload: assumption.toJson(),
         justification: assumption.commercialJustification,
       );
-      // No es necesario esperar la respuesta, el notifier maneja su propio estado.
       ref.read(decisionNotifierProvider.notifier).createDecision(decision);
 
     } else if (mounted) {
@@ -84,38 +70,67 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   Future<void> _completeModule() async {
   final companyId = ref.read(currentCompanyIdProvider).toString();
 
-  final success =
-      await ref.read(marketNotifierProvider.notifier).completeMarketModule();
+  try {
+    // 1. FORZAMOS EL INICIO explícitamente antes de completar
+    // Esto asegura que el estado del servidor cambie a EN_PROGRESO
+    await ref.read(module_actions.moduleProgressProvider.notifier).start(
+          companyId,
+          SimModule.market.toApi(),
+        );
+    
+    // Pequeño delay de 300ms para dar tiempo al servidor a procesar el cambio de estado
+    await Future.delayed(const Duration(milliseconds: 300));
 
-  if (mounted && success) {
-    ref.invalidate(company_providers.companyModuleProgressProvider);
-    ref.invalidate(company_providers.companyWorkspaceProvider);
-    ref.invalidate(global_providers.moduleProgressProvider);
-    ref.invalidate(investmentFinancingProvider(companyId));
+    // 2. AHORA SÍ, COMPLETAMOS EL MÓDULO
+    final success =
+        await ref.read(marketNotifierProvider.notifier).completeMarketModule();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Módulo de Mercado completado. Ya puedes continuar con Inversión y Financiamiento.'),
-        backgroundColor: SimcoreColors.success,
-      ),
-    );
-  } else if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Error al completar el módulo.'),
-        backgroundColor: SimcoreColors.danger,
-      ),
-    );
+    if (mounted && success) {
+      // Invalida estados para refrescar UI
+      ref.invalidate(company_providers.companyModuleProgressProvider);
+      ref.invalidate(company_providers.companyWorkspaceProvider);
+      ref.invalidate(global_providers.moduleProgressProvider);
+      ref.invalidate(investmentFinancingProvider(companyId));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Módulo completado con éxito.'),
+          backgroundColor: SimcoreColors.success,
+        ),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al procesar: ${e.toString()}'),
+          backgroundColor: SimcoreColors.danger,
+        ),
+      );
+    }
   }
 }
 
   @override
   Widget build(BuildContext context) {
+    final ctxState = ref.watch(simulationContextNotifierProvider);
+    if (!ctxState.isReady || ctxState.context == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_hasStarted) {
+      _hasStarted = true;
+      Future.microtask(() {
+        ref.read(module_actions.moduleProgressProvider.notifier).start(
+          ctxState.context!.companyId.toString(),
+          SimModule.market.toApi(),
+        );
+      });
+    }
+
     final assumptionAsync = ref.watch(marketAssumptionProvider);
     final projectionAsync = ref.watch(salesProjectionProvider);
     final marketNotifierState = ref.watch(marketNotifierProvider);
 
-    // El botón de completar solo se habilita si hay supuestos y proyección.
     final canComplete = assumptionAsync.hasValue &&
         assumptionAsync.value != null &&
         projectionAsync.hasValue &&
@@ -141,7 +156,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionLabel('2. Proyección de Ventas'),
+              const SectionLabel('2. Proyección de Ventas nuevo'),
               const SizedBox(height: 20),
               const SalesProjectionPanel(),
               const SizedBox(height: 24),

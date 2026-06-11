@@ -540,7 +540,12 @@ class _DecisionTraceRow extends StatelessWidget {
             ),
           ),
           Text(
-            status,
+            switch (status) {
+              'SUBMITTED' => 'Enviada',
+              'SUPERSEDED' => 'Reemplazada',
+              'DRAFT' => 'Borrador',
+              _ => status,
+            },
             style: GoogleFonts.jetBrainsMono(
                 fontSize: 12,
                 color: statusColor,

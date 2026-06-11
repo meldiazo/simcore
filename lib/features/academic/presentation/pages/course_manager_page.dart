@@ -16,42 +16,43 @@ class CourseManagerPage extends ConsumerStatefulWidget {
 class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
   final _formKey = GlobalKey<FormState>();
   final _codeCtrl = TextEditingController();
-final _nameCtrl = TextEditingController();
-final _descCtrl = TextEditingController();
-final _academicPeriodCtrl = TextEditingController();
-final _teacherIdCtrl = TextEditingController();
-final _studentIdCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _academicPeriodCtrl = TextEditingController();
   final List<int> _pendingStudentIds = [];
   Map<String, String> _fieldErrors = {};
+  int? _selectedTeacherId;
 
   @override
-void dispose() {
-  _codeCtrl.dispose();
-  _nameCtrl.dispose();
-  _descCtrl.dispose();
-  _academicPeriodCtrl.dispose();
-  _teacherIdCtrl.dispose();
-  _studentIdCtrl.dispose();
-  super.dispose();
-}
+  void dispose() {
+    _codeCtrl.dispose();
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _academicPeriodCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _create() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedTeacherId == null) {
+      setState(() => _fieldErrors = {'error': 'Por favor, selecciona un docente.'});
+      return;
+    }
 
-  setState(() => _fieldErrors = {});
+    setState(() => _fieldErrors = {});
 
-  try {
-    await ref.read(courseNotifierProvider.notifier).createCourse(
-          code: _codeCtrl.text.trim(),
-          name: _nameCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          academicPeriod: _academicPeriodCtrl.text.trim(),
-          teacherId: int.parse(_teacherIdCtrl.text.trim()),
-        );
-  } catch (e) {
-    setState(() => _fieldErrors = {'error': e.toString()});
+    try {
+      await ref.read(courseNotifierProvider.notifier).createCourse(
+            code: _codeCtrl.text.trim(),
+            name: _nameCtrl.text.trim(),
+            description: _descCtrl.text.trim(),
+            academicPeriod: _academicPeriodCtrl.text.trim(),
+            teacherId: _selectedTeacherId!,
+          );
+    } catch (e) {
+      setState(() => _fieldErrors = {'error': e.toString()});
+    }
   }
-}
 
   Future<void> _closeCourse(int id) async {
     await ref.read(courseNotifierProvider.notifier).closeCourse(id);
@@ -66,19 +67,10 @@ void dispose() {
     setState(() => _pendingStudentIds.clear());
   }
 
-  void _addStudentId() {
-    final id = int.tryParse(_studentIdCtrl.text.trim());
-    if (id != null && !_pendingStudentIds.contains(id)) {
-      setState(() {
-        _pendingStudentIds.add(id);
-        _studentIdCtrl.clear();
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final courseState = ref.watch(courseNotifierProvider);
+    final usersAsync = ref.watch(usersProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,37 +93,79 @@ void dispose() {
                 FormErrorSummary(errors: _fieldErrors),
                 TextFormField(
                   controller: _codeCtrl,
-                  decoration: const InputDecoration(labelText: 'Código'),
-                  validator: (v) => FormValidators.required(v, fieldName: 'Código'),
+                  decoration: const InputDecoration(labelText: 'Código del curso (ej: ADM-101)'),
+                  validator: (v) => FormValidators.required(v, fieldName: 'Código del curso'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-  controller: _nameCtrl,
-  decoration: const InputDecoration(labelText: 'Nombre del curso'),
-  validator: (v) =>
-      FormValidators.minLength(v, 3, fieldName: 'Nombre del curso'),
-),
+                  controller: _nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre del curso'),
+                  validator: (v) =>
+                      FormValidators.minLength(v, 3, fieldName: 'Nombre del curso'),
+                ),
                 const SizedBox(height: 12),
                 TextFormField(
-  controller: _descCtrl,
-  decoration: const InputDecoration(labelText: 'Descripción'),
-  maxLines: 2,
-  validator: (v) => FormValidators.required(v, fieldName: 'Descripción'),
-),
-const SizedBox(height: 12),
-TextFormField(
-  controller: _academicPeriodCtrl,
-  decoration: const InputDecoration(
-    labelText: 'Periodo académico',
-    hintText: 'Ejemplo: 2026-I',
-  ),
-),
-const SizedBox(height: 12),
-TextFormField(
-  controller: _teacherIdCtrl,
-                  decoration: const InputDecoration(labelText: 'ID Docente'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => FormValidators.positiveInt(v, fieldName: 'ID Docente'),
+                  controller: _descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción'),
+                  maxLines: 2,
+                  validator: (v) => FormValidators.required(v, fieldName: 'Descripción'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _academicPeriodCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Periodo académico',
+                    hintText: 'Ejemplo: 2026-I',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                usersAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text('Error al cargar docentes: $err',
+                        style: const TextStyle(color: SimcoreColors.danger)),
+                  ),
+                  data: (users) {
+                    final teachers = users.where((u) {
+                      final roles = (u['roles'] as List?)
+                          ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                          .toList() ?? [];
+                      return roles.contains('DOCENTE');
+                    }).toList();
+
+                    if (teachers.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: Text('No hay docentes disponibles en el sistema.',
+                            style: TextStyle(color: SimcoreColors.warning)),
+                      );
+                    }
+
+                    return DropdownButtonFormField<int>(
+                      value: _selectedTeacherId,
+                      decoration: const InputDecoration(labelText: 'Selecciona Docente'),
+                      items: teachers.map((t) {
+                        final id = t['id'] as int? ?? 0;
+                        final name = '${t['firstName'] ?? ''} ${t['lastName'] ?? ''}'.trim();
+                        final username = t['username'] ?? '';
+                        final displayName = name.isNotEmpty ? '$name ($username)' : username;
+                        return DropdownMenuItem<int>(
+                          value: id,
+                          child: Text(displayName),
+                        );
+                      }).toList(),
+                      onChanged: (v) {
+                        setState(() {
+                          _selectedTeacherId = v;
+                        });
+                      },
+                      validator: (v) => v == null ? 'Selecciona un docente' : null,
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
@@ -153,9 +187,14 @@ TextFormField(
             data: courseState.value!,
             onClose: (id) => _closeCourse(id),
             onEnroll: (id) => _enrollStudents(id),
-            studentIdCtrl: _studentIdCtrl,
             pendingStudents: _pendingStudentIds,
-            onAddStudent: _addStudentId,
+            onAddStudent: (id) {
+              if (!_pendingStudentIds.contains(id)) {
+                setState(() {
+                  _pendingStudentIds.add(id);
+                });
+              }
+            },
             onRemoveStudent: (id) => setState(() => _pendingStudentIds.remove(id)),
           ),
         ],
@@ -173,12 +212,11 @@ TextFormField(
   }
 }
 
-class _CourseResultPanel extends StatelessWidget {
+class _CourseResultPanel extends ConsumerStatefulWidget {
   const _CourseResultPanel({
     required this.data,
     required this.onClose,
     required this.onEnroll,
-    required this.studentIdCtrl,
     required this.pendingStudents,
     required this.onAddStudent,
     required this.onRemoveStudent,
@@ -187,14 +225,22 @@ class _CourseResultPanel extends StatelessWidget {
   final Map<String, dynamic> data;
   final void Function(int id) onClose;
   final void Function(int id) onEnroll;
-  final TextEditingController studentIdCtrl;
   final List<int> pendingStudents;
-  final VoidCallback onAddStudent;
+  final void Function(int id) onAddStudent;
   final void Function(int id) onRemoveStudent;
 
   @override
+  ConsumerState<_CourseResultPanel> createState() => _CourseResultPanelState();
+}
+
+class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
+  int? _selectedStudentId;
+
+  @override
   Widget build(BuildContext context) {
-    final id = data['id'] as int? ?? 0;
+    final id = widget.data['id'] as int? ?? 0;
+    final usersAsync = ref.watch(usersProvider);
+
     return GlassPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,55 +250,120 @@ class _CourseResultPanel extends StatelessWidget {
               const Icon(Icons.check_circle_rounded, color: SimcoreColors.success),
               const SizedBox(width: 8),
               Text(
-  'Curso #$id creado: ${data['name'] ?? data['title'] ?? ''}',
-  style: const TextStyle(fontWeight: FontWeight.w700),
-),
+                'Curso #$id creado: ${widget.data['name'] ?? widget.data['title'] ?? ''}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           const Text('Matricular Estudiantes',
               style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: studentIdCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'ID Estudiante', isDense: true),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                onPressed: onAddStudent,
-                icon: const Icon(Icons.add_rounded),
-              ),
-            ],
+          usersAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (err, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text('Error al cargar estudiantes: $err',
+                  style: const TextStyle(color: SimcoreColors.danger)),
+            ),
+            data: (users) {
+              final students = users.where((u) {
+                final roles = (u['roles'] as List?)
+                    ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                    .toList() ?? [];
+                return roles.contains('ESTUDIANTE');
+              }).toList();
+
+              if (students.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Text('No hay estudiantes disponibles.',
+                      style: TextStyle(color: SimcoreColors.warning)),
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedStudentId,
+                      decoration: const InputDecoration(
+                          labelText: 'Selecciona Estudiante', isDense: true),
+                      items: students.map((s) {
+                        final id = s['id'] as int? ?? 0;
+                        final name = '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
+                        final username = s['username'] ?? '';
+                        final displayName = name.isNotEmpty ? '$name ($username)' : username;
+                        return DropdownMenuItem<int>(
+                          value: id,
+                          child: Text(displayName),
+                        );
+                      }).toList(),
+                      onChanged: (v) {
+                        setState(() {
+                          _selectedStudentId = v;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _selectedStudentId == null
+                        ? null
+                        : () {
+                            widget.onAddStudent(_selectedStudentId!);
+                            setState(() {
+                              _selectedStudentId = null;
+                            });
+                          },
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ],
+              );
+            },
           ),
-          if (pendingStudents.isNotEmpty) ...[
+          if (widget.pendingStudents.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: pendingStudents
-                  .map((s) => Chip(
-                        label: Text('$s'),
-                        deleteIcon: const Icon(Icons.close_rounded, size: 14),
-                        onDeleted: () => onRemoveStudent(s),
-                      ))
-                  .toList(),
+            usersAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (users) {
+                final nameMap = {
+                  for (final u in users)
+                    u['id'] as int: () {
+                      final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();
+                      final username = u['username'] ?? '';
+                      return name.isNotEmpty ? '$name ($username)' : username;
+                    }()
+                };
+
+                return Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: widget.pendingStudents.map((s) {
+                    final label = nameMap[s] ?? '$s';
+                    return Chip(
+                      label: Text(label),
+                      deleteIcon: const Icon(Icons.close_rounded, size: 14),
+                      onDeleted: () => widget.onRemoveStudent(s),
+                    );
+                  }).toList(),
+                );
+              },
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: () => onEnroll(id),
+              onPressed: () => widget.onEnroll(id),
               icon: const Icon(Icons.group_add_rounded),
-              label: Text('Matricular ${pendingStudents.length} estudiante(s)'),
+              label: Text('Matricular ${widget.pendingStudents.length} estudiante(s)'),
             ),
           ],
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () => onClose(id),
+            onPressed: () => widget.onClose(id),
             icon: const Icon(Icons.lock_rounded, color: SimcoreColors.danger),
             label: const Text('Cerrar Curso',
                 style: TextStyle(color: SimcoreColors.danger)),

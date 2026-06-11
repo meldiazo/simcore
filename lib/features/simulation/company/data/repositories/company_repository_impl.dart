@@ -73,4 +73,8 @@ class CompanyRepositoryImpl implements CompanyRepository {
   @override
   Future<void> linkGroupToCompany({required int groupId, required int companyId}) =>
       _dataSource.linkGroupToCompany(groupId: groupId, companyId: companyId);
+
+  @override
+  Future<List<Company>> getCompaniesByCourse({required int courseId}) =>
+      _dataSource.getCompaniesByCourse(courseId: courseId);
 }

@@ -6,12 +6,14 @@ class AuthUser extends Equatable {
     required this.username,
     required this.tenantId,
     required this.roles,
+    this.groupId,
   });
 
   final int id;
   final String username;
   final int tenantId;
   final List<String> roles;
+  final int? groupId;
 
   List<String> get normalizedRoles {
     return roles
@@ -38,7 +40,7 @@ class AuthUser extends Equatable {
   bool get canReviewSimulation => isAdmin || isDocente;
 
   @override
-  List<Object?> get props => [id, username, tenantId, roles];
+  List<Object?> get props => [id, username, tenantId, roles, groupId];
 }
 
 String _normalizeRole(String role) {

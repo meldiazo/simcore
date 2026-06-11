@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 
 class GroupSetupPage extends ConsumerStatefulWidget {
   const GroupSetupPage({super.key});
@@ -17,16 +18,26 @@ class GroupSetupPage extends ConsumerStatefulWidget {
 class _GroupSetupPageState extends ConsumerState<GroupSetupPage> {
   final _formKey = GlobalKey<FormState>();
   final _groupIdController = TextEditingController();
+  final _searchController = TextEditingController();
+  Map<String, dynamic>? _selectedGroup;
+  bool _showSearch = false;
 
   @override
   void dispose() {
     _groupIdController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final groupId = int.parse(_groupIdController.text.trim());
+    await ref
+        .read(simulationContextNotifierProvider.notifier)
+        .loadByGroupId(groupId: groupId);
+  }
+
+  Future<void> _submitGroupId(int groupId) async {
     await ref
         .read(simulationContextNotifierProvider.notifier)
         .loadByGroupId(groupId: groupId);
@@ -39,6 +50,9 @@ class _GroupSetupPageState extends ConsumerState<GroupSetupPage> {
     final errorMessage = ctxState.status == SimulationContextStatus.needsGroupId
         ? ctxState.errorMessage
         : null;
+
+    final currentUser = ref.watch(authNotifierProvider).user;
+    final groupsAsync = ref.watch(allGroupsProvider);
 
     ref.listen(simulationContextNotifierProvider, (prev, next) {
       if (next.status == SimulationContextStatus.ready) {
@@ -53,46 +67,318 @@ class _GroupSetupPageState extends ConsumerState<GroupSetupPage> {
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _SimcoreLogoSmall(),
-                  const SizedBox(height: 40),
-                  Text(
-                    'Ingresa a tu empresa',
-                    style: GoogleFonts.inter(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SimcoreLogoSmall(),
+                const SizedBox(height: 40),
+                Text(
+                  'Ingresa a tu empresa',
+                  style: GoogleFonts.inter(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: SimcoreColors.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Selecciona tu grupo o busca tu empresa para cargar el contexto de simulación.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: SimcoreColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Loader de grupos
+                groupsAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            'Cargando grupos disponibles...',
+                            style: TextStyle(color: SimcoreColors.textSecondary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Ingresa el ID de tu grupo para cargar el contexto de simulación.',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.55),
-                      height: 1.5,
+                  error: (err, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Error al cargar grupos: $err',
+                      style: const TextStyle(color: SimcoreColors.danger),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  _GroupIdField(
-                    controller: _groupIdController,
-                    enabled: !isLoading,
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: errorMessage),
-                  ],
-                  const SizedBox(height: 24),
-                  _SubmitButton(isLoading: isLoading, onPressed: _submit),
-                  const SizedBox(height: 16),
-                  _LogoutLink(),
-                ],
-              ),
+                  data: (groups) {
+                    // Buscar si el estudiante pertenece a algún grupo
+                    Map<String, dynamic>? myGroup;
+                    if (currentUser != null) {
+                      for (final g in groups) {
+                        final memberIds = g['memberIds'] as List?;
+                        if (memberIds?.contains(currentUser.id) == true) {
+                          myGroup = g;
+                          break;
+                        }
+                      }
+                    }
+
+                    if (myGroup != null && !_showSearch) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          GlassPanel(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: SimcoreColors.accentSoft,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.business_rounded,
+                                        color: SimcoreColors.accent,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Grupo Asignado',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: SimcoreColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  myGroup['name']?.toString() ?? 'Sin Nombre',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: SimcoreColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Tu docente te ha matriculado en este grupo para la simulación académica.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: SimcoreColors.textSecondary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _SubmitButton(
+                            isLoading: isLoading,
+                            onPressed: () => _submitGroupId(myGroup!['id'] as int),
+                          ),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _showSearch = true;
+                                });
+                              },
+                              child: Text(
+                                'Buscar otro grupo...',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: SimcoreColors.accent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Autocomplete<Map<String, dynamic>>(
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text.isEmpty) {
+                                return const Iterable<Map<String, dynamic>>.empty();
+                              }
+                              return groups.where((g) {
+                                final name = g['name']?.toString().toLowerCase() ?? '';
+                                return name.contains(textEditingValue.text.toLowerCase());
+                              });
+                            },
+                            displayStringForOption: (option) => option['name']?.toString() ?? '',
+                            onSelected: (option) {
+                              setState(() {
+                                _selectedGroup = option;
+                                _groupIdController.text = option['id'].toString();
+                              });
+                            },
+                            fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+                              // Asegurar que si el controller de búsqueda está vacío limpiemos la selección
+                              textController.addListener(() {
+                                if (textController.text.isEmpty && _selectedGroup != null) {
+                                  setState(() {
+                                    _selectedGroup = null;
+                                    _groupIdController.clear();
+                                  });
+                                }
+                              });
+
+                              return TextFormField(
+                                controller: textController,
+                                focusNode: focusNode,
+                                enabled: !isLoading,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: SimcoreColors.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Nombre del grupo o empresa',
+                                  hintText: 'Escribe para buscar...',
+                                  prefixIcon: const Icon(Icons.group_outlined),
+                                  filled: true,
+                                  fillColor: SimcoreColors.surface,
+                                  labelStyle: const TextStyle(color: SimcoreColors.textSecondary),
+                                  hintStyle: const TextStyle(color: SimcoreColors.textTertiary),
+                                  prefixIconColor: SimcoreColors.textTertiary,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: SimcoreColors.border),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: SimcoreColors.border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: SimcoreColors.accent, width: 1.5),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: SimcoreColors.danger),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: SimcoreColors.danger, width: 1.5),
+                                  ),
+                                  errorStyle: const TextStyle(color: SimcoreColors.danger),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Selecciona un grupo o empresa';
+                                  }
+                                  if (_selectedGroup == null || _selectedGroup!['name'] != value) {
+                                    return 'Selecciona una opción sugerida de la lista';
+                                  }
+                                  return null;
+                                },
+                              );
+                            },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8,
+                                  color: SimcoreColors.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: 340, // Se ajusta al ancho del campo
+                                    constraints: const BoxConstraints(maxHeight: 200),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: SimcoreColors.border),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (BuildContext context, int index) {
+                                        final option = options.elementAt(index);
+                                        return InkWell(
+                                          onTap: () => onSelected(option),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.business_rounded, color: SimcoreColors.accent, size: 18),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    option['name']?.toString() ?? '',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: SimcoreColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          if (errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            _ErrorBanner(message: errorMessage),
+                          ],
+                          const SizedBox(height: 24),
+                          _SubmitButton(isLoading: isLoading, onPressed: _submit),
+                          if (myGroup != null) ...[
+                            const SizedBox(height: 16),
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showSearch = false;
+                                  });
+                                },
+                                child: Text(
+                                  'Volver a mi grupo asignado',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: SimcoreColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                _LogoutLink(),
+              ],
             ),
           ),
         ),
@@ -123,68 +409,11 @@ class _SimcoreLogoSmall extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: SimcoreColors.textPrimary,
             letterSpacing: 1.5,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _GroupIdField extends StatelessWidget {
-  const _GroupIdField({required this.controller, required this.enabled});
-
-  final TextEditingController controller;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-      decoration: InputDecoration(
-        labelText: 'ID de Grupo',
-        hintText: 'Ej: 3',
-        prefixIcon: const Icon(Icons.group_outlined),
-        filled: true,
-        fillColor: const Color(0xFF1E293B),
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        prefixIconColor: Colors.white.withValues(alpha: 0.5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444)),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-        ),
-        errorStyle: const TextStyle(color: Color(0xFFEF4444)),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Ingresa el ID de tu grupo';
-        }
-        final id = int.tryParse(value.trim());
-        if (id == null || id <= 0) return 'Ingresa un número válido';
-        return null;
-      },
     );
   }
 }
@@ -198,18 +427,18 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        color: SimcoreColors.dangerSoft,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+        border: Border.all(color: SimcoreColors.danger.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 18),
+          const Icon(Icons.error_outline_rounded, color: SimcoreColors.danger, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'No se encontró una empresa para ese grupo. Verifica el ID.',
-              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFEF4444)),
+              'No se pudo ingresar al grupo. Verifica tu conexión.',
+              style: GoogleFonts.inter(fontSize: 13, color: SimcoreColors.danger),
             ),
           ),
         ],
@@ -230,8 +459,8 @@ class _SubmitButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2563EB),
-          disabledBackgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.5),
+          backgroundColor: SimcoreColors.accent,
+          disabledBackgroundColor: SimcoreColors.accent.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,
         ),
@@ -266,7 +495,7 @@ class _LogoutLink extends ConsumerWidget {
         'Cerrar sesión',
         style: GoogleFonts.inter(
           fontSize: 13,
-          color: Colors.white.withValues(alpha: 0.4),
+          color: SimcoreColors.textSecondary,
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/teacher/data/models/teacher_dashboard_model.dart';
 import 'package:simcore_frontend/features/teacher/presentation/providers/teacher_dashboard_providers.dart';
@@ -86,9 +87,14 @@ class _GroupCardState extends State<_GroupCard> {
     final incoherenceTotal = group.incoherences['total'] as int? ?? 0;
     final incoherenceHigh = group.incoherences['high'] as int? ?? 0;
 
-    final (statusColor, statusBg) = switch (group.companyStatus?.toUpperCase()) {
-      'IN_SIMULATION' => (SimcoreColors.success, SimcoreColors.successSoft),
-      'CLOSED' => (SimcoreColors.danger, SimcoreColors.dangerSoft),
+    final companyStatus = group.companyStatus != null
+        ? CompanyStatus.fromApi(group.companyStatus!)
+        : null;
+
+    final (statusColor, statusBg) = switch (companyStatus) {
+      CompanyStatus.inSimulation => (SimcoreColors.success, SimcoreColors.successSoft),
+      CompanyStatus.closed => (SimcoreColors.danger, SimcoreColors.dangerSoft),
+      CompanyStatus.draft => (SimcoreColors.textTertiary, SimcoreColors.surface),
       _ => (SimcoreColors.textTertiary, SimcoreColors.surface),
     };
 
@@ -132,7 +138,7 @@ class _GroupCardState extends State<_GroupCard> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      group.companyStatus!,
+                      companyStatus?.label ?? '',
                       style: TextStyle(
                         color: statusColor,
                         fontWeight: FontWeight.w600,
@@ -190,7 +196,9 @@ class _GroupCardState extends State<_GroupCard> {
                         style: const TextStyle(fontSize: 13),
                       )),
                       Text(
-                        m['status']?.toString() ?? '',
+                        m['status'] != null
+                            ? ModuleStatus.fromApi(m['status'].toString()).label
+                            : '',
                         style: const TextStyle(
                             fontSize: 12,
                             color: SimcoreColors.textSecondary),

@@ -83,7 +83,7 @@ enum ModuleStatus {
 
 enum CompanyStatus {
   draft('DRAFT', 'Borrador'),
-  inSimulation('IN_SIMULATION', 'En simulación'),
+  inSimulation('IN_SIMULATION', 'Simulando'),
   closed('CLOSED', 'Cerrada');
 
   const CompanyStatus(this.apiValue, this.label);

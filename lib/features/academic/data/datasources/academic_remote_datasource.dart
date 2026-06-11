@@ -40,6 +40,19 @@ class AcademicRemoteDataSource {
   );
 }
 
+  Future<List<Map<String, dynamic>>> listCourses() async {
+    final result = await _client.get('/api/v1/iam/courses');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) {
+        if (data is! List) return [];
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> getCourse(int id) async {
     final result = await _client.get('/api/v1/iam/courses/$id');
     return result.fold(
@@ -98,6 +111,22 @@ class AcademicRemoteDataSource {
     return result.fold(
       (e) => throw Exception(e.message),
       (data) => Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listGroups({int? courseId}) async {
+    final path = courseId != null
+        ? '/api/v1/iam/groups?courseId=$courseId'
+        : '/api/v1/iam/groups';
+    final result = await _client.get(path);
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) {
+        if (data is! List) return [];
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
+      },
     );
   }
 
@@ -170,6 +199,19 @@ class AcademicRemoteDataSource {
     return result.fold(
       (e) => throw Exception(e.message),
       (data) => Map<String, dynamic>.from(data as Map? ?? {}),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listUsers() async {
+    final result = await _client.get('/api/v1/iam/users');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) {
+        if (data is! List) return [];
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
+      },
     );
   }
 }

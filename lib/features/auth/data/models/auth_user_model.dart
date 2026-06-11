@@ -6,6 +6,7 @@ class AuthUserModel extends AuthUser {
     required super.username,
     required super.tenantId,
     required super.roles,
+    super.groupId,
   });
 
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +17,7 @@ class AuthUserModel extends AuthUser {
           'usuario',
       tenantId: _readInt(json['tenantId'], fallback: 1),
       roles: _readRoles(json['roles']),
+      groupId: json['groupId'] != null ? _readInt(json['groupId']) : null,
     );
   }
 }

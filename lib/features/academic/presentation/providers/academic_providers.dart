@@ -51,6 +51,21 @@ final courseNotifierProvider = StateNotifierProvider.autoDispose<CourseNotifier,
   (ref) => CourseNotifier(ref.watch(academicDataSourceProvider)),
 );
 
+final coursesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final ds = ref.watch(academicDataSourceProvider);
+  return ds.listCourses();
+});
+
+final allGroupsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final ds = ref.watch(academicDataSourceProvider);
+  return ds.listGroups();
+});
+
+final groupsByCourseProvider = FutureProvider.family.autoDispose<List<Map<String, dynamic>>, int>((ref, courseId) async {
+  final ds = ref.watch(academicDataSourceProvider);
+  return ds.listGroups(courseId: courseId);
+});
+
 // ── Group Notifier ─────────────────────────────────────────────────────────────
 
 class GroupNotifier
@@ -107,3 +122,8 @@ final groupNotifierProvider = StateNotifierProvider.autoDispose<GroupNotifier,
     AsyncValue<Map<String, dynamic>?>>(
   (ref) => GroupNotifier(ref.watch(academicDataSourceProvider)),
 );
+
+final usersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final ds = ref.watch(academicDataSourceProvider);
+  return ds.listUsers();
+});

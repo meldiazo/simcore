@@ -144,6 +144,22 @@ class CompanyRemoteDataSource {
     result.fold((e) => throw e, (_) {});
   }
 
+  Future<List<Company>> getCompaniesByCourse({required int courseId}) async {
+    final result = await _apiClient.get(
+      '/api/v1/simulation/companies',
+      queryParameters: {'courseId': courseId},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) {
+        if (data is! List) return [];
+        return data
+            .map((item) => CompanyModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .toList();
+      },
+    );
+  }
+
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
       return data

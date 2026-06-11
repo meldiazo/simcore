@@ -8,31 +8,29 @@ class SalesProjectionModel extends SalesProjection {
     required super.scenario,
   });
 
-  factory SalesProjectionModel.fromJson(Map<String, dynamic> json) {
+ factory SalesProjectionModel.fromJson(Map<String, dynamic> json) {
+    // 1. Buscamos en la raíz por si acaso
+    int extractedDemand = _readInt(json, ['monthlyDemand', 'demandUnitsPerMonth', 'projectedMonthlyDemand', 'unitsPerMonth']);
+    double extractedPrice = _readDouble(json, ['estimatedPrice', 'estimatedUnitPrice', 'unitPrice', 'price']);
+
+    // 2. Escarbamos directamente en el mes 1 sin condiciones raras
+    if (json.containsKey('periods') && json['periods'] != null && (json['periods'] as List).isNotEmpty) {
+      final firstPeriod = json['periods'][0] as Map<String, dynamic>;
+      
+      // Sobreescribimos con los datos reales del periodo
+      if (extractedDemand == 0) {
+        extractedDemand = _readInt(firstPeriod, ['demandUnits']);
+      }
+      if (extractedPrice == 0.0) {
+        extractedPrice = _readDouble(firstPeriod, ['unitPrice']);
+      }
+    }
+
     return SalesProjectionModel(
-      monthlyDemand: _readInt(json, [
-        'monthlyDemand',
-        'demandUnitsPerMonth',
-        'projectedMonthlyDemand',
-        'unitsPerMonth',
-      ]),
-      estimatedPrice: _readDouble(json, [
-        'estimatedPrice',
-        'estimatedUnitPrice',
-        'unitPrice',
-        'price',
-      ]),
-      projectedRevenue: _readDouble(json, [
-        'projectedRevenue',
-        'monthlyRevenue',
-        'totalRevenue',
-        'revenue',
-      ]),
-      scenario: _readString(json, [
-        'scenario',
-        'scenarioType',
-        'type',
-      ], fallback: 'PROBABLE'),
+      monthlyDemand: extractedDemand,
+      estimatedPrice: extractedPrice,
+      projectedRevenue: _readDouble(json, ['totalRevenue', 'projectedRevenue', 'monthlyRevenue', 'revenue']),
+      scenario: _readString(json, ['scenarioType', 'scenario', 'type'], fallback: 'PROBABLE'),
     );
   }
 

@@ -6,6 +6,8 @@ import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widg
 import 'package:simcore_frontend/features/simulation/scenario/domain/entities/scenario.dart';
 import 'package:simcore_frontend/features/simulation/scenario/presentation/providers/scenario_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ScenarioManagerPage extends ConsumerWidget {
   const ScenarioManagerPage({super.key});
@@ -73,79 +75,26 @@ class ScenarioManagerPage extends ConsumerWidget {
   }
 
   void _showAssignDialog(BuildContext context, WidgetRef ref, int scenarioId) {
-  final currentContext = ref.read(simulationContextNotifierProvider).context;
-  final ctrl = TextEditingController(
-    text: currentContext?.groupId.toString() ?? '',
-  );
+    final currentContext = ref.read(simulationContextNotifierProvider).context;
+    final courseId = currentContext?.courseId;
 
-  showDialog(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Text('Asignar escenario a grupo'),
-      content: TextField(
-        controller: ctrl,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          labelText: 'ID del grupo',
-          helperText: 'Usa el grupo del curso que quieres evaluar.',
+    if (courseId == null || courseId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo determinar el curso actual.'),
         ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => _AssignScenarioDialog(
+        scenarioId: scenarioId,
+        courseId: courseId,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            final groupId = int.tryParse(ctrl.text.trim());
-
-            if (groupId == null || groupId <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Ingresa un ID de grupo válido.'),
-                ),
-              );
-              return;
-            }
-
-            final success = await ref
-                .read(scenarioFormNotifierProvider.notifier)
-                .assignToGroup(
-                  scenarioId: scenarioId,
-                  groupId: groupId,
-                );
-
-            if (!context.mounted || !dialogContext.mounted) return;
-
-            if (success) {
-              ref.invalidate(activeScenarioProvider);
-              ref.invalidate(scenariosByCourseProvider);
-
-              Navigator.pop(dialogContext);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Escenario $scenarioId asignado correctamente al grupo $groupId.',
-                  ),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'No se pudo asignar el escenario. Revisa si pertenece al curso del grupo.',
-                  ),
-                ),
-              );
-            }
-          },
-          child: const Text('Asignar'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 }
 
 class _ScenarioCard extends StatelessWidget {
@@ -198,7 +147,12 @@ class _ScenarioCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  scenario.status,
+                  switch (scenario.status.toUpperCase()) {
+                    'DRAFT' => 'Borrador',
+                    'ACTIVE' => 'Activo',
+                    'INACTIVE' => 'Inactivo',
+                    _ => scenario.status,
+                  },
                   style: const TextStyle(
                     fontSize: 12,
                     color: SimcoreColors.textSecondary,
@@ -349,5 +303,256 @@ class _CreateScenarioDialogState extends ConsumerState<_CreateScenarioDialog> {
         ),
       ],
     );
+  }
+}
+
+class _AssignScenarioDialog extends ConsumerStatefulWidget {
+  const _AssignScenarioDialog({
+    required this.scenarioId,
+    required this.courseId,
+  });
+
+  final int scenarioId;
+  final int courseId;
+
+  @override
+  ConsumerState<_AssignScenarioDialog> createState() => _AssignScenarioDialogState();
+}
+
+class _AssignScenarioDialogState extends ConsumerState<_AssignScenarioDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _groupIdController = TextEditingController();
+  Map<String, dynamic>? _selectedGroup;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _groupIdController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final groupsAsync = ref.watch(groupsByCourseProvider(widget.courseId));
+
+    return AlertDialog(
+      title: const Text('Asignar escenario a grupo'),
+      content: SizedBox(
+        width: 380,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Selecciona el grupo del curso al que quieres asignar este escenario.',
+                style: TextStyle(color: SimcoreColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              groupsAsync.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (e, _) => Text(
+                  'Error al cargar grupos: $e',
+                  style: const TextStyle(color: SimcoreColors.danger),
+                ),
+                data: (groups) {
+                  if (groups.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'No hay grupos creados en este curso.',
+                        style: TextStyle(color: SimcoreColors.warning, fontSize: 13),
+                      ),
+                    );
+                  }
+
+                  return Autocomplete<Map<String, dynamic>>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<Map<String, dynamic>>.empty();
+                      }
+                      return groups.where((g) {
+                        final name = g['name']?.toString().toLowerCase() ?? '';
+                        return name.contains(textEditingValue.text.toLowerCase());
+                      });
+                    },
+                    displayStringForOption: (option) => option['name']?.toString() ?? '',
+                    onSelected: (option) {
+                      setState(() {
+                        _selectedGroup = option;
+                        _groupIdController.text = option['id'].toString();
+                      });
+                    },
+                    fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+                      textController.addListener(() {
+                        if (textController.text.isEmpty && _selectedGroup != null) {
+                          setState(() {
+                            _selectedGroup = null;
+                            _groupIdController.clear();
+                          });
+                        }
+                      });
+
+                      return TextFormField(
+                        controller: textController,
+                        focusNode: focusNode,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: SimcoreColors.textPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Nombre del grupo',
+                          hintText: 'Escribe para buscar...',
+                          prefixIcon: const Icon(Icons.group_outlined, color: SimcoreColors.textTertiary),
+                          filled: true,
+                          fillColor: SimcoreColors.muted,
+                          labelStyle: const TextStyle(color: SimcoreColors.textSecondary),
+                          hintStyle: const TextStyle(color: SimcoreColors.textTertiary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: SimcoreColors.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: SimcoreColors.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: SimcoreColors.accent, width: 1.5),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: SimcoreColors.danger),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: SimcoreColors.danger, width: 1.5),
+                          ),
+                          errorStyle: const TextStyle(color: SimcoreColors.danger),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Selecciona un grupo';
+                          }
+                          if (_selectedGroup == null || _selectedGroup!['name'] != value) {
+                            return 'Selecciona una sugerencia de la lista';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 8,
+                          color: SimcoreColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 320,
+                            constraints: const BoxConstraints(maxHeight: 180),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: SimcoreColors.border),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final option = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () => onSelected(option),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.business_rounded, color: SimcoreColors.accent, size: 18),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            option['name']?.toString() ?? '',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: SimcoreColors.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _isSubmitting ? null : _submitAssign,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Asignar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submitAssign() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
+
+    final groupId = int.parse(_groupIdController.text.trim());
+    final success = await ref.read(scenarioFormNotifierProvider.notifier).assignToGroup(
+          scenarioId: widget.scenarioId,
+          groupId: groupId,
+        );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (success) {
+      ref.invalidate(activeScenarioProvider);
+      ref.invalidate(scenariosByCourseProvider);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Escenario ${widget.scenarioId} asignado correctamente al grupo ${_selectedGroup?['name'] ?? groupId}.',
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se pudo asignar el escenario. Revisa si pertenece al curso del grupo.',
+          ),
+        ),
+      );
+    }
   }
 }

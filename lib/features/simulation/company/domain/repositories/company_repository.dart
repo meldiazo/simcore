@@ -36,4 +36,6 @@ abstract class CompanyRepository {
   Future<Company> closeCompany({required int companyId, required String reason});
 
   Future<void> linkGroupToCompany({required int groupId, required int companyId});
+
+  Future<List<Company>> getCompaniesByCourse({required int courseId});
 }

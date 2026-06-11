@@ -73,7 +73,12 @@ class SimulationContextNotifier
       return;
     }
 
-    // ESTUDIANTE: necesita ingresar su groupId
+    // ESTUDIANTE: si ya tiene un groupId asignado, cargarlo automáticamente
+    if (user != null && user.groupId != null && user.groupId! > 0) {
+      await loadByGroupId(groupId: user.groupId!);
+      return;
+    }
+
     state = const SimulationContextState(
       status: SimulationContextStatus.needsGroupId,
     );

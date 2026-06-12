@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ResponsiveConfig {
   static const double mobileLimit = 600;
   static const double tabletLimit = 1024;

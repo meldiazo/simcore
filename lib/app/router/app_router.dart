@@ -21,7 +21,6 @@ class AppRouter {
   static const String decisions = '/decisions';
   static const String market = '/market';
   static const String investment = '/investment';
-  static const String legacyFinance = investment;
   static const String organization = '/organization';
   static const String accounting = '/accounting';
   static const String analysis = '/analysis';
@@ -29,15 +28,12 @@ class AppRouter {
   static const String report = '/report';
   static const String profile = '/profile';
   static const String teacher = '/teacher';
-static const String courseManager = '/course-manager';
-static const String groupManager = '/group-manager';
-static const String companyForm = '/companies/create';
-static const String scenarioManager = '/scenario-manager';
+  static const String courseManager = '/course-manager';
+  static const String groupManager = '/group-manager';
+  static const String companyForm = '/companies/create';
+  static const String scenarioManager = '/scenario-manager';
 
-  static const String legacyHr = organization;
-  static const String legacyAdmin = '/admin';
-
-    static const Set<String> _studentRoutes = <String>{
+  static const Set<String> _studentRoutes = <String>{
     workspace,
     decisions,
     market,
@@ -50,39 +46,39 @@ static const String scenarioManager = '/scenario-manager';
   };
 
   static const Set<String> _teacherRoutes = <String>{
-  teacher,
-  courseManager,
-  groupManager,
-  companyForm,
-  scenarioManager,
-  ranking,
-  report,
-  workspace,
-  market,
-  investment,
-  organization,
-  accounting,
-  analysis,
-  profile,
-};
+    teacher,
+    courseManager,
+    groupManager,
+    companyForm,
+    scenarioManager,
+    ranking,
+    report,
+    workspace,
+    market,
+    investment,
+    organization,
+    accounting,
+    analysis,
+    profile,
+  };
 
   static const Set<String> _adminRoutes = <String>{
-  teacher,
-  courseManager,
-  groupManager,
-  companyForm,
-  scenarioManager,
-  ranking,
-  report,
-  workspace,
-  decisions,
-  market,
-  investment,
-  organization,
-  accounting,
-  analysis,
-  profile,
-};
+    teacher,
+    courseManager,
+    groupManager,
+    companyForm,
+    scenarioManager,
+    ranking,
+    report,
+    workspace,
+    decisions,
+    market,
+    investment,
+    organization,
+    accounting,
+    analysis,
+    profile,
+  };
 
   static const Set<String> _routesThatNeedSimulationContext = <String>{
     workspace,
@@ -95,7 +91,7 @@ static const String scenarioManager = '/scenario-manager';
     report,
   };
 
-    static bool canAccessRoute(String routeName, AuthUser user) {
+  static bool canAccessRoute(String routeName, AuthUser user) {
     if (!isKnownRoute(routeName)) return false;
 
     if (routeName == login) return true;
@@ -142,19 +138,20 @@ static const String scenarioManager = '/scenario-manager';
         settings: settings,
       );
     }
-    if (routeName == companyForm) {
-  final groupId = _groupIdFromArgs(settings.arguments);
 
-  return MaterialPageRoute<void>(
-    builder: (_) => _AuthGuard(
-      routeName: companyForm,
-      child: groupId == null
-          ? const SimcoreShellPage(section: SimcoreSection.groupManager)
-          : CompanyFormPage(groupId: groupId),
-    ),
-    settings: settings,
-  );
-}
+    if (routeName == companyForm) {
+      final groupId = _groupIdFromArgs(settings.arguments);
+
+      return MaterialPageRoute<void>(
+        builder: (_) => _AuthGuard(
+          routeName: companyForm,
+          child: groupId == null
+              ? const SimcoreShellPage(section: SimcoreSection.groupManager)
+              : CompanyFormPage(groupId: groupId),
+        ),
+        settings: settings,
+      );
+    }
 
     final normalizedRoute = _normalizeRoute(routeName);
     final section = _sectionFromRoute(normalizedRoute);
@@ -174,18 +171,18 @@ static const String scenarioManager = '/scenario-manager';
         routeName: normalizedRoute,
         child: SimcoreShellPage(section: section),
       ),
-      settings: RouteSettings(name: normalizedRoute, arguments: settings.arguments),
+      settings: RouteSettings(
+        name: normalizedRoute,
+        arguments: settings.arguments,
+      ),
     );
   }
 
   static String _normalizeRoute(String routeName) {
     return switch (routeName) {
-      legacyHr => organization,
-      legacyAdmin => teacher,
       workspace => workspace,
       decisions => decisions,
       market => market,
-      legacyFinance => investment,
       investment => investment,
       organization => organization,
       accounting => accounting,
@@ -193,12 +190,12 @@ static const String scenarioManager = '/scenario-manager';
       ranking => ranking,
       report => report,
       profile => profile,
-            teacher => teacher,
-courseManager => courseManager,
-groupManager => groupManager,
-companyForm => companyForm,
-scenarioManager => scenarioManager,
-_ => workspace,
+      teacher => teacher,
+      courseManager => courseManager,
+      groupManager => groupManager,
+      companyForm => companyForm,
+      scenarioManager => scenarioManager,
+      _ => workspace,
     };
   }
 
@@ -213,7 +210,7 @@ _ => workspace,
       ranking => SimcoreSection.ranking,
       report => SimcoreSection.report,
       profile => SimcoreSection.profile,
-            teacher => SimcoreSection.teacher,
+      teacher => SimcoreSection.teacher,
       courseManager => SimcoreSection.courseManager,
       groupManager => SimcoreSection.groupManager,
       scenarioManager => SimcoreSection.scenarioManager,
@@ -233,7 +230,7 @@ _ => workspace,
       SimcoreSection.ranking => ranking,
       SimcoreSection.report => report,
       SimcoreSection.profile => profile,
-            SimcoreSection.teacher => teacher,
+      SimcoreSection.teacher => teacher,
       SimcoreSection.courseManager => courseManager,
       SimcoreSection.groupManager => groupManager,
       SimcoreSection.scenarioManager => scenarioManager,
@@ -250,52 +247,48 @@ _ => workspace,
       decisions ||
       market ||
       investment ||
-      legacyFinance ||
       organization ||
       accounting ||
       analysis ||
       ranking ||
       report ||
       profile ||
-            teacher ||
-courseManager ||
-groupManager ||
-companyForm ||
-scenarioManager ||
-legacyAdmin ||
-legacyHr =>
-  true,
+      teacher ||
+      courseManager ||
+      groupManager ||
+      companyForm ||
+      scenarioManager =>
+        true,
       _ => false,
     };
   }
+
   static int? _groupIdFromArgs(Object? args) {
-  if (args is int && args > 0) return args;
+    if (args is int && args > 0) return args;
 
-  if (args is num && args > 0) return args.toInt();
+    if (args is num && args > 0) return args.toInt();
 
-  if (args is String) {
-    final parsed = int.tryParse(args);
-    return parsed != null && parsed > 0 ? parsed : null;
-  }
-
-  if (args is Map) {
-    final value = args['groupId'];
-
-    if (value is int && value > 0) return value;
-
-    if (value is num && value > 0) return value.toInt();
-
-    if (value is String) {
-      final parsed = int.tryParse(value);
+    if (args is String) {
+      final parsed = int.tryParse(args);
       return parsed != null && parsed > 0 ? parsed : null;
     }
+
+    if (args is Map) {
+      final value = args['groupId'];
+
+      if (value is int && value > 0) return value;
+
+      if (value is num && value > 0) return value.toInt();
+
+      if (value is String) {
+        final parsed = int.tryParse(value);
+        return parsed != null && parsed > 0 ? parsed : null;
+      }
+    }
+
+    return null;
   }
-
-  return null;
 }
-}
-
-// ── Guard que protege rutas autenticadas ──────────────────────────────────────
 
 class _AuthGuard extends ConsumerWidget {
   const _AuthGuard({required this.routeName, required this.child});
@@ -325,11 +318,6 @@ class _AuthGuard extends ConsumerWidget {
           return ForbiddenPage(routeName: routeName);
         }
 
-        // Si el contexto de simulación necesita que el usuario elija su grupo,
-        // redirigir a la pantalla de setup (solo para rutas que requieren contexto).
-                // Solo las rutas de simulación necesitan contexto de empresa/grupo.
-        // Las rutas docentes/admin de configuración deben abrir aunque todavía
-        // no exista companyId ni groupId cargado.
         if (routeName != AppRouter.groupSetup &&
             AppRouter.routeRequiresSimulationContext(routeName)) {
           final ctxState = ref.watch(simulationContextNotifierProvider);

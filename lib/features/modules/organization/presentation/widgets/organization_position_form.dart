@@ -42,6 +42,7 @@ class _OrganizationPositionFormState extends State<OrganizationPositionForm> {
       
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al crear cargo: $e')),
       );

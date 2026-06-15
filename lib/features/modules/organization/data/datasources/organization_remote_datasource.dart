@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_type_check
+
 import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/core/network/api_exception.dart';
 import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';

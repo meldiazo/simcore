@@ -344,7 +344,7 @@ class _NewDecisionTabState extends ConsumerState<_NewDecisionTab> {
             const Text('Registrar Nueva Decisión', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 20),
             DropdownButtonFormField<SimModule>(
-              value: _selectedModule,
+              initialValue: _selectedModule,
               hint: const Text('Seleccionar Módulo'),
               items: SimModule.values.map((module) {
                 return DropdownMenuItem(value: module, child: Text(module.label));

@@ -1,6 +1,6 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/features/modules/analysis/presentation/providers/analysis_providers.dart';
-import 'package:simcore_frontend/features/simulation/decisions/presentation/providers/decision_providers.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

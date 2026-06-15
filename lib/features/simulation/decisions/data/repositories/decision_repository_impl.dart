@@ -1,12 +1,11 @@
-import 'package:simcore_frontend/features/simulation/decisions/datasources/decision_remote_datasource.dart';
+import 'package:simcore_frontend/features/simulation/decisions/data/datasources/decision_remote_datasource.dart';
 import 'package:simcore_frontend/features/simulation/decisions/repositories/decision_repository.dart';
 import '../models/decision_model.dart';
 import '../models/decision_impact_model.dart';
 
 class DecisionRepositoryImpl implements DecisionRepository {
-  final DecisionRemoteDatasource remoteDatasource;
+  final DecisionRemoteDataSource remoteDatasource;
 
-  // Inyectamos el datasource por el constructor
   DecisionRepositoryImpl({required this.remoteDatasource});
 
   @override

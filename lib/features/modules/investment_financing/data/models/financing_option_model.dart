@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 enum FinancingType {
   OWN_CAPITAL('Capital propio'),
   BANK_LOAN('Préstamo bancario'),

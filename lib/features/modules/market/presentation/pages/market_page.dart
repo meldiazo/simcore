@@ -92,6 +92,8 @@ class _MarketPageState extends ConsumerState<MarketPage> {
             SimModule.market.toApi(),
           );
 
+      if (!mounted) return;
+
       // Invalida estados para refrescar UI
       ref.invalidate(company_providers.companyModuleProgressProvider);
       ref.invalidate(company_providers.companyWorkspaceProvider);

@@ -31,6 +31,7 @@ class _OrganizationAreaFormState extends State<OrganizationAreaForm> {
       
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al crear área: $e')),
       );

@@ -146,7 +146,7 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                     }
 
                     return DropdownButtonFormField<int>(
-                      value: _selectedTeacherId,
+                      initialValue: _selectedTeacherId,
                       decoration: const InputDecoration(labelText: 'Selecciona Docente'),
                       items: teachers.map((t) {
                         final id = t['id'] as int? ?? 0;
@@ -289,7 +289,7 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
-                      value: _selectedStudentId,
+                      initialValue: _selectedStudentId,
                       decoration: const InputDecoration(
                           labelText: 'Selecciona Estudiante', isDense: true),
                       items: students.map((s) {

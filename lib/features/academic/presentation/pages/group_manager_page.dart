@@ -132,7 +132,7 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
                         );
                       }
                       return DropdownButtonFormField<int>(
-                        value: _selectedCourseId,
+                        initialValue: _selectedCourseId,
                         decoration: const InputDecoration(labelText: 'Selecciona el curso'),
                         items: courses.map((c) {
                           final id = c['id'] as int? ?? 0;
@@ -300,7 +300,7 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
-                      value: _selectedMemberId,
+                      initialValue: _selectedMemberId,
                       decoration: const InputDecoration(
                           labelText: 'Selecciona Estudiante', isDense: true),
                       items: students.map((s) {
@@ -405,7 +405,7 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
-                      value: _selectedCompanyId,
+                      initialValue: _selectedCompanyId,
                       decoration: const InputDecoration(
                           labelText: 'Selecciona Empresa', isDense: true),
                       items: companies.map((c) {

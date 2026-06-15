@@ -32,7 +32,7 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
               const Text('Fuente de financiamiento:', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<FinancingType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: FinancingType.values.map((type) {
                   return DropdownMenuItem(value: type, child: Text(type.displayName));

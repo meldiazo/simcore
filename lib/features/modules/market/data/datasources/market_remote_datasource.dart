@@ -15,7 +15,7 @@ class MarketRemoteDatasource {
 
     return result.fold(
       (failure) {
-        if (failure is ApiException && failure.type == ErrorType.notFound) {
+        if (failure.type == ErrorType.notFound) {
           return null;
         }
         throw failure;
@@ -62,7 +62,7 @@ class MarketRemoteDatasource {
 
     return result.fold(
       (failure) {
-        if (failure is ApiException && failure.type == ErrorType.notFound) {
+        if (failure.type == ErrorType.notFound) {
           return null;
         }
         throw failure;

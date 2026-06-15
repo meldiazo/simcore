@@ -31,7 +31,7 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
               const Text('Categoría de la inversión:', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<InvestmentType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: InvestmentType.values.map((type) {
                   return DropdownMenuItem(

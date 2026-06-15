@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../data/models/financing_option_model.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart'; 
@@ -105,7 +107,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isWarning ? SimcoreColors.warning.withOpacity(0.1) : SimcoreColors.surface,
+        color: isWarning
+            ? SimcoreColors.warning.withValues(alpha: 0.1)
+            : SimcoreColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: isWarning ? SimcoreColors.warning : SimcoreColors.border),
       ),

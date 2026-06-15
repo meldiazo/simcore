@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 enum InvestmentType {
   FIXED_ASSET('Activo fijo'),
   WORKING_CAPITAL('Capital de trabajo'),

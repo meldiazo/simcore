@@ -44,8 +44,8 @@ if (state.errorMessage != null)
     margin: const EdgeInsets.only(bottom: 24),
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: SimcoreColors.danger.withOpacity(0.1),
-      border: Border.all(color: SimcoreColors.danger.withOpacity(0.35)),
+      color: SimcoreColors.danger.withValues(alpha: 0.1),
+      border: Border.all(color: SimcoreColors.danger.withValues(alpha: 0.35)),
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
@@ -71,8 +71,8 @@ if (state.successMessage != null)
     margin: const EdgeInsets.only(bottom: 24),
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: SimcoreColors.success.withOpacity(0.1),
-      border: Border.all(color: SimcoreColors.success.withOpacity(0.35)),
+      color: SimcoreColors.success.withValues(alpha: 0.1),
+      border: Border.all(color: SimcoreColors.success.withValues(alpha: 0.35)),
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
@@ -203,7 +203,7 @@ class _MarketNotReadyWarning extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SimcoreColors.warning.withOpacity(0.1),
+        color: SimcoreColors.warning.withValues(alpha: 0.1),
         border: Border.all(color: SimcoreColors.warning),
         borderRadius: BorderRadius.circular(16),
       ),

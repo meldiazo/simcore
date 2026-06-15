@@ -13,7 +13,10 @@ import 'package:simcore_frontend/features/simulation/shared/presentation/provide
 
 final companyRemoteDataSourceProvider =
     Provider<CompanyRemoteDataSource>((ref) {
-  return CompanyRemoteDataSource(ref.watch(simulationApiClientProvider));
+  return CompanyRemoteDataSource(
+    ref.watch(simulationApiClientProvider),
+    iamClient: ref.watch(iamApiClientProvider),
+  );
 });
 
 final companyRepositoryProvider = Provider<CompanyRepository>((ref) {

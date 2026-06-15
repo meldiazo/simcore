@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_type_check
-
 import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/core/network/api_exception.dart';
 import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';
@@ -31,8 +29,7 @@ class OrganizationRemoteDataSource {
 
     return result.fold(
       (e) {
-        if (e is ApiException) {
-          if (e.type == ErrorType.notFound) {
+        if (e.type == ErrorType.notFound) {
             return _emptySummary(
               companyId,
               warnings: const [
@@ -41,14 +38,13 @@ class OrganizationRemoteDataSource {
             );
           }
 
-          if (e.type == ErrorType.serverError) {
+        if (e.type == ErrorType.serverError) {
             return _emptySummary(
               companyId,
               warnings: const [
                 'El backend no pudo calcular Organización. Verifica que Mercado tenga proyección generada y que la empresa esté activa.',
               ],
             );
-          }
         }
 
         throw e;
@@ -192,16 +188,25 @@ class OrganizationRemoteDataSource {
   Map<String, dynamic> _sanitizePositionRequest(Map<String, dynamic> data) {
     final body = Map<String, dynamic>.from(data);
 
-    final headcount = _toInt(body['headcount']);
-    final monthlySalary = _toDouble(body['monthlySalary']);
-    final capacityPerPerson = _toDouble(body['capacityPerPerson']);
+    final headcount = _requiredPositiveInt(
+      body['headcount'],
+      'La cantidad de personas debe ser mayor a 0.',
+    );
+    final monthlySalary = _requiredPositiveDouble(
+      body['monthlySalary'],
+      'El salario mensual debe ser mayor a 0.',
+    );
+    final capacityPerPerson = _requiredNonNegativeDouble(
+      body['capacityPerPerson'],
+      'La capacidad por persona no puede ser negativa.',
+    );
 
     body['areaId'] = _toInt(body['areaId']);
     body['title'] = body['title']?.toString().trim() ?? '';
     body['responsibilities'] = body['responsibilities']?.toString();
-    body['headcount'] = headcount <= 0 ? 1 : headcount;
-    body['monthlySalary'] = monthlySalary <= 0 ? 1.0 : monthlySalary;
-    body['capacityPerPerson'] = capacityPerPerson < 0 ? 0.0 : capacityPerPerson;
+    body['headcount'] = headcount;
+    body['monthlySalary'] = monthlySalary;
+    body['capacityPerPerson'] = capacityPerPerson;
 
     return body;
   }
@@ -411,7 +416,29 @@ class OrganizationRemoteDataSource {
 
   int _toInt(dynamic value) => _tryInt(value) ?? 0;
 
-  double _toDouble(dynamic value) => _tryDouble(value) ?? 0;
+  int _requiredPositiveInt(dynamic value, String message) {
+    final parsed = _tryInt(value);
+    if (parsed == null || parsed <= 0) {
+      throw FormatException(message);
+    }
+    return parsed;
+  }
+
+  double _requiredPositiveDouble(dynamic value, String message) {
+    final parsed = _tryDouble(value);
+    if (parsed == null || parsed <= 0) {
+      throw FormatException(message);
+    }
+    return parsed;
+  }
+
+  double _requiredNonNegativeDouble(dynamic value, String message) {
+    final parsed = _tryDouble(value);
+    if (parsed == null || parsed < 0) {
+      throw FormatException(message);
+    }
+    return parsed;
+  }
 
   int? _tryInt(dynamic value) {
     if (value is int) return value;

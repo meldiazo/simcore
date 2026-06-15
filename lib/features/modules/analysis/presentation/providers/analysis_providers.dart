@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/modules/analysis/data/datasources/analysis_remote_datasource.dart';
+import 'package:simcore_frontend/features/modules/analysis/data/models/consolidated_analysis_model.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
@@ -10,7 +11,7 @@ final analysisRemoteDataSourceProvider =
 });
 
 final consolidatedAnalysisProvider =
-    FutureProvider<Map<String, dynamic>?>((ref) {
+    FutureProvider<ConsolidatedAnalysisModel?>((ref) {
   final ctx = ref.watch(simulationContextNotifierProvider).context;
   if (ctx == null) return Future.value(null);
   final scenarioType = ref.watch(selectedScenarioTypeProvider);
@@ -23,33 +24,21 @@ final financialIndicatorsProvider =
     FutureProvider<Map<String, dynamic>?>((ref) async {
   final analysis = await ref.watch(consolidatedAnalysisProvider.future);
   if (analysis == null) return null;
-  return _readMap(analysis, const [
-    'financialIndicators',
-    'indicators',
-    'kpis',
-  ]);
+  return analysis.financialIndicators;
 });
 
 final analysisIncoherencesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final analysis = await ref.watch(consolidatedAnalysisProvider.future);
   if (analysis == null) return const [];
-  return _readList(analysis, const [
-    'incoherences',
-    'warnings',
-    'alerts',
-  ]);
+  return analysis.incoherences;
 });
 
 final narrativeReportProvider =
     FutureProvider<Map<String, dynamic>?>((ref) async {
   final analysis = await ref.watch(consolidatedAnalysisProvider.future);
   if (analysis == null) return null;
-  return _readMap(analysis, const [
-    'narrativeReport',
-    'report',
-    'narrative',
-  ]);
+  return analysis.narrativeReport;
 });
 
 class AnalysisNotifier extends StateNotifier<AsyncValue<void>> {
@@ -64,6 +53,13 @@ class AnalysisNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> completeModule() async {
     state = const AsyncValue.loading();
     try {
+      final analysis = await _ref.read(consolidatedAnalysisProvider.future);
+      if (analysis == null || !analysis.canComplete) {
+        throw StateError(
+          'No se puede completar Analisis sin indicadores, narrativa y revision de incoherencias.',
+        );
+      }
+
       await _ds.completeModule(companyId: _companyId);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -79,28 +75,3 @@ final analysisNotifierProvider =
     ref,
   ),
 );
-
-Map<String, dynamic>? _readMap(Map<String, dynamic> source, List<String> keys) {
-  for (final key in keys) {
-    final value = source[key];
-    if (value is Map<String, dynamic>) return value;
-    if (value is Map) return Map<String, dynamic>.from(value);
-  }
-  return null;
-}
-
-List<Map<String, dynamic>> _readList(
-  Map<String, dynamic> source,
-  List<String> keys,
-) {
-  for (final key in keys) {
-    final value = source[key];
-    if (value is List) {
-      return value
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-    }
-  }
-  return const [];
-}

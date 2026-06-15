@@ -3,9 +3,10 @@ import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/teacher/data/datasources/teacher_dashboard_remote_datasource.dart';
 import 'package:simcore_frontend/features/teacher/data/models/teacher_dashboard_model.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 import 'package:simcore_frontend/core/config/app_config.dart';
+
+final teacherActiveCourseIdProvider = StateProvider<int?>((ref) => null);
 
 final teacherDashboardRemoteDataSourceProvider =
     Provider<TeacherDashboardRemoteDataSource>((ref) {
@@ -51,8 +52,8 @@ final teacherDashboardProvider = FutureProvider<TeacherDashboard>((ref) {
     ));
   }
 
-  final ctx = ref.watch(simulationContextNotifierProvider).context;
-  if (ctx == null) {
+  final courseId = ref.watch(teacherActiveCourseIdProvider);
+  if (courseId == null || courseId <= 0) {
     return Future.value(TeacherDashboard(
       courseId: 0,
       totalGroups: 0,
@@ -63,5 +64,5 @@ final teacherDashboardProvider = FutureProvider<TeacherDashboard>((ref) {
   final scenarioType = ref.watch(selectedScenarioTypeProvider);
   return ref
       .watch(teacherDashboardRemoteDataSourceProvider)
-      .getDashboard(courseId: ctx.courseId, scenarioType: scenarioType);
+      .getDashboard(courseId: courseId, scenarioType: scenarioType);
 });

@@ -1,11 +1,12 @@
 import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/features/modules/analysis/data/models/consolidated_analysis_model.dart';
 
 class AnalysisRemoteDataSource {
   AnalysisRemoteDataSource(this._apiClient);
 
   final ApiClient _apiClient;
 
-  Future<Map<String, dynamic>?> getAnalysis({
+  Future<ConsolidatedAnalysisModel?> getAnalysis({
     required int companyId,
     required String scenarioType,
   }) async {
@@ -15,7 +16,11 @@ class AnalysisRemoteDataSource {
     );
     return result.fold(
       (e) => throw e,
-      (data) => data != null ? Map<String, dynamic>.from(data as Map) : null,
+      (data) => data != null
+          ? ConsolidatedAnalysisModel.fromJson(
+              Map<String, dynamic>.from(data as Map),
+            )
+          : null,
     );
   }
 

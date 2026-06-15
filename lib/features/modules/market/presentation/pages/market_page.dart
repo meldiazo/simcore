@@ -54,8 +54,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         payload: assumption.toJson(),
         justification: assumption.commercialJustification,
       );
-      unawaited(
-          ref.read(decisionNotifierProvider.notifier).createDecision(decision));
+      unawaited(_auditDecision(decision));
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -63,6 +62,21 @@ class _MarketPageState extends ConsumerState<MarketPage> {
             backgroundColor: SimcoreColors.danger),
       );
     }
+  }
+
+  Future<void> _auditDecision(DecisionModel decision) async {
+    final recorded =
+        await ref.read(decisionNotifierProvider.notifier).createDecision(decision);
+    if (!mounted || recorded) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Supuestos guardados. No se pudo registrar la auditoria de decision.',
+        ),
+        backgroundColor: SimcoreColors.warning,
+      ),
+    );
   }
 
   Future<void> _generateProjection() async {

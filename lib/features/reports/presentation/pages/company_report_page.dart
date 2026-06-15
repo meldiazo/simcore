@@ -171,8 +171,12 @@ class _IndicatorsPanel extends StatelessWidget {
 
   final Map<String, dynamic> report;
 
-  String _pct(dynamic v) =>
-      v != null ? '${((v as num) * 100).toStringAsFixed(1)}%' : '-';
+  String _pct(dynamic v) {
+    if (v == null) return '-';
+    final value = (v as num).toDouble();
+    final normalized = value.abs() <= 1 ? value * 100 : value;
+    return '${normalized.toStringAsFixed(1)}%';
+  }
 
   @override
   Widget build(BuildContext context) {

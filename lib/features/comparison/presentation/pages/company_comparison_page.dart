@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/comparison/presentation/providers/comparison_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 
 class CompanyComparisonPage extends ConsumerWidget {
   const CompanyComparisonPage({super.key});
@@ -53,11 +55,9 @@ class _ScenarioSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const options = ['PROBABLE', 'OPTIMISTIC', 'PESSIMISTIC'];
-    const labels = {
-      'PROBABLE': 'Probable',
-      'OPTIMISTIC': 'Optimista',
-      'PESSIMISTIC': 'Pesimista',
+    final options = ScenarioType.values.map((type) => type.toApi()).toList();
+    final labels = {
+      for (final type in ScenarioType.values) type.toApi(): type.label,
     };
     return Wrap(
       spacing: 8,
@@ -72,7 +72,7 @@ class _ScenarioSelector extends ConsumerWidget {
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
           onSelected: (_) {
-            ref.read(selectedScenarioTypeProvider.notifier).state = opt;
+            ref.read(scenarioTypeOverrideProvider.notifier).state = opt;
           },
         );
       }).toList(),

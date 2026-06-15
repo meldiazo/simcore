@@ -5,9 +5,11 @@ import 'package:simcore_frontend/features/simulation/company/domain/entities/com
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 
 class CompanyRemoteDataSource {
-  CompanyRemoteDataSource(this._apiClient);
+  CompanyRemoteDataSource(this._apiClient, {ApiClient? iamClient})
+      : _iamClient = iamClient ?? _apiClient;
 
   final ApiClient _apiClient;
+  final ApiClient _iamClient;
 
   Future<List<Company>> getCompaniesByGroup({required int groupId}) async {
     final result = await _apiClient.get(
@@ -16,7 +18,7 @@ class CompanyRemoteDataSource {
     );
     return result.fold(
       (e) => throw e,
-      (data) => _extractList(data).map(CompanyModel.fromJson).toList(),
+      (data) => _extractCompanies(data),
     );
   }
 
@@ -144,16 +146,54 @@ class CompanyRemoteDataSource {
   }
 
   Future<List<Company>> getCompaniesByCourse({required int courseId}) async {
-    final result = await _apiClient.get(
-      '/api/v1/simulation/companies',
+    final result = await _iamClient.get(
+      '/api/v1/iam/groups',
       queryParameters: {'courseId': courseId},
     );
     return result.fold(
       (e) => throw e,
-      (data) {
-        return _extractList(data).map(CompanyModel.fromJson).toList();
+      (data) async {
+        final groups = _extractList(data);
+        final companies = <Company>[];
+
+        for (final group in groups) {
+          final nestedCompany = group['company'];
+          if (nestedCompany is Map) {
+            companies.add(
+              CompanyModel.fromJson(Map<String, dynamic>.from(nestedCompany)),
+            );
+            continue;
+          }
+
+          final companyId = _readInt(group, const ['companyId', 'company_id']);
+          if (companyId > 0) {
+            companies.add(await getCompanyById(companyId: companyId));
+            continue;
+          }
+
+          final groupId = _readInt(group, const ['id', 'groupId']);
+          if (groupId > 0) {
+            companies.addAll(await getCompaniesByGroup(groupId: groupId));
+          }
+        }
+
+        return companies;
       },
     );
+  }
+
+  List<Company> _extractCompanies(dynamic data) {
+    if (data == null) return const [];
+
+    if (data is Map) {
+      final json = Map<String, dynamic>.from(data);
+      final list = _extractList(json);
+      if (list.isNotEmpty) return list.map(CompanyModel.fromJson).toList();
+
+      return [CompanyModel.fromJson(json)];
+    }
+
+    return _extractList(data).map(CompanyModel.fromJson).toList();
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
@@ -176,5 +216,15 @@ class CompanyRemoteDataSource {
       }
     }
     return const [];
+  }
+
+  int _readInt(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+    }
+    return 0;
   }
 }

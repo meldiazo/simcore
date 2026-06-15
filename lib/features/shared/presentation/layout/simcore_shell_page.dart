@@ -644,26 +644,77 @@ class _ModuleStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget icon;
+    final IconData iconData;
+    final Color color;
+    final String label;
     switch (status) {
       case ModuleStatus.complete:
-        icon = const Icon(Icons.check_circle_outline_rounded, color: SimcoreColors.success, size: 18);
+        iconData = Icons.check_circle_outline_rounded;
+        color = SimcoreColors.success;
+        label = '';
         break;
       case ModuleStatus.inProgress:
-        icon = const Icon(Icons.data_usage_rounded, color: SimcoreColors.accent, size: 18);
+        iconData = Icons.data_usage_rounded;
+        color = SimcoreColors.accent;
+        label = '';
         break;
       case ModuleStatus.locked:
-        icon = const Icon(Icons.lock_outline_rounded, color: SimcoreColors.danger, size: 18); // Un módulo bloqueado no se puede editar.
+        iconData = Icons.lock_outline_rounded;
+        color = SimcoreColors.danger;
+        label = '';
+        break;
+      case ModuleStatus.outdated:
+        iconData = Icons.update_disabled_rounded;
+        color = SimcoreColors.warning;
+        label = 'OUT';
+        break;
+      case ModuleStatus.requiresRevision:
+        iconData = Icons.rate_review_outlined;
+        color = SimcoreColors.danger;
+        label = 'REV';
         break;
       case ModuleStatus.pending:
-        icon = const Icon(Icons.circle_outlined, color: SimcoreColors.textTertiary, size: 14);
+        iconData = Icons.circle_outlined;
+        color = SimcoreColors.textTertiary;
+        label = '';
         break;
       default:
         return const SizedBox.shrink();
     }
     return Padding(
       padding: const EdgeInsets.only(left: 8.0),
-      child: icon,
+      child: Tooltip(
+        message: status?.label ?? '',
+        child: label.isEmpty
+            ? Icon(
+                iconData,
+                color: color,
+                size: status == ModuleStatus.pending ? 14 : 18,
+              )
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withValues(alpha: 0.45)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(iconData, color: color, size: 12),
+                    const SizedBox(width: 3),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 }

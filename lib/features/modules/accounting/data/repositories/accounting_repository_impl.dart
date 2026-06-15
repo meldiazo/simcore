@@ -3,10 +3,17 @@ import '../models/accounting_entry_model.dart';
 import '../models/financial_statement_model.dart';
 
 abstract class AccountingRepository {
-  Future<void> generateAccountingEntries(String companyId);
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId);
-  Future<void> generateFinancialStatements(String companyId);
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId);
+  Future<void> generateAccountingEntries(String companyId, String scenarioType);
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+    String companyId,
+    String scenarioType,
+  );
+  Future<void> generateFinancialStatements(
+      String companyId, String scenarioType);
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+    String companyId,
+    String scenarioType,
+  );
   Future<void> completeAccountingModule(String companyId);
 }
 
@@ -16,36 +23,51 @@ class AccountingRepositoryImpl implements AccountingRepository {
   AccountingRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<void> generateAccountingEntries(String companyId) async {
+  Future<void> generateAccountingEntries(
+    String companyId,
+    String scenarioType,
+  ) async {
     try {
-      await remoteDataSource.generateAccountingEntries(companyId);
+      await remoteDataSource.generateAccountingEntries(companyId, scenarioType);
     } catch (e) {
       throw Exception('Error al generar asientos automáticos: $e');
     }
   }
 
   @override
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId) async {
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+    String companyId,
+    String scenarioType,
+  ) async {
     try {
-      return await remoteDataSource.getAccountingEntries(companyId);
+      return await remoteDataSource.getAccountingEntries(
+          companyId, scenarioType);
     } catch (e) {
       throw Exception('Error al cargar la tabla de asientos: $e');
     }
   }
 
   @override
-  Future<void> generateFinancialStatements(String companyId) async {
+  Future<void> generateFinancialStatements(
+    String companyId,
+    String scenarioType,
+  ) async {
     try {
-      await remoteDataSource.generateFinancialStatements(companyId);
+      await remoteDataSource.generateFinancialStatements(
+          companyId, scenarioType);
     } catch (e) {
       throw Exception('Error al procesar los estados financieros: $e');
     }
   }
 
   @override
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId) async {
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+    String companyId,
+    String scenarioType,
+  ) async {
     try {
-      return await remoteDataSource.getFinancialStatements(companyId);
+      return await remoteDataSource.getFinancialStatements(
+          companyId, scenarioType);
     } catch (e) {
       throw Exception('Error al obtener los reportes financieros: $e');
     }

@@ -6,8 +6,11 @@ import 'package:simcore_frontend/features/modules/market/data/models/sales_proje
 import 'package:simcore_frontend/features/modules/market/data/repositories/market_repository_impl.dart';
 import 'package:simcore_frontend/features/modules/market/domain/entities/repositories/market_repository.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
-import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart'
+    as global_providers;
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart'
+    as company_providers;
 
 // 1. Inyección del Datasource
 final marketRemoteDatasourceProvider = Provider<MarketRemoteDatasource>((ref) {
@@ -23,9 +26,12 @@ final marketRepositoryProvider = Provider<MarketRepository>((ref) {
 // --- Providers para LEER datos (GET) ---
 
 /// Provider para obtener los supuestos de mercado actuales de la compañía.
-final marketAssumptionProvider = FutureProvider<MarketAssumptionModel?>((ref) async {
+final marketAssumptionProvider =
+    FutureProvider<MarketAssumptionModel?>((ref) async {
   final ctxState = ref.watch(simulationContextNotifierProvider);
-  if (ctxState.context == null) return null; // Espera pacientemente si no ha cargado
+  if (ctxState.context == null) {
+    return null; // Espera pacientemente si no ha cargado
+  }
 
   final companyId = ctxState.context!.companyId;
   final repository = ref.watch(marketRepositoryProvider);
@@ -33,9 +39,12 @@ final marketAssumptionProvider = FutureProvider<MarketAssumptionModel?>((ref) as
 });
 
 /// Provider para obtener la proyección de ventas actual de la compañía.
-final salesProjectionProvider = FutureProvider<SalesProjectionModel?>((ref) async {
+final salesProjectionProvider =
+    FutureProvider<SalesProjectionModel?>((ref) async {
   final ctxState = ref.watch(simulationContextNotifierProvider);
-  if (ctxState.context == null) return null; // Espera pacientemente si no ha cargado
+  if (ctxState.context == null) {
+    return null; // Espera pacientemente si no ha cargado
+  }
 
   final companyId = ctxState.context!.companyId;
   final repository = ref.watch(marketRepositoryProvider);
@@ -48,7 +57,8 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
   final MarketRepository _repository;
   final Ref _ref;
 
-  MarketNotifier(this._repository, this._ref) : super(const AsyncValue.data(null));
+  MarketNotifier(this._repository, this._ref)
+      : super(const AsyncValue.data(null));
 
   // Helper para obtener el ID en el momento exacto del clic
   String get _companyId => _ref.read(currentCompanyIdProvider).toString();
@@ -73,7 +83,10 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> generateProjection() async {
     state = const AsyncValue.loading();
     try {
-      await _repository.generateProjection(_companyId);
+      await _repository.generateProjection(
+        _companyId,
+        scenarioType: _ref.read(selectedScenarioTypeProvider),
+      );
       if (!mounted) return false;
       state = const AsyncValue.data(null);
       _ref.invalidate(salesProjectionProvider);
@@ -104,7 +117,8 @@ class MarketNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final marketNotifierProvider = StateNotifierProvider<MarketNotifier, AsyncValue<void>>((ref) {
+final marketNotifierProvider =
+    StateNotifierProvider<MarketNotifier, AsyncValue<void>>((ref) {
   final repository = ref.watch(marketRepositoryProvider);
   // Pasamos el ref en vez del companyId duro para que lo evalúe en tiempo real
   return MarketNotifier(repository, ref);

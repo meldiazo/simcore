@@ -9,17 +9,29 @@ class MarketRepositoryImpl implements MarketRepository {
   MarketRepositoryImpl({required this.remoteDatasource});
 
   @override
-  Future<MarketAssumptionModel?> getAssumption(String companyId) async => await remoteDatasource.getAssumption(companyId);
+  Future<MarketAssumptionModel?> getAssumption(String companyId) async =>
+      await remoteDatasource.getAssumption(companyId);
 
   @override
-  Future<MarketAssumptionModel> updateAssumption(String companyId, MarketAssumptionModel assumption) async => await remoteDatasource.updateAssumption(companyId, assumption);
+  Future<MarketAssumptionModel> updateAssumption(
+          String companyId, MarketAssumptionModel assumption) async =>
+      await remoteDatasource.updateAssumption(companyId, assumption);
 
   @override
-  Future<SalesProjectionModel?> getProjection(String companyId) async => await remoteDatasource.getProjection(companyId);
+  Future<SalesProjectionModel?> getProjection(String companyId) async =>
+      await remoteDatasource.getProjection(companyId);
 
   @override
-  Future<SalesProjectionModel> generateProjection(String companyId) async => await remoteDatasource.generateProjection(companyId);
+  Future<SalesProjectionModel> generateProjection(
+    String companyId, {
+    required String scenarioType,
+  }) async =>
+      await remoteDatasource.generateProjection(
+        companyId,
+        scenarioType: scenarioType,
+      );
 
   @override
-  Future<void> completeMarket(String companyId) async => await remoteDatasource.completeMarket(companyId);
+  Future<void> completeMarket(String companyId) async =>
+      await remoteDatasource.completeMarket(companyId);
 }

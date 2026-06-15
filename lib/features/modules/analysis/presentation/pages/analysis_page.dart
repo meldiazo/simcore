@@ -10,6 +10,7 @@ class AnalysisPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final analysisAsync = ref.watch(consolidatedAnalysisProvider);
     final indicatorsAsync = ref.watch(financialIndicatorsProvider);
     final incoherencesAsync = ref.watch(analysisIncoherencesProvider);
     final reportAsync = ref.watch(narrativeReportProvider);
@@ -17,12 +18,24 @@ class AnalysisPage extends ConsumerWidget {
     final notifierState = ref.watch(analysisNotifierProvider);
     final isLoading = notifierState is AsyncLoading;
 
+    if (analysisAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (analysisAsync.hasError) {
+      return Text(
+        'Error: ${analysisAsync.error}',
+        style: const TextStyle(color: SimcoreColors.danger),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
           title: 'Análisis General',
-          subtitle: 'Indicadores financieros, incoherencias y narrativa del plan.',
+          subtitle:
+              'Indicadores financieros, incoherencias y narrativa del plan.',
         ),
         const SizedBox(height: 24),
 
@@ -47,7 +60,14 @@ class AnalysisPage extends ConsumerWidget {
                       style: TextStyle(color: SimcoreColors.textSecondary),
                     );
                   }
-                  final keys = ['van', 'tir', 'pri', 'grossMargin', 'netMargin', 'roi'];
+                  final keys = [
+                    'van',
+                    'tir',
+                    'pri',
+                    'grossMargin',
+                    'netMargin',
+                    'roi'
+                  ];
                   final labels = {
                     'van': 'VAN',
                     'tir': 'TIR (%)',
@@ -63,7 +83,8 @@ class AnalysisPage extends ConsumerWidget {
                       final val = indicators[k];
                       if (val == null) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: SimcoreColors.surface,
                           borderRadius: BorderRadius.circular(12),
@@ -74,7 +95,8 @@ class AnalysisPage extends ConsumerWidget {
                           children: [
                             Text(labels[k] ?? k,
                                 style: const TextStyle(
-                                    fontSize: 11, color: SimcoreColors.textTertiary)),
+                                    fontSize: 11,
+                                    color: SimcoreColors.textTertiary)),
                             const SizedBox(height: 4),
                             Text(
                               val.toString(),
@@ -151,11 +173,17 @@ class AnalysisPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (report['marketSummary'] != null)
-                        _ReportSectionWidget(title: 'Mercado', content: report['marketSummary'].toString()),
+                        _ReportSectionWidget(
+                            title: 'Mercado',
+                            content: report['marketSummary'].toString()),
                       if (report['investmentSummary'] != null)
-                        _ReportSectionWidget(title: 'Inversión', content: report['investmentSummary'].toString()),
+                        _ReportSectionWidget(
+                            title: 'Inversión',
+                            content: report['investmentSummary'].toString()),
                       if (report['organizationSummary'] != null)
-                        _ReportSectionWidget(title: 'Organización', content: report['organizationSummary'].toString()),
+                        _ReportSectionWidget(
+                            title: 'Organización',
+                            content: report['organizationSummary'].toString()),
                     ],
                   );
                 },
@@ -223,7 +251,8 @@ class AnalysisPage extends ConsumerWidget {
         const SizedBox(height: 24),
         FilledButton(
           onPressed: !isLoading
-              ? () => ref.read(analysisNotifierProvider.notifier).completeModule()
+              ? () =>
+                  ref.read(analysisNotifierProvider.notifier).completeModule()
               : null,
           style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
           child: const Text('Completar módulo Análisis'),
@@ -258,8 +287,7 @@ class _IncoherenceTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
@@ -267,15 +295,15 @@ class _IncoherenceTile extends StatelessWidget {
               child: Text(
                 level,
                 style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11),
+                    color: color, fontWeight: FontWeight.w700, fontSize: 11),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                data['message']?.toString() ?? data['description']?.toString() ?? '',
+                data['message']?.toString() ??
+                    data['description']?.toString() ??
+                    '',
                 style: const TextStyle(height: 1.4),
               ),
             ),

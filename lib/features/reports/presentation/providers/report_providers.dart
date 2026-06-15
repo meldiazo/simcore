@@ -1,16 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/utils/download_helper.dart';
 import 'package:simcore_frontend/features/reports/data/datasources/reports_remote_datasource.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-
-final reportScenarioTypeProvider =
-    StateProvider.autoDispose<String>((ref) => 'PROBABLE');
 
 final narrativeReportProvider =
     FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final ctx = ref.watch(simulationContextNotifierProvider).context;
   if (ctx == null) return {};
-  final scenarioType = ref.watch(reportScenarioTypeProvider);
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
   return ref.watch(reportsDataSourceProvider).getCompanyReport(
         companyId: ctx.companyId,
         scenarioType: scenarioType,
@@ -32,8 +30,12 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     if (id == null) return;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final bytes = await _ds.exportCompanyPdf(companyId: id);
-      downloadFile(bytes, 'reporte_empresa_$id.pdf');
+      final scenarioType = _ref.read(selectedScenarioTypeProvider);
+      final bytes = await _ds.exportCompanyPdf(
+        companyId: id,
+        scenarioType: scenarioType,
+      );
+      downloadFile(bytes, 'reporte_empresa_${id}_$scenarioType.pdf');
       return 'PDF generado y descargado correctamente.';
     });
   }
@@ -44,15 +46,19 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     if (id == null) return;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final bytes = await _ds.exportCourseCsv(courseId: id);
-      downloadFile(bytes, 'reporte_curso_$id.csv');
+      final scenarioType = _ref.read(selectedScenarioTypeProvider);
+      final bytes = await _ds.exportCourseCsv(
+        courseId: id,
+        scenarioType: scenarioType,
+      );
+      downloadFile(bytes, 'reporte_curso_${id}_$scenarioType.csv');
       return 'CSV del curso generado y descargado correctamente.';
     });
   }
 }
 
-final reportExportNotifierProvider =
-    StateNotifierProvider.autoDispose<ReportExportNotifier, AsyncValue<String?>>(
+final reportExportNotifierProvider = StateNotifierProvider.autoDispose<
+    ReportExportNotifier, AsyncValue<String?>>(
   (ref) => ReportExportNotifier(
     ref.watch(reportsDataSourceProvider),
     ref,

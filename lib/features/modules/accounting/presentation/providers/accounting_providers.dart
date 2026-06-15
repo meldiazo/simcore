@@ -5,7 +5,9 @@ import 'package:simcore_frontend/features/modules/accounting/data/models/account
 import 'package:simcore_frontend/features/modules/accounting/data/models/financial_statement_model.dart';
 import 'package:simcore_frontend/features/modules/accounting/data/repositories/accounting_repository_impl.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart'
+    as global_providers;
 
 final accountingRemoteDataSourceProvider =
     Provider<AccountingRemoteDataSource>((ref) {
@@ -20,15 +22,19 @@ final accountingRepositoryProvider = Provider<AccountingRepository>((ref) {
 });
 
 final accountingEntriesProvider =
-    FutureProvider.family<List<AccountingEntryModel>, String>((ref, companyId) async {
+    FutureProvider.family<List<AccountingEntryModel>, String>(
+        (ref, companyId) async {
   final repository = ref.watch(accountingRepositoryProvider);
-  return repository.getAccountingEntries(companyId);
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
+  return repository.getAccountingEntries(companyId, scenarioType);
 });
 
 final financialStatementsProvider =
-    FutureProvider.family<List<FinancialStatementModel>, String>((ref, companyId) async {
+    FutureProvider.family<List<FinancialStatementModel>, String>(
+        (ref, companyId) async {
   final repository = ref.watch(accountingRepositoryProvider);
-  return repository.getFinancialStatements(companyId);
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
+  return repository.getFinancialStatements(companyId, scenarioType);
 });
 
 final accountingActionsProvider = Provider((ref) => AccountingActions(ref));
@@ -40,20 +46,34 @@ class AccountingActions {
 
   Future<void> generateEntries(String companyId) async {
     final repository = ref.read(accountingRepositoryProvider);
-    await repository.generateAccountingEntries(companyId);
+    final scenarioType = ref.read(selectedScenarioTypeProvider);
+    await repository.generateAccountingEntries(companyId, scenarioType);
 
     ref.invalidate(accountingEntriesProvider(companyId));
   }
 
   Future<void> generateStatements(String companyId) async {
     final repository = ref.read(accountingRepositoryProvider);
-    await repository.generateFinancialStatements(companyId);
+    final scenarioType = ref.read(selectedScenarioTypeProvider);
+    await repository.generateFinancialStatements(companyId, scenarioType);
 
     ref.invalidate(financialStatementsProvider(companyId));
   }
 
   Future<void> completeModule(String companyId) async {
     final repository = ref.read(accountingRepositoryProvider);
+    final statements =
+        await ref.read(financialStatementsProvider(companyId).future);
+    final hasOutdated = statements.any(
+      (statement) => statement.status.trim().toUpperCase() == 'OUTDATED',
+    );
+
+    if (statements.isEmpty || hasOutdated) {
+      throw StateError(
+        'No se puede completar Contabilidad con estados financieros vacios u OUTDATED.',
+      );
+    }
+
     await repository.completeAccountingModule(companyId);
 
     ref.invalidate(companyModuleProgressProvider);

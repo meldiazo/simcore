@@ -79,12 +79,15 @@ class MarketRemoteDatasource {
     );
   }
 
-  Future<SalesProjectionModel> generateProjection(String companyId) async {
+  Future<SalesProjectionModel> generateProjection(
+    String companyId, {
+    required String scenarioType,
+  }) async {
     final result = await _apiClient.post(
       '/api/v1/simulation/companies/$companyId/market/projection/generate',
       data: {
         'companyId': int.tryParse(companyId) ?? companyId,
-        'scenarioType': 'PROBABLE',
+        'scenarioType': scenarioType,
       },
     );
 

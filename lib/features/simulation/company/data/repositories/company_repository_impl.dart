@@ -29,7 +29,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   @override
   Future<List<Map<String, dynamic>>> getIncoherences({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) =>
       _dataSource.getIncoherences(
         companyId: companyId,
@@ -67,11 +67,13 @@ class CompanyRepositoryImpl implements CompanyRepository {
       _dataSource.activateCompany(companyId: companyId);
 
   @override
-  Future<Company> closeCompany({required int companyId, required String reason}) =>
+  Future<Company> closeCompany(
+          {required int companyId, required String reason}) =>
       _dataSource.closeCompany(companyId: companyId, reason: reason);
 
   @override
-  Future<void> linkGroupToCompany({required int groupId, required int companyId}) =>
+  Future<void> linkGroupToCompany(
+          {required int groupId, required int companyId}) =>
       _dataSource.linkGroupToCompany(groupId: groupId, companyId: companyId);
 
   @override

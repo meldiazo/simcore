@@ -8,6 +8,7 @@ import 'package:simcore_frontend/features/modules/organization/data/repositories
 import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart'
     as global_providers;
 
@@ -37,9 +38,11 @@ final organizationSummaryProvider = FutureProvider<OrganizationSummary>((ref) {
     );
   }
 
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
+
   return ref.watch(organizationRemoteDataSourceProvider).getSummary(
         companyId: ctx.companyId,
-        scenarioType: 'PROBABLE',
+        scenarioType: scenarioType,
       );
 });
 

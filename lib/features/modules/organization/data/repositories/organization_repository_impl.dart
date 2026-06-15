@@ -1,3 +1,5 @@
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+
 import '../models/organization_area_model.dart';
 import '../models/organization_position_model.dart';
 import '../datasources/organization_remote_datasource.dart';
@@ -7,9 +9,13 @@ class OrganizationRepositoryImpl {
 
   OrganizationRepositoryImpl({required this.remoteDataSource});
 
-  Future<List<OrganizationAreaModel>> getOrganization(String companyId) async {
+  Future<List<OrganizationAreaModel>> getOrganization(
+    String companyId, {
+    String? scenarioType,
+  }) async {
     final summary = await remoteDataSource.getSummary(
       companyId: int.tryParse(companyId) ?? 0,
+      scenarioType: scenarioType ?? ScenarioType.probable.toApi(),
     );
     return summary.areas
         .map((area) => OrganizationAreaModel(
@@ -39,7 +45,8 @@ class OrganizationRepositoryImpl {
     );
   }
 
-  Future<void> createPosition(String companyId, OrganizationPositionModel position) async {
+  Future<void> createPosition(
+      String companyId, OrganizationPositionModel position) async {
     await remoteDataSource.createPosition(
       companyId: int.tryParse(companyId) ?? 0,
       data: position.toJson(),

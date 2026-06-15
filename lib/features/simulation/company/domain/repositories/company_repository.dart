@@ -14,7 +14,7 @@ abstract class CompanyRepository {
 
   Future<List<Map<String, dynamic>>> getIncoherences({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   });
 
   Future<List<Map<String, dynamic>>> getDecisions({
@@ -33,9 +33,11 @@ abstract class CompanyRepository {
 
   Future<Company> activateCompany({required int companyId});
 
-  Future<Company> closeCompany({required int companyId, required String reason});
+  Future<Company> closeCompany(
+      {required int companyId, required String reason});
 
-  Future<void> linkGroupToCompany({required int groupId, required int companyId});
+  Future<void> linkGroupToCompany(
+      {required int groupId, required int companyId});
 
   Future<List<Company>> getCompaniesByCourse({required int courseId});
 }

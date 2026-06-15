@@ -3,10 +3,17 @@ import 'package:simcore_frontend/features/modules/accounting/data/models/account
 import 'package:simcore_frontend/features/modules/accounting/data/models/financial_statement_model.dart';
 
 abstract class AccountingRemoteDataSource {
-  Future<void> generateAccountingEntries(String companyId);
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId);
-  Future<void> generateFinancialStatements(String companyId);
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId);
+  Future<void> generateAccountingEntries(String companyId, String scenarioType);
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+    String companyId,
+    String scenarioType,
+  );
+  Future<void> generateFinancialStatements(
+      String companyId, String scenarioType);
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+    String companyId,
+    String scenarioType,
+  );
   Future<void> completeAccountingModule(String companyId);
 }
 
@@ -17,12 +24,15 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   final ApiClient _apiClient;
 
   @override
-  Future<void> generateAccountingEntries(String companyId) async {
+  Future<void> generateAccountingEntries(
+    String companyId,
+    String scenarioType,
+  ) async {
     final result = await _apiClient.post(
       '/api/v1/simulation/accounting-entries/generate',
       data: {
         'companyId': int.tryParse(companyId) ?? companyId,
-        'scenarioType': 'PROBABLE',
+        'scenarioType': scenarioType,
       },
     );
 
@@ -33,11 +43,14 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   }
 
   @override
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId) async {
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+    String companyId,
+    String scenarioType,
+  ) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/accounting-entries/company/$companyId/scenario',
       queryParameters: {
-        'scenarioType': 'PROBABLE',
+        'scenarioType': scenarioType,
       },
     );
 
@@ -48,12 +61,15 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   }
 
   @override
-  Future<void> generateFinancialStatements(String companyId) async {
+  Future<void> generateFinancialStatements(
+    String companyId,
+    String scenarioType,
+  ) async {
     final result = await _apiClient.post(
       '/api/v1/simulation/financial-statements/generate',
       data: {
         'companyId': int.tryParse(companyId) ?? companyId,
-        'scenarioType': 'PROBABLE',
+        'scenarioType': scenarioType,
       },
     );
 
@@ -64,17 +80,21 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   }
 
   @override
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId) async {
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+    String companyId,
+    String scenarioType,
+  ) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/financial-statements/company/$companyId/scenario',
       queryParameters: {
-        'scenarioType': 'PROBABLE',
+        'scenarioType': scenarioType,
       },
     );
 
     return result.fold(
       (failure) => throw failure,
-      (data) => _extractList(data).map(FinancialStatementModel.fromJson).toList(),
+      (data) =>
+          _extractList(data).map(FinancialStatementModel.fromJson).toList(),
     );
   }
 

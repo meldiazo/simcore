@@ -1,3 +1,4 @@
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import '../../domain/entities/sales_projection.dart';
 
 class SalesProjectionModel extends SalesProjection {
@@ -8,15 +9,23 @@ class SalesProjectionModel extends SalesProjection {
     required super.scenario,
   });
 
- factory SalesProjectionModel.fromJson(Map<String, dynamic> json) {
+  factory SalesProjectionModel.fromJson(Map<String, dynamic> json) {
     // 1. Buscamos en la raíz por si acaso
-    int extractedDemand = _readInt(json, ['monthlyDemand', 'demandUnitsPerMonth', 'projectedMonthlyDemand', 'unitsPerMonth']);
-    double extractedPrice = _readDouble(json, ['estimatedPrice', 'estimatedUnitPrice', 'unitPrice', 'price']);
+    int extractedDemand = _readInt(json, [
+      'monthlyDemand',
+      'demandUnitsPerMonth',
+      'projectedMonthlyDemand',
+      'unitsPerMonth'
+    ]);
+    double extractedPrice = _readDouble(
+        json, ['estimatedPrice', 'estimatedUnitPrice', 'unitPrice', 'price']);
 
     // 2. Escarbamos directamente en el mes 1 sin condiciones raras
-    if (json.containsKey('periods') && json['periods'] != null && (json['periods'] as List).isNotEmpty) {
+    if (json.containsKey('periods') &&
+        json['periods'] != null &&
+        (json['periods'] as List).isNotEmpty) {
       final firstPeriod = json['periods'][0] as Map<String, dynamic>;
-      
+
       // Sobreescribimos con los datos reales del periodo
       if (extractedDemand == 0) {
         extractedDemand = _readInt(firstPeriod, ['demandUnits']);
@@ -29,8 +38,13 @@ class SalesProjectionModel extends SalesProjection {
     return SalesProjectionModel(
       monthlyDemand: extractedDemand,
       estimatedPrice: extractedPrice,
-      projectedRevenue: _readDouble(json, ['totalRevenue', 'projectedRevenue', 'monthlyRevenue', 'revenue']),
-      scenario: _readString(json, ['scenarioType', 'scenario', 'type'], fallback: 'PROBABLE'),
+      projectedRevenue: _readDouble(json,
+          ['totalRevenue', 'projectedRevenue', 'monthlyRevenue', 'revenue']),
+      scenario: _readString(
+        json,
+        ['scenarioType', 'scenario', 'type'],
+        fallback: ScenarioType.probable.toApi(),
+      ),
     );
   }
 

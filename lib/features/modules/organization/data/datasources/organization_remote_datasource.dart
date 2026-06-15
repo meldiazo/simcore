@@ -11,7 +11,7 @@ class OrganizationRemoteDataSource {
 
   Future<OrganizationSummary> getSummary({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     if (companyId <= 0) {
       return _emptySummary(
@@ -235,7 +235,8 @@ class OrganizationRemoteDataSource {
       id: _readInt(json, ['id', 'positionId']),
       areaId: _readInt(json, ['areaId']),
       title: _readString(json, ['title', 'name', 'positionName']),
-      responsibilities: _readNullableString(json, ['responsibilities', 'description']),
+      responsibilities:
+          _readNullableString(json, ['responsibilities', 'description']),
       headcount: _readInt(json, ['headcount', 'quantity']),
       monthlySalary: _readDouble(json, ['monthlySalary', 'salary']),
       capacityPerPerson: _readNullableDouble(json, [

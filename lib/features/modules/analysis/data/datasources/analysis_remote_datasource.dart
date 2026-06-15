@@ -7,7 +7,7 @@ class AnalysisRemoteDataSource {
 
   Future<Map<String, dynamic>?> getAnalysis({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/companies/$companyId/analysis',
@@ -21,7 +21,7 @@ class AnalysisRemoteDataSource {
 
   Future<Map<String, dynamic>?> getFinancialIndicators({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/companies/$companyId/financial-indicators',
@@ -35,7 +35,7 @@ class AnalysisRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getIncoherences({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/companies/$companyId/incoherences',
@@ -49,7 +49,7 @@ class AnalysisRemoteDataSource {
 
   Future<Map<String, dynamic>?> getNarrativeReport({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/companies/$companyId/report',
@@ -70,14 +70,20 @@ class AnalysisRemoteDataSource {
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
-      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     if (data is Map) {
       final json = Map<String, dynamic>.from(data);
       for (final key in ['data', 'content', 'items', 'incoherences']) {
         final value = json[key];
         if (value is List) {
-          return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          return value
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
       }
     }

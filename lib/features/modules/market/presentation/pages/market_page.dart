@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
@@ -10,10 +12,13 @@ import 'package:simcore_frontend/features/simulation/decisions/data/models/decis
 import 'package:simcore_frontend/features/simulation/decisions/data/repositories/decision_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
-import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
-import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
+import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart'
+    as module_actions;
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart'
+    as global_providers;
 import 'package:simcore_frontend/features/modules/investment_financing/presentation/providers/investment_financing_providers.dart';
-import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart'
+    as company_providers;
 
 class MarketPage extends ConsumerStatefulWidget {
   const MarketPage({super.key});
@@ -30,11 +35,15 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   }
 
   Future<void> _saveAssumptions(MarketAssumptionModel assumption) async {
-    final success = await ref.read(marketNotifierProvider.notifier).updateAssumption(assumption);
+    final success = await ref
+        .read(marketNotifierProvider.notifier)
+        .updateAssumption(assumption);
 
     if (mounted && success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Supuestos de mercado guardados.'), backgroundColor: SimcoreColors.success),
+        const SnackBar(
+            content: Text('Supuestos de mercado guardados.'),
+            backgroundColor: SimcoreColors.success),
       );
 
       final decision = DecisionModel(
@@ -45,79 +54,87 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         payload: assumption.toJson(),
         justification: assumption.commercialJustification,
       );
-      ref.read(decisionNotifierProvider.notifier).createDecision(decision);
-
+      unawaited(
+          ref.read(decisionNotifierProvider.notifier).createDecision(decision));
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al guardar los supuestos.'), backgroundColor: SimcoreColors.danger),
+        const SnackBar(
+            content: Text('Error al guardar los supuestos.'),
+            backgroundColor: SimcoreColors.danger),
       );
     }
   }
 
   Future<void> _generateProjection() async {
-    final success = await ref.read(marketNotifierProvider.notifier).generateProjection();
+    final success =
+        await ref.read(marketNotifierProvider.notifier).generateProjection();
     if (mounted && success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proyección de ventas generada.'), backgroundColor: SimcoreColors.accent),
+        const SnackBar(
+            content: Text('Proyección de ventas generada.'),
+            backgroundColor: SimcoreColors.accent),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al generar la proyección.'), backgroundColor: SimcoreColors.danger),
+        const SnackBar(
+            content: Text('Error al generar la proyección.'),
+            backgroundColor: SimcoreColors.danger),
       );
     }
   }
 
   Future<void> _completeModule() async {
-  final companyId = ref.read(currentCompanyIdProvider).toString();
+    final companyId = ref.read(currentCompanyIdProvider).toString();
 
-  try {
-    // 1. FORZAMOS EL INICIO explícitamente antes de completar
-    // Esto asegura que el estado del servidor cambie a EN_PROGRESO
-    await ref.read(module_actions.moduleProgressProvider.notifier).start(
-          companyId,
-          SimModule.market.toApi(),
-        );
-    
-    // Pequeño delay de 300ms para dar tiempo al servidor a procesar el cambio de estado
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    // 2. AHORA SÍ, COMPLETAMOS EL MÓDULO
-    final success =
-        await ref.read(marketNotifierProvider.notifier).completeMarketModule();
-
-    if (mounted && success) {
-      // 3. COMPLETAMOS EL PROGRESO DEL MÓDULO A NIVEL GLOBAL
-      await ref.read(module_actions.moduleProgressProvider.notifier).complete(
+    try {
+      // 1. FORZAMOS EL INICIO explícitamente antes de completar
+      // Esto asegura que el estado del servidor cambie a EN_PROGRESO
+      await ref.read(module_actions.moduleProgressProvider.notifier).start(
             companyId,
             SimModule.market.toApi(),
           );
 
-      if (!mounted) return;
+      // Pequeño delay de 300ms para dar tiempo al servidor a procesar el cambio de estado
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      // Invalida estados para refrescar UI
-      ref.invalidate(company_providers.companyModuleProgressProvider);
-      ref.invalidate(company_providers.companyWorkspaceProvider);
-      ref.invalidate(global_providers.moduleProgressProvider);
-      ref.invalidate(investmentFinancingProvider(companyId));
+      // 2. AHORA SÍ, COMPLETAMOS EL MÓDULO
+      final success = await ref
+          .read(marketNotifierProvider.notifier)
+          .completeMarketModule();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Módulo completado con éxito.'),
-          backgroundColor: SimcoreColors.success,
-        ),
-      );
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al procesar: ${e.toString()}'),
-          backgroundColor: SimcoreColors.danger,
-        ),
-      );
+      if (mounted && success) {
+        // 3. COMPLETAMOS EL PROGRESO DEL MÓDULO A NIVEL GLOBAL
+        await ref.read(module_actions.moduleProgressProvider.notifier).complete(
+              companyId,
+              SimModule.market.toApi(),
+            );
+
+        if (!mounted) return;
+
+        // Invalida estados para refrescar UI
+        ref.invalidate(company_providers.companyModuleProgressProvider);
+        ref.invalidate(company_providers.companyWorkspaceProvider);
+        ref.invalidate(global_providers.moduleProgressProvider);
+        ref.invalidate(investmentFinancingProvider(companyId));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Módulo completado con éxito.'),
+            backgroundColor: SimcoreColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar: ${e.toString()}'),
+            backgroundColor: SimcoreColors.danger,
+          ),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -129,9 +146,9 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       _hasStarted = true;
       Future.microtask(() {
         ref.read(module_actions.moduleProgressProvider.notifier).start(
-          ctxState.context!.companyId.toString(),
-          SimModule.market.toApi(),
-        );
+              ctxState.context!.companyId.toString(),
+              SimModule.market.toApi(),
+            );
       });
     }
 
@@ -149,7 +166,8 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       children: [
         const PageIntro(
           title: 'Módulo de Mercado',
-          subtitle: 'Define tus supuestos de mercado para estimar la demanda y proyectar las ventas.',
+          subtitle:
+              'Define tus supuestos de mercado para estimar la demanda y proyectar las ventas.',
         ),
         const SizedBox(height: 24),
         GlassPanel(
@@ -171,10 +189,18 @@ class _MarketPageState extends ConsumerState<MarketPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
-                  onPressed: marketNotifierState.isLoading ? null : _generateProjection,
-                  icon: marketNotifierState.isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.auto_awesome),
+                  onPressed: marketNotifierState.isLoading
+                      ? null
+                      : _generateProjection,
+                  icon: marketNotifierState.isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.auto_awesome),
                   label: const Text('Generar Proyección'),
-                  style: FilledButton.styleFrom(backgroundColor: SimcoreColors.accent),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: SimcoreColors.accent),
                 ),
               ),
             ],
@@ -184,12 +210,14 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         GlassPanel(
           child: ResponsiveHeaderAction(
             title: 'Finalizar Módulo de Mercado',
-            subtitle: 'Al completar, tus supuestos y proyecciones se considerarán finales para este ciclo.',
+            subtitle:
+                'Al completar, tus supuestos y proyecciones se considerarán finales para este ciclo.',
             action: FilledButton.icon(
               onPressed: canComplete ? _completeModule : null,
               icon: const Icon(Icons.check_circle_outline_rounded),
               label: const Text('Completar Módulo'),
-              style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
+              style: FilledButton.styleFrom(
+                  backgroundColor: SimcoreColors.success),
             ),
           ),
         ),

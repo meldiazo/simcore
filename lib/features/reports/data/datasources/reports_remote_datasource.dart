@@ -10,7 +10,7 @@ class ReportsRemoteDataSource {
 
   Future<Map<String, dynamic>> getCompanyReport({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _client.get(
       '/api/v1/simulation/companies/$companyId/report',
@@ -24,7 +24,7 @@ class ReportsRemoteDataSource {
 
   Future<List<int>> exportCompanyPdf({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _client.get(
       '/api/v1/simulation/companies/$companyId/export/pdf',
@@ -44,7 +44,7 @@ class ReportsRemoteDataSource {
 
   Future<List<int>> exportCourseCsv({
     required int courseId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _client.get(
       '/api/v1/simulation/courses/$courseId/export/csv',

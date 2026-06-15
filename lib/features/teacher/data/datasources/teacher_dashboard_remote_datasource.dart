@@ -8,7 +8,7 @@ class TeacherDashboardRemoteDataSource {
 
   Future<TeacherDashboard> getDashboard({
     required int courseId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/courses/$courseId/teacher-dashboard',
@@ -25,7 +25,8 @@ class TeacherDashboardRemoteDataSource {
             groups: const [],
           );
         }
-        return TeacherDashboard.fromJson(Map<String, dynamic>.from(data as Map));
+        return TeacherDashboard.fromJson(
+            Map<String, dynamic>.from(data as Map));
       },
     );
   }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/reports/presentation/providers/report_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 class CompanyReportPage extends ConsumerWidget {
@@ -17,14 +19,15 @@ class CompanyReportPage extends ConsumerWidget {
     final exportState = ref.watch(reportExportNotifierProvider);
     final user = ref.watch(authNotifierProvider).user;
     final ctx = ref.watch(simulationContextNotifierProvider).context;
-    final selectedScenario = ref.watch(reportScenarioTypeProvider);
+    final selectedScenario = ref.watch(selectedScenarioTypeProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
           title: 'Reporte Final',
-          subtitle: 'Análisis narrativo e indicadores financieros consolidados.',
+          subtitle:
+              'Análisis narrativo e indicadores financieros consolidados.',
         ),
         const SizedBox(height: 16),
         _ScenarioSelector(selected: selectedScenario),
@@ -61,11 +64,9 @@ class _ScenarioSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const options = ['PROBABLE', 'OPTIMISTIC', 'PESSIMISTIC'];
-    const labels = {
-      'PROBABLE': 'Probable',
-      'OPTIMISTIC': 'Optimista',
-      'PESSIMISTIC': 'Pesimista',
+    final options = ScenarioType.values.map((type) => type.toApi()).toList();
+    final labels = {
+      for (final type in ScenarioType.values) type.toApi(): type.label,
     };
     return Wrap(
       spacing: 8,
@@ -80,7 +81,7 @@ class _ScenarioSelector extends ConsumerWidget {
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
           onSelected: (_) =>
-              ref.read(reportScenarioTypeProvider.notifier).state = opt,
+              ref.read(scenarioTypeOverrideProvider.notifier).state = opt,
         );
       }).toList(),
     );
@@ -187,7 +188,8 @@ class _IndicatorsPanel extends StatelessWidget {
         spacing: 24,
         runSpacing: 16,
         children: [
-          _KpiTile(label: 'VAN', value: van != null ? van.toStringAsFixed(0) : '-'),
+          _KpiTile(
+              label: 'VAN', value: van != null ? van.toStringAsFixed(0) : '-'),
           _KpiTile(label: 'TIR', value: tir != null ? _pct(tir) : '-'),
           _KpiTile(label: 'PRI (meses)', value: pri?.toString() ?? '-'),
           _KpiTile(label: 'Margen Bruto', value: _pct(grossM)),
@@ -286,7 +288,8 @@ class _IncoherencesPanel extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isHigh ? SimcoreColors.dangerSoft : SimcoreColors.warningSoft,
+            color:
+                isHigh ? SimcoreColors.dangerSoft : SimcoreColors.warningSoft,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isHigh ? SimcoreColors.danger : SimcoreColors.warning,
@@ -367,8 +370,7 @@ class _SuccessBanner extends StatelessWidget {
           const Icon(Icons.check_circle_rounded,
               color: SimcoreColors.success, size: 18),
           const SizedBox(width: 8),
-          Text(message,
-              style: const TextStyle(color: SimcoreColors.success)),
+          Text(message, style: const TextStyle(color: SimcoreColors.success)),
         ],
       ),
     );
@@ -390,8 +392,7 @@ class _ErrorBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: SimcoreColors.danger.withValues(alpha: 0.4)),
       ),
-      child: Text(message,
-          style: const TextStyle(color: SimcoreColors.danger)),
+      child: Text(message, style: const TextStyle(color: SimcoreColors.danger)),
     );
   }
 }

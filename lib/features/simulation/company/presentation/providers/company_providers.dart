@@ -6,6 +6,7 @@ import 'package:simcore_frontend/features/simulation/company/data/repositories/c
 import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/repositories/company_repository.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/scenario_context_provider.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────────
@@ -38,8 +39,7 @@ final companyModuleProgressProvider =
       .getModuleProgress(companyId: ctx.companyId);
 });
 
-final activeScenarioProvider =
-    FutureProvider<Map<String, dynamic>?>((ref) {
+final activeScenarioProvider = FutureProvider<Map<String, dynamic>?>((ref) {
   final ctx = ref.watch(simulationContextNotifierProvider).context;
   if (ctx == null) return Future.value(null);
   return ref
@@ -51,9 +51,10 @@ final companyIncoherencesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) {
   final ctx = ref.watch(simulationContextNotifierProvider).context;
   if (ctx == null) return Future.value(const []);
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
   return ref.watch(companyRepositoryProvider).getIncoherences(
         companyId: ctx.companyId,
-        scenarioType: 'PROBABLE',
+        scenarioType: scenarioType,
       );
 });
 
@@ -83,8 +84,7 @@ class CompanyWorkspaceData {
   final List<Map<String, dynamic>> incoherences;
   final List<Map<String, dynamic>> decisions;
 
-  int get completedModules =>
-      modules.where((m) => m.status.isComplete).length;
+  int get completedModules => modules.where((m) => m.status.isComplete).length;
 }
 
 final companyWorkspaceProvider =
@@ -95,12 +95,13 @@ final companyWorkspaceProvider =
   }
 
   final repo = ref.watch(companyRepositoryProvider);
+  final scenarioType = ref.watch(selectedScenarioTypeProvider);
 
   final results = await Future.wait([
     repo.getCompanyById(companyId: ctx.companyId),
     repo.getModuleProgress(companyId: ctx.companyId),
     repo.getActiveScenario(groupId: ctx.groupId),
-    repo.getIncoherences(companyId: ctx.companyId, scenarioType: 'PROBABLE'),
+    repo.getIncoherences(companyId: ctx.companyId, scenarioType: scenarioType),
     repo.getDecisions(companyId: ctx.companyId),
   ]);
 
@@ -160,13 +161,13 @@ class CompanyFormNotifier extends StateNotifier<AsyncValue<Company?>> {
   }
 }
 
-final companyFormNotifierProvider =
-    StateNotifierProvider.autoDispose<CompanyFormNotifier, AsyncValue<Company?>>(
+final companyFormNotifierProvider = StateNotifierProvider.autoDispose<
+    CompanyFormNotifier, AsyncValue<Company?>>(
   (ref) => CompanyFormNotifier(ref.watch(companyRepositoryProvider)),
 );
 
-final companiesByCourseProvider =
-    FutureProvider.family.autoDispose<List<Company>, int>((ref, courseId) async {
+final companiesByCourseProvider = FutureProvider.family
+    .autoDispose<List<Company>, int>((ref, courseId) async {
   final repo = ref.watch(companyRepositoryProvider);
   return repo.getCompaniesByCourse(courseId: courseId);
 });

@@ -8,6 +8,7 @@ class FinancialStatementModel {
   final StatementType type;
   final Map<String, dynamic> data;
   final DateTime generatedAt;
+  final String status;
 
   FinancialStatementModel({
     required this.id,
@@ -15,6 +16,7 @@ class FinancialStatementModel {
     required this.type,
     required this.data,
     required this.generatedAt,
+    required this.status,
   });
 
   factory FinancialStatementModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class FinancialStatementModel {
       ),
       data: _parseData(json['data'] ?? json['statementData'] ?? json['values']),
       generatedAt: _parseDate(json['generatedAt'] ?? json['createdAt']),
+      status: (json['status'] ?? json['state'] ?? 'CURRENT').toString(),
     );
   }
 

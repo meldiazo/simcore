@@ -16,9 +16,7 @@ class CompanyRemoteDataSource {
     );
     return result.fold(
       (e) => throw e,
-      (data) => _extractList(data)
-          .map(CompanyModel.fromJson)
-          .toList(),
+      (data) => _extractList(data).map(CompanyModel.fromJson).toList(),
     );
   }
 
@@ -40,9 +38,8 @@ class CompanyRemoteDataSource {
     );
     return result.fold(
       (e) => throw e,
-      (data) => _extractList(data)
-          .map(CompanyModuleProgressModel.fromJson)
-          .toList(),
+      (data) =>
+          _extractList(data).map(CompanyModuleProgressModel.fromJson).toList(),
     );
   }
 
@@ -64,7 +61,7 @@ class CompanyRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getIncoherences({
     required int companyId,
-    String scenarioType = 'PROBABLE',
+    required String scenarioType,
   }) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/companies/$companyId/incoherences',
@@ -125,7 +122,8 @@ class CompanyRemoteDataSource {
     );
   }
 
-  Future<Company> closeCompany({required int companyId, required String reason}) async {
+  Future<Company> closeCompany(
+      {required int companyId, required String reason}) async {
     final result = await _apiClient.patch(
       '/api/v1/simulation/companies/$companyId/close',
       data: {'reason': reason},
@@ -136,7 +134,8 @@ class CompanyRemoteDataSource {
     );
   }
 
-  Future<void> linkGroupToCompany({required int groupId, required int companyId}) async {
+  Future<void> linkGroupToCompany(
+      {required int groupId, required int companyId}) async {
     final result = await _apiClient.patch(
       '/api/v1/iam/groups/$groupId/company',
       data: {'companyId': companyId},
@@ -152,10 +151,7 @@ class CompanyRemoteDataSource {
     return result.fold(
       (e) => throw e,
       (data) {
-        if (data is! List) return [];
-        return data
-            .map((item) => CompanyModel.fromJson(Map<String, dynamic>.from(item as Map)))
-            .toList();
+        return _extractList(data).map(CompanyModel.fromJson).toList();
       },
     );
   }

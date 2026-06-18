@@ -38,7 +38,8 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
 
     final targetCourseId = activeCourseId ?? _selectedCourseId;
     if (targetCourseId == null) {
-      setState(() => _fieldErrors = {'error': 'No se pudo determinar el ID del curso.'});
+      setState(() =>
+          _fieldErrors = {'error': 'No se pudo determinar el ID del curso.'});
       return;
     }
 
@@ -82,7 +83,8 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
     final contextState = ref.watch(simulationContextNotifierProvider);
     final activeCourseId = contextState.context?.courseId;
 
-    final coursesAsync = activeCourseId == null ? ref.watch(coursesProvider) : null;
+    final coursesAsync =
+        activeCourseId == null ? ref.watch(coursesProvider) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +107,8 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
                 FormErrorSummary(errors: _fieldErrors),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre del grupo'),
+                  decoration:
+                      const InputDecoration(labelText: 'Nombre del grupo'),
                   validator: (v) =>
                       FormValidators.required(v, fieldName: 'Nombre'),
                 ),
@@ -132,11 +135,13 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
                         );
                       }
                       return DropdownButtonFormField<int>(
-                        value: _selectedCourseId,
-                        decoration: const InputDecoration(labelText: 'Selecciona el curso'),
+                        initialValue: _selectedCourseId,
+                        decoration: const InputDecoration(
+                            labelText: 'Selecciona el curso'),
                         items: courses.map((c) {
                           final id = c['id'] as int? ?? 0;
-                          final name = (c['name'] ?? c['title'] ?? '').toString();
+                          final name =
+                              (c['name'] ?? c['title'] ?? '').toString();
                           final code = (c['code'] ?? '').toString();
                           return DropdownMenuItem<int>(
                             value: id,
@@ -148,7 +153,8 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
                             _selectedCourseId = v;
                           });
                         },
-                        validator: (v) => v == null ? 'Selecciona un curso' : null,
+                        validator: (v) =>
+                            v == null ? 'Selecciona un curso' : null,
                       );
                     },
                   ),
@@ -283,8 +289,10 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
             data: (users) {
               final students = users.where((u) {
                 final roles = (u['roles'] as List?)
-                    ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
-                    .toList() ?? [];
+                        ?.map((r) =>
+                            r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                        .toList() ??
+                    [];
                 return roles.contains('ESTUDIANTE');
               }).toList();
 
@@ -296,43 +304,40 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
                 );
               }
 
-              return Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedMemberId,
-                      decoration: const InputDecoration(
-                          labelText: 'Selecciona Estudiante', isDense: true),
-                      items: students.map((s) {
-                        final id = s['id'] as int? ?? 0;
-                        final name = '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
-                        final username = s['username'] ?? '';
-                        final displayName = name.isNotEmpty ? '$name ($username)' : username;
-                        return DropdownMenuItem<int>(
-                          value: id,
-                          child: Text(displayName),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        setState(() {
-                          _selectedMemberId = v;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _selectedMemberId == null
-                        ? null
-                        : () {
-                            widget.onAddMember(_selectedMemberId!);
-                            setState(() {
-                              _selectedMemberId = null;
-                            });
-                          },
-                    icon: const Icon(Icons.person_add_rounded),
-                  ),
-                ],
+              return _CompactActionRow(
+                field: DropdownButtonFormField<int>(
+                  initialValue: _selectedMemberId,
+                  decoration: const InputDecoration(
+                      labelText: 'Selecciona Estudiante', isDense: true),
+                  items: students.map((s) {
+                    final id = s['id'] as int? ?? 0;
+                    final name =
+                        '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
+                    final username = s['username'] ?? '';
+                    final displayName =
+                        name.isNotEmpty ? '$name ($username)' : username;
+                    return DropdownMenuItem<int>(
+                      value: id,
+                      child: Text(displayName),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedMemberId = v;
+                    });
+                  },
+                ),
+                action: IconButton.filled(
+                  onPressed: _selectedMemberId == null
+                      ? null
+                      : () {
+                          widget.onAddMember(_selectedMemberId!);
+                          setState(() {
+                            _selectedMemberId = null;
+                          });
+                        },
+                  icon: const Icon(Icons.person_add_rounded),
+                ),
               );
             },
           ),
@@ -345,7 +350,9 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
                 final nameMap = {
                   for (final u in users)
                     u['id'] as int: () {
-                      final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();
+                      final name =
+                          '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'
+                              .trim();
                       final username = u['username'] ?? '';
                       return name.isNotEmpty ? '$name ($username)' : username;
                     }()
@@ -369,8 +376,7 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
             OutlinedButton.icon(
               onPressed: () => widget.onSendMembers(groupId),
               icon: const Icon(Icons.group_add_rounded),
-              label:
-                  Text('Agregar ${widget.pendingMembers.length} miembro(s)'),
+              label: Text('Agregar ${widget.pendingMembers.length} miembro(s)'),
             ),
           ],
 
@@ -401,39 +407,71 @@ class _GroupResultPanelState extends ConsumerState<_GroupResultPanel> {
                 );
               }
 
-              return Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedCompanyId,
-                      decoration: const InputDecoration(
-                          labelText: 'Selecciona Empresa', isDense: true),
-                      items: companies.map((c) {
-                        return DropdownMenuItem<int>(
-                          value: c.id,
-                          child: Text('${c.name} (ID: ${c.id})'),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        setState(() {
-                          _selectedCompanyId = v;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: _selectedCompanyId == null
-                        ? null
-                        : () => widget.onLinkCompany(groupId, _selectedCompanyId!),
-                    child: const Text('Vincular'),
-                  ),
-                ],
+              return _CompactActionRow(
+                field: DropdownButtonFormField<int>(
+                  initialValue: _selectedCompanyId,
+                  decoration: const InputDecoration(
+                      labelText: 'Selecciona Empresa', isDense: true),
+                  items: companies.map((c) {
+                    return DropdownMenuItem<int>(
+                      value: c.id,
+                      child: Text('${c.name} (ID: ${c.id})'),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedCompanyId = v;
+                    });
+                  },
+                ),
+                action: OutlinedButton(
+                  onPressed: _selectedCompanyId == null
+                      ? null
+                      : () =>
+                          widget.onLinkCompany(groupId, _selectedCompanyId!),
+                  child: const Text('Vincular'),
+                ),
               );
             },
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CompactActionRow extends StatelessWidget {
+  const _CompactActionRow({
+    required this.field,
+    required this.action,
+  });
+
+  final Widget field;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              field,
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: action),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: field),
+            const SizedBox(width: 8),
+            action,
+          ],
+        );
+      },
     );
   }
 }

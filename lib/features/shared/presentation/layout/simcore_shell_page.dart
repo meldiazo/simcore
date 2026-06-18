@@ -3,6 +3,7 @@ import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/academic/presentation/pages/course_manager_page.dart';
 import 'package:simcore_frontend/features/academic/presentation/pages/group_manager_page.dart';
+import 'package:simcore_frontend/features/academic/presentation/pages/user_manager_page.dart';
 import 'package:simcore_frontend/features/auth/domain/entities/auth_user.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/comparison/presentation/pages/company_comparison_page.dart';
@@ -37,6 +38,7 @@ enum SimcoreSection {
   teacher,
   courseManager,
   groupManager,
+  userManager,
   scenarioManager,
   report,
 }
@@ -201,58 +203,16 @@ const _adminDestinations = [
     icon: Icons.group_work_rounded,
   ),
   SimcoreDestination(
+    section: SimcoreSection.userManager,
+    label: 'Usuarios y Roles',
+    route: AppRouter.userManager,
+    icon: Icons.manage_accounts_rounded,
+  ),
+  SimcoreDestination(
     section: SimcoreSection.scenarioManager,
     label: 'Gestión de Escenarios',
     route: AppRouter.scenarioManager,
     icon: Icons.tune_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.ranking,
-    label: 'Comparación',
-    route: AppRouter.ranking,
-    icon: Icons.compare_arrows_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.report,
-    label: 'Reporte Final',
-    route: AppRouter.report,
-    icon: Icons.description_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.workspace,
-    label: 'Workspace de Empresa',
-    route: AppRouter.workspace,
-    icon: Icons.space_dashboard_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.market,
-    label: 'Revisar Mercado',
-    route: AppRouter.market,
-    icon: Icons.trending_up_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.investment,
-    label: 'Revisar Inversión',
-    route: AppRouter.investment,
-    icon: Icons.attach_money_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.organization,
-    label: 'Revisar Organización',
-    route: AppRouter.organization,
-    icon: Icons.groups_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.accounting,
-    label: 'Revisar Contabilidad',
-    route: AppRouter.accounting,
-    icon: Icons.receipt_long_rounded,
-  ),
-  SimcoreDestination(
-    section: SimcoreSection.analysis,
-    label: 'Revisar Análisis',
-    route: AppRouter.analysis,
-    icon: Icons.insert_chart_outlined_rounded,
   ),
 ];
 
@@ -262,11 +222,20 @@ class SimcoreShellPage extends ConsumerWidget {
   final SimcoreSection section;
 
   Widget _buildContent(WidgetRef ref) {
+    final contextState = ref.watch(simulationContextNotifierProvider);
+    final simulationContext = contextState.context;
+
+    if (_sectionNeedsSimulationContext(section) && simulationContext == null) {
+      return _SimulationContextRequiredState(status: contextState.status);
+    }
+
     return switch (section) {
       SimcoreSection.workspace => const WorkspacePage(),
       SimcoreSection.decisions => const DecisionsPage(),
       SimcoreSection.market => const MarketPage(),
-      SimcoreSection.investment => _buildInvestmentContent(ref),
+      SimcoreSection.investment => InvestmentFinancingPage(
+          companyId: simulationContext!.companyId.toString(),
+        ),
       SimcoreSection.organization => const OrganizationPage(),
       SimcoreSection.accounting => const AccountingPage(),
       SimcoreSection.analysis => const AnalysisPage(),
@@ -275,22 +244,25 @@ class SimcoreShellPage extends ConsumerWidget {
       SimcoreSection.teacher => const TeacherDashboardPage(),
       SimcoreSection.courseManager => const CourseManagerPage(),
       SimcoreSection.groupManager => const GroupManagerPage(),
+      SimcoreSection.userManager => const UserManagerPage(),
       SimcoreSection.scenarioManager => const ScenarioManagerPage(),
       SimcoreSection.report => const CompanyReportPage(),
     };
   }
 
-  Widget _buildInvestmentContent(WidgetRef ref) {
-    final contextState = ref.watch(simulationContextNotifierProvider);
-    final simulationContext = contextState.context;
-
-    if (simulationContext == null) {
-      return _SimulationContextRequiredState(status: contextState.status);
-    }
-
-    return InvestmentFinancingPage(
-      companyId: simulationContext.companyId.toString(),
-    );
+  bool _sectionNeedsSimulationContext(SimcoreSection section) {
+    return switch (section) {
+      SimcoreSection.workspace ||
+      SimcoreSection.decisions ||
+      SimcoreSection.market ||
+      SimcoreSection.investment ||
+      SimcoreSection.organization ||
+      SimcoreSection.accounting ||
+      SimcoreSection.analysis ||
+      SimcoreSection.report =>
+        true,
+      _ => false,
+    };
   }
 
   void _navigate(BuildContext context, SimcoreDestination destination) {
@@ -373,8 +345,7 @@ class _SimulationContextRequiredState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = status == SimulationContextStatus.initial ||
-        status == SimulationContextStatus.loading;
+    final isLoading = status == SimulationContextStatus.loading;
 
     if (isLoading) {
       return const Center(
@@ -400,8 +371,8 @@ class _SimulationContextRequiredState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Para abrir Inversiones y Financiamiento primero debes cargar una empresa o grupo. '
-            'Así el módulo usará el companyId real del flujo y no una empresa fija.',
+            'Para abrir este módulo primero debes cargar una empresa o grupo. '
+            'Así la pantalla usará el companyId real del flujo.',
             style: TextStyle(
               color: SimcoreColors.textSecondary,
               height: 1.5,
@@ -430,7 +401,7 @@ class _Sidebar extends ConsumerWidget {
   final SimcoreSection section;
   final ValueChanged<SimcoreDestination> onTap;
 
-    List<SimcoreDestination> _filterDestinations(AuthUser? user) {
+  List<SimcoreDestination> _filterDestinations(AuthUser? user) {
     if (user == null) return const [];
 
     final baseDestinations = user.isAdmin
@@ -440,7 +411,8 @@ class _Sidebar extends ConsumerWidget {
             : _studentDestinations;
 
     return baseDestinations
-        .where((destination) => AppRouter.canAccessRoute(destination.route, user))
+        .where(
+            (destination) => AppRouter.canAccessRoute(destination.route, user))
         .toList(growable: false);
   }
 
@@ -469,7 +441,8 @@ class _Sidebar extends ConsumerWidget {
     final username = user?.username ?? 'Usuario';
     final roles = user?.roles ?? const <String>[];
     final roleText = roles.isEmpty ? 'Sin rol' : roles.join(', ');
-    final avatarText = username.isNotEmpty ? username.substring(0, 1).toUpperCase() : '?';
+    final avatarText =
+        username.isNotEmpty ? username.substring(0, 1).toUpperCase() : '?';
 
     return Container(
       decoration: BoxDecoration(
@@ -511,7 +484,8 @@ class _Sidebar extends ConsumerWidget {
 
                   // Buscamos el progreso del módulo correspondiente a esta sección del menú
                   final simModule = _sectionToModuleMap[destination.section];
-                  final progress = simModule != null ? moduleProgressMap[simModule] : null;
+                  final progress =
+                      simModule != null ? moduleProgressMap[simModule] : null;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -519,27 +493,38 @@ class _Sidebar extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(18),
                       onTap: () => onTap(destination),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
                         decoration: BoxDecoration(
-                          color: active ? SimcoreColors.accentSoft : Colors.transparent,
+                          color: active
+                              ? SimcoreColors.accentSoft
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(18),
                           border: active
-                              ? Border.all(color: SimcoreColors.accent.withValues(alpha: 0.18))
+                              ? Border.all(
+                                  color: SimcoreColors.accent
+                                      .withValues(alpha: 0.18))
                               : null,
                         ),
                         child: Row(
                           children: [
                             Icon(
                               destination.icon,
-                              color: active ? SimcoreColors.accent : SimcoreColors.textSecondary,
+                              color: active
+                                  ? SimcoreColors.accent
+                                  : SimcoreColors.textSecondary,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 destination.label,
                                 style: TextStyle(
-                                  color: active ? SimcoreColors.accent : SimcoreColors.textSecondary,
-                                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                                  color: active
+                                      ? SimcoreColors.accent
+                                      : SimcoreColors.textSecondary,
+                                  fontWeight: active
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -552,11 +537,12 @@ class _Sidebar extends ConsumerWidget {
                 }).toList(growable: false),
               ),
             ),
-                        if (user != null && user.isAdmin)
+            if (user != null && user.isAdmin)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: FilledButton.icon(
-                  onPressed: () => Navigator.of(context).pushNamed(AppRouter.register),
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRouter.register),
                   icon: const Icon(Icons.person_add_rounded, size: 16),
                   label: const Text('Crear usuario'),
                   style: FilledButton.styleFrom(
@@ -647,16 +633,21 @@ class _ModuleStatusIndicator extends StatelessWidget {
     final Widget icon;
     switch (status) {
       case ModuleStatus.complete:
-        icon = const Icon(Icons.check_circle_outline_rounded, color: SimcoreColors.success, size: 18);
+        icon = const Icon(Icons.check_circle_outline_rounded,
+            color: SimcoreColors.success, size: 18);
         break;
       case ModuleStatus.inProgress:
-        icon = const Icon(Icons.data_usage_rounded, color: SimcoreColors.accent, size: 18);
+        icon = const Icon(Icons.data_usage_rounded,
+            color: SimcoreColors.accent, size: 18);
         break;
       case ModuleStatus.locked:
-        icon = const Icon(Icons.lock_outline_rounded, color: SimcoreColors.danger, size: 18); // Un módulo bloqueado no se puede editar.
+        icon = const Icon(Icons.lock_outline_rounded,
+            color: SimcoreColors.danger,
+            size: 18); // Un módulo bloqueado no se puede editar.
         break;
       case ModuleStatus.pending:
-        icon = const Icon(Icons.circle_outlined, color: SimcoreColors.textTertiary, size: 14);
+        icon = const Icon(Icons.circle_outlined,
+            color: SimcoreColors.textTertiary, size: 14);
         break;
       default:
         return const SizedBox.shrink();

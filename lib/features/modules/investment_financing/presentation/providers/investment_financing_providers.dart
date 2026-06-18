@@ -72,14 +72,63 @@ class InvestmentFinancingNotifier
   Future<void> refresh() => _initializeModule();
 
   Future<void> _initializeModule() async {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
-  try {
-    final parsedCompanyId = int.tryParse(companyId);
+    try {
+      final parsedCompanyId = int.tryParse(companyId);
 
-    if (parsedCompanyId == null || parsedCompanyId <= 0) {
+      if (parsedCompanyId == null || parsedCompanyId <= 0) {
+        if (!mounted) return;
+
+        state = state.copyWith(
+          isLoading: false,
+          isMarketComplete: false,
+          investmentItems: const [],
+          financingOptions: const [],
+          errorMessage:
+              'No se pudo validar el Módulo de Mercado porque el ID de empresa no es válido.',
+        );
+        return;
+      }
+
+      final moduleProgress = await companyRepository.getModuleProgress(
+        companyId: parsedCompanyId,
+      );
+
+      final marketReady = moduleProgress.any(
+        (module) =>
+            module.module == SimModule.market &&
+            module.status == ModuleStatus.complete,
+      );
+
+      if (!mounted) return;
+
+      if (!marketReady) {
+        state = state.copyWith(
+          isLoading: false,
+          isMarketComplete: false,
+          investmentItems: const [],
+          financingOptions: const [],
+          errorMessage: null,
+        );
+        return;
+      }
+
+      final investments = await repository.getInvestmentItems(companyId);
+      final financings = await repository.getFinancingOptions(companyId);
+
+      if (!mounted) return;
+
+      state = state.copyWith(
+        isLoading: false,
+        isMarketComplete: true,
+        investmentItems: investments,
+        financingOptions: financings,
+        errorMessage: null,
+      );
+    } catch (e) {
       if (!mounted) return;
 
       state = state.copyWith(
@@ -87,59 +136,10 @@ class InvestmentFinancingNotifier
         isMarketComplete: false,
         investmentItems: const [],
         financingOptions: const [],
-        errorMessage:
-            'No se pudo validar el Módulo de Mercado porque el ID de empresa no es válido.',
+        errorMessage: e.toString(),
       );
-      return;
     }
-
-    final moduleProgress = await companyRepository.getModuleProgress(
-      companyId: parsedCompanyId,
-    );
-
-    final marketReady = moduleProgress.any(
-      (module) =>
-          module.module == SimModule.market &&
-          module.status == ModuleStatus.complete,
-    );
-
-    if (!mounted) return;
-
-    if (!marketReady) {
-      state = state.copyWith(
-        isLoading: false,
-        isMarketComplete: false,
-        investmentItems: const [],
-        financingOptions: const [],
-        errorMessage: null,
-      );
-      return;
-    }
-
-    final investments = await repository.getInvestmentItems(companyId);
-    final financings = await repository.getFinancingOptions(companyId);
-
-    if (!mounted) return;
-
-    state = state.copyWith(
-      isLoading: false,
-      isMarketComplete: true,
-      investmentItems: investments,
-      financingOptions: financings,
-      errorMessage: null,
-    );
-  } catch (e) {
-    if (!mounted) return;
-
-    state = state.copyWith(
-      isLoading: false,
-      isMarketComplete: false,
-      investmentItems: const [],
-      financingOptions: const [],
-      errorMessage: e.toString(),
-    );
   }
-}
 
   Future<void> addInvestmentItem(
     InvestmentType type,
@@ -148,10 +148,10 @@ class InvestmentFinancingNotifier
   ) async {
     try {
       state = state.copyWith(
-  isLoading: true,
-  clearErrorMessage: true,
-  clearSuccessMessage: true,
-);
+        isLoading: true,
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      );
 
       final normalizedDescription = description.trim();
 
@@ -172,10 +172,10 @@ class InvestmentFinancingNotifier
       );
     } catch (e) {
       state = state.copyWith(
-  isLoading: false,
-  errorMessage: e.toString(),
-  clearSuccessMessage: true,
-);
+        isLoading: false,
+        errorMessage: e.toString(),
+        clearSuccessMessage: true,
+      );
     }
   }
 
@@ -187,10 +187,10 @@ class InvestmentFinancingNotifier
   ) async {
     try {
       state = state.copyWith(
-  isLoading: true,
-  clearErrorMessage: true,
-  clearSuccessMessage: true,
-);
+        isLoading: true,
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      );
 
       final annualInterestRate =
           (interestRate / 100).clamp(0.0, 1.0).toDouble();
@@ -213,20 +213,20 @@ class InvestmentFinancingNotifier
       );
     } catch (e) {
       state = state.copyWith(
-  isLoading: false,
-  errorMessage: e.toString(),
-  clearSuccessMessage: true,
-);
+        isLoading: false,
+        errorMessage: e.toString(),
+        clearSuccessMessage: true,
+      );
     }
   }
 
   Future<void> selectFinancingOption(String optionId) async {
     try {
       state = state.copyWith(
-  isLoading: true,
-  clearErrorMessage: true,
-  clearSuccessMessage: true,
-);
+        isLoading: true,
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      );
       await repository.selectFinancingOption(companyId, optionId);
 
       final financings = await repository.getFinancingOptions(companyId);
@@ -237,63 +237,60 @@ class InvestmentFinancingNotifier
       );
     } catch (e) {
       state = state.copyWith(
-  isLoading: false,
-  errorMessage: e.toString(),
-  clearSuccessMessage: true,
-);
+        isLoading: false,
+        errorMessage: e.toString(),
+        clearSuccessMessage: true,
+      );
     }
   }
 
   Future<void> completeModule() async {
     if (state.investmentItems.isEmpty) {
-  state = state.copyWith(
-    errorMessage: 'Debes registrar al menos un requerimiento de inversión.',
-    clearSuccessMessage: true,
-  );
-  return;
-}
+      state = state.copyWith(
+        errorMessage: 'Debes registrar al menos un requerimiento de inversión.',
+        clearSuccessMessage: true,
+      );
+      return;
+    }
 
     final hasSelectedFinancing =
         state.financingOptions.any((opt) => opt.isSelected);
 
     if (!hasSelectedFinancing) {
-  state = state.copyWith(
-    errorMessage:
-        'Debes seleccionar una opción de financiamiento para continuar.',
-    clearSuccessMessage: true,
-  );
-  return;
-}
+      state = state.copyWith(
+        errorMessage:
+            'Debes seleccionar una opción de financiamiento para continuar.',
+        clearSuccessMessage: true,
+      );
+      return;
+    }
 
     try {
       state = state.copyWith(
-  isLoading: true,
-  clearErrorMessage: true,
-  clearSuccessMessage: true,
-);
-      await repository.completeInvestment(companyId);
+        isLoading: true,
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      );
       await repository.completeFinancing(companyId);
-      await repository.completeModuleProgress(companyId);
 
       state = state.copyWith(
-  isLoading: false,
-  successMessage: '¡Estructuración financiera completada exitosamente!',
-  clearErrorMessage: true,
-);
+        isLoading: false,
+        successMessage: '¡Estructuración financiera completada exitosamente!',
+        clearErrorMessage: true,
+      );
     } catch (e) {
       state = state.copyWith(
-  isLoading: false,
-  errorMessage: e.toString(),
-  clearSuccessMessage: true,
-);
+        isLoading: false,
+        errorMessage: e.toString(),
+        clearSuccessMessage: true,
+      );
     }
   }
 }
 
-final investmentFinancingProvider = StateNotifierProvider.autoDispose.family<
-    InvestmentFinancingNotifier,
-    InvestmentFinancingState,
-    String>((ref, companyId) {
+final investmentFinancingProvider = StateNotifierProvider.autoDispose
+    .family<InvestmentFinancingNotifier, InvestmentFinancingState, String>(
+        (ref, companyId) {
   final repository = ref.watch(investmentFinancingRepositoryProvider);
   final companyRepository = ref.watch(companyRepositoryProvider);
 

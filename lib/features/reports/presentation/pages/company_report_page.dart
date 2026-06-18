@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
@@ -24,7 +25,8 @@ class CompanyReportPage extends ConsumerWidget {
       children: [
         const PageIntro(
           title: 'Reporte Final',
-          subtitle: 'Análisis narrativo e indicadores financieros consolidados.',
+          subtitle:
+              'Análisis narrativo e indicadores financieros consolidados.',
         ),
         const SizedBox(height: 16),
         _ScenarioSelector(selected: selectedScenario),
@@ -47,6 +49,7 @@ class CompanyReportPage extends ConsumerWidget {
             isTeacher: user != null && (user.isAdmin || user.isDocente),
             companyId: ctx?.companyId,
             courseId: ctx?.courseId,
+            scenarioType: selectedScenario,
           ),
         ),
       ],
@@ -93,18 +96,29 @@ class _ReportBody extends ConsumerWidget {
     required this.isTeacher,
     required this.companyId,
     required this.courseId,
+    required this.scenarioType,
   });
 
   final Map<String, dynamic> report;
   final bool isTeacher;
   final int? companyId;
   final int? courseId;
+  final String scenarioType;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _ExportPanel(
+          isTeacher: isTeacher,
+          companyId: companyId,
+          courseId: courseId,
+          scenarioType: scenarioType,
+          report: report,
+        ),
+        const SizedBox(height: 24),
+
         // ── Indicadores ────────────────────────────────────────────────────
         const SectionLabel('Indicadores Financieros'),
         const SizedBox(height: 12),
@@ -133,36 +147,117 @@ class _ReportBody extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
 
-        // ── Acciones de exportación ────────────────────────────────────────
-        Wrap(
-          spacing: 12,
-          runSpacing: 10,
-          children: [
-            FilledButton.icon(
-              onPressed: companyId != null
-                  ? () => ref
-                      .read(reportExportNotifierProvider.notifier)
-                      .downloadPdf(companyId)
-                  : null,
-              icon: const Icon(Icons.picture_as_pdf_rounded),
-              label: const Text('Exportar PDF'),
-            ),
-            if (isTeacher)
-              OutlinedButton.icon(
-                onPressed: courseId != null
-                    ? () => ref
-                        .read(reportExportNotifierProvider.notifier)
-                        .downloadCsv(courseId)
-                    : null,
-                icon: const Icon(Icons.table_chart_rounded),
-                label: const Text('Exportar CSV del curso'),
-              ),
-          ],
-        ),
         const SizedBox(height: 28),
       ],
     );
   }
+}
+
+class _ExportPanel extends ConsumerWidget {
+  const _ExportPanel({
+    required this.isTeacher,
+    required this.companyId,
+    required this.courseId,
+    required this.scenarioType,
+    required this.report,
+  });
+
+  final bool isTeacher;
+  final int? companyId;
+  final int? courseId;
+  final String scenarioType;
+  final Map<String, dynamic> report;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = _reportSummary(report);
+
+    return GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ResponsiveHeaderAction(
+            title: 'Exportes',
+            subtitle: 'Escenario $scenarioType',
+            action: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: companyId != null
+                      ? () => ref
+                          .read(reportExportNotifierProvider.notifier)
+                          .downloadPdf(companyId)
+                      : null,
+                  icon: const Icon(Icons.picture_as_pdf_rounded),
+                  label: const Text('PDF'),
+                ),
+                if (isTeacher)
+                  OutlinedButton.icon(
+                    onPressed: courseId != null
+                        ? () => ref
+                            .read(reportExportNotifierProvider.notifier)
+                            .downloadCsv(courseId)
+                        : null,
+                    icon: const Icon(Icons.table_chart_rounded),
+                    label: const Text('CSV'),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: summary.isEmpty
+                      ? null
+                      : () async {
+                          await Clipboard.setData(ClipboardData(text: summary));
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Resumen copiado.'),
+                              backgroundColor: SimcoreColors.success,
+                            ),
+                          );
+                        },
+                  icon: const Icon(Icons.copy_rounded),
+                  label: const Text('Copiar'),
+                ),
+              ],
+            ),
+          ),
+          if (summary.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: SimcoreColors.muted,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: SimcoreColors.border),
+              ),
+              child: Text(
+                summary,
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: SimcoreColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _reportSummary(Map<String, dynamic> report) {
+  final parts = [
+    report['executiveNarrative'],
+    report['viabilitySummary'],
+    report['conclusions'],
+  ]
+      .where((value) => value != null && value.toString().trim().isNotEmpty)
+      .map((value) => value.toString().trim())
+      .toList(growable: false);
+  return parts.join('\n\n');
 }
 
 class _IndicatorsPanel extends StatelessWidget {
@@ -187,7 +282,8 @@ class _IndicatorsPanel extends StatelessWidget {
         spacing: 24,
         runSpacing: 16,
         children: [
-          _KpiTile(label: 'VAN', value: van != null ? van.toStringAsFixed(0) : '-'),
+          _KpiTile(
+              label: 'VAN', value: van != null ? van.toStringAsFixed(0) : '-'),
           _KpiTile(label: 'TIR', value: tir != null ? _pct(tir) : '-'),
           _KpiTile(label: 'PRI (meses)', value: pri?.toString() ?? '-'),
           _KpiTile(label: 'Margen Bruto', value: _pct(grossM)),
@@ -286,7 +382,8 @@ class _IncoherencesPanel extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isHigh ? SimcoreColors.dangerSoft : SimcoreColors.warningSoft,
+            color:
+                isHigh ? SimcoreColors.dangerSoft : SimcoreColors.warningSoft,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isHigh ? SimcoreColors.danger : SimcoreColors.warning,
@@ -367,8 +464,7 @@ class _SuccessBanner extends StatelessWidget {
           const Icon(Icons.check_circle_rounded,
               color: SimcoreColors.success, size: 18),
           const SizedBox(width: 8),
-          Text(message,
-              style: const TextStyle(color: SimcoreColors.success)),
+          Text(message, style: const TextStyle(color: SimcoreColors.success)),
         ],
       ),
     );
@@ -390,8 +486,7 @@ class _ErrorBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: SimcoreColors.danger.withValues(alpha: 0.4)),
       ),
-      child: Text(message,
-          style: const TextStyle(color: SimcoreColors.danger)),
+      child: Text(message, style: const TextStyle(color: SimcoreColors.danger)),
     );
   }
 }

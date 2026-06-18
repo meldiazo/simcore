@@ -1,7 +1,9 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-void downloadFile(List<int> bytes, String fileName) {
+Future<String> downloadFile(List<int> bytes, String fileName) async {
   final uint8List = Uint8List.fromList(bytes);
   final blob = html.Blob([uint8List]);
   final url = html.Url.createObjectUrlFromBlob(blob);
@@ -13,4 +15,5 @@ void downloadFile(List<int> bytes, String fileName) {
   anchor.click();
   html.document.body?.children.remove(anchor);
   html.Url.revokeObjectUrl(url);
+  return fileName;
 }

@@ -10,35 +10,35 @@ class AcademicRemoteDataSource {
   // ── Cursos ─────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> createCourse({
-  required String code,
-  required String name,
-  required String description,
-  String? academicPeriod,
-  required int teacherId,
-}) async {
-  final payload = <String, dynamic>{
-    'code': code,
-    'name': name,
-    'description': description,
-    'teacherId': teacherId,
-  };
+    required String code,
+    required String name,
+    required String description,
+    String? academicPeriod,
+    required int teacherId,
+  }) async {
+    final payload = <String, dynamic>{
+      'code': code,
+      'name': name,
+      'description': description,
+      'teacherId': teacherId,
+    };
 
-  final normalizedAcademicPeriod = academicPeriod?.trim();
-  if (normalizedAcademicPeriod != null &&
-      normalizedAcademicPeriod.isNotEmpty) {
-    payload['academicPeriod'] = normalizedAcademicPeriod;
+    final normalizedAcademicPeriod = academicPeriod?.trim();
+    if (normalizedAcademicPeriod != null &&
+        normalizedAcademicPeriod.isNotEmpty) {
+      payload['academicPeriod'] = normalizedAcademicPeriod;
+    }
+
+    final result = await _client.post(
+      '/api/v1/iam/courses',
+      data: payload,
+    );
+
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) => Map<String, dynamic>.from(data as Map),
+    );
   }
-
-  final result = await _client.post(
-    '/api/v1/iam/courses',
-    data: payload,
-  );
-
-  return result.fold(
-    (e) => throw Exception(e.message),
-    (data) => Map<String, dynamic>.from(data as Map),
-  );
-}
 
   Future<List<Map<String, dynamic>>> listCourses() async {
     final result = await _client.get('/api/v1/iam/courses');
@@ -130,6 +130,22 @@ class AcademicRemoteDataSource {
     );
   }
 
+  Future<List<Map<String, dynamic>>> listAllGroups() async {
+    final courses = await listCourses();
+    final groups = <Map<String, dynamic>>[];
+
+    for (final course in courses) {
+      final rawId = course['id'];
+      final courseId = rawId is int ? rawId : int.tryParse('$rawId');
+      if (courseId == null) continue;
+
+      final courseGroups = await listGroups(courseId: courseId);
+      groups.addAll(courseGroups);
+    }
+
+    return groups;
+  }
+
   Future<Map<String, dynamic>> getGroup(int id) async {
     final result = await _client.get('/api/v1/iam/groups/$id');
     return result.fold(
@@ -202,8 +218,37 @@ class AcademicRemoteDataSource {
     );
   }
 
+  Future<Map<String, dynamic>> disableUser(int userId) async {
+    final result = await _client.patch('/api/v1/iam/users/$userId/disable');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) => Map<String, dynamic>.from(data as Map? ?? {}),
+    );
+  }
+
+  Future<Map<String, dynamic>> enableUser(int userId) async {
+    final result = await _client.patch('/api/v1/iam/users/$userId/enable');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) => Map<String, dynamic>.from(data as Map? ?? {}),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> listUsers() async {
     final result = await _client.get('/api/v1/iam/users');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) {
+        if (data is! List) return [];
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listRoles() async {
+    final result = await _client.get('/api/v1/iam/roles');
     return result.fold(
       (e) => throw Exception(e.message),
       (data) {

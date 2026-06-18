@@ -3,28 +3,27 @@ import 'package:simcore_frontend/features/academic/data/datasources/academic_rem
 
 // ── Course Notifier ────────────────────────────────────────────────────────────
 
-class CourseNotifier
-    extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
+class CourseNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
   CourseNotifier(this._ds) : super(const AsyncValue.data(null));
 
   final AcademicRemoteDataSource _ds;
 
   Future<void> createCourse({
-  required String code,
-  required String name,
-  required String description,
-  String? academicPeriod,
-  required int teacherId,
-}) async {
-  state = const AsyncValue.loading();
-  state = await AsyncValue.guard(() => _ds.createCourse(
-        code: code,
-        name: name,
-        description: description,
-        academicPeriod: academicPeriod,
-        teacherId: teacherId,
-      ));
-}
+    required String code,
+    required String name,
+    required String description,
+    String? academicPeriod,
+    required int teacherId,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _ds.createCourse(
+          code: code,
+          name: name,
+          description: description,
+          academicPeriod: academicPeriod,
+          teacherId: teacherId,
+        ));
+  }
 
   Future<void> getCourse(int id) async {
     state = const AsyncValue.loading();
@@ -51,25 +50,27 @@ final courseNotifierProvider = StateNotifierProvider.autoDispose<CourseNotifier,
   (ref) => CourseNotifier(ref.watch(academicDataSourceProvider)),
 );
 
-final coursesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+final coursesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final ds = ref.watch(academicDataSourceProvider);
   return ds.listCourses();
 });
 
-final allGroupsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+final allGroupsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final ds = ref.watch(academicDataSourceProvider);
-  return ds.listGroups();
+  return ds.listAllGroups();
 });
 
-final groupsByCourseProvider = FutureProvider.family.autoDispose<List<Map<String, dynamic>>, int>((ref, courseId) async {
+final groupsByCourseProvider = FutureProvider.family
+    .autoDispose<List<Map<String, dynamic>>, int>((ref, courseId) async {
   final ds = ref.watch(academicDataSourceProvider);
   return ds.listGroups(courseId: courseId);
 });
 
 // ── Group Notifier ─────────────────────────────────────────────────────────────
 
-class GroupNotifier
-    extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
+class GroupNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
   GroupNotifier(this._ds) : super(const AsyncValue.data(null));
 
   final AcademicRemoteDataSource _ds;
@@ -123,7 +124,56 @@ final groupNotifierProvider = StateNotifierProvider.autoDispose<GroupNotifier,
   (ref) => GroupNotifier(ref.watch(academicDataSourceProvider)),
 );
 
-final usersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+final usersProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final ds = ref.watch(academicDataSourceProvider);
   return ds.listUsers();
+});
+
+final rolesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final ds = ref.watch(academicDataSourceProvider);
+  return ds.listRoles();
+});
+
+class UserAdminNotifier extends StateNotifier<AsyncValue<void>> {
+  UserAdminNotifier(this._ds, this._ref) : super(const AsyncValue.data(null));
+
+  final AcademicRemoteDataSource _ds;
+  final Ref _ref;
+
+  Future<bool> updateRoles({
+    required int userId,
+    required List<int> roleIds,
+  }) async {
+    return _run(() => _ds.updateUserRoles(userId: userId, roleIds: roleIds));
+  }
+
+  Future<bool> setEnabled({
+    required int userId,
+    required bool enabled,
+  }) async {
+    return _run(
+        () => enabled ? _ds.enableUser(userId) : _ds.disableUser(userId));
+  }
+
+  Future<bool> _run(Future<Map<String, dynamic>> Function() action) async {
+    state = const AsyncValue.loading();
+    try {
+      await action();
+      if (!mounted) return false;
+      state = const AsyncValue.data(null);
+      _ref.invalidate(usersProvider);
+      return true;
+    } catch (e, st) {
+      if (!mounted) return false;
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+}
+
+final userAdminNotifierProvider =
+    StateNotifierProvider<UserAdminNotifier, AsyncValue<void>>((ref) {
+  return UserAdminNotifier(ref.watch(academicDataSourceProvider), ref);
 });

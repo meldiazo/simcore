@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import '../../data/models/investment_item_model.dart';
 
@@ -20,7 +21,8 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Registrar Requerimiento de Capital', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Registrar Requerimiento de Capital',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -28,7 +30,8 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Categoría de la inversión:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text('Categoría de la inversión:',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<InvestmentType>(
                 value: _selectedType,
@@ -44,21 +47,25 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text('Descripción detallada:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text('Descripción detallada:',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               TextFormField(
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Ej. Maquinaria de producción, Licencias...',
                 ),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Requerido' : null,
                 onSaved: (value) => _description = value!.trim(),
               ),
               const SizedBox(height: 16),
-              const Text('Monto Estimado (\$):', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text('Monto Estimado (\$):',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               TextFormField(
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.attach_money),
@@ -78,7 +85,8 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar', style: TextStyle(color: SimcoreColors.textSecondary)),
+          child: const Text('Cancelar',
+              style: TextStyle(color: SimcoreColors.textSecondary)),
         ),
         FilledButton(
           onPressed: () {

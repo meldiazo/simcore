@@ -6,7 +6,9 @@ abstract class AccountingRemoteDataSource {
   Future<void> generateAccountingEntries(String companyId);
   Future<List<AccountingEntryModel>> getAccountingEntries(String companyId);
   Future<void> generateFinancialStatements(String companyId);
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId);
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+      String companyId);
+  Future<void> startAccountingModule(String companyId);
   Future<void> completeAccountingModule(String companyId);
 }
 
@@ -33,7 +35,8 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   }
 
   @override
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId) async {
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+      String companyId) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/accounting-entries/company/$companyId/scenario',
       queryParameters: {
@@ -43,7 +46,7 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
 
     return result.fold(
       (failure) => throw failure,
-      (data) => _extractList(data).map(AccountingEntryModel.fromJson).toList(),
+      (data) => _extractAccountingEntries(data),
     );
   }
 
@@ -64,7 +67,8 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
   }
 
   @override
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId) async {
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+      String companyId) async {
     final result = await _apiClient.get(
       '/api/v1/simulation/financial-statements/company/$companyId/scenario',
       queryParameters: {
@@ -74,7 +78,20 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
 
     return result.fold(
       (failure) => throw failure,
-      (data) => _extractList(data).map(FinancialStatementModel.fromJson).toList(),
+      (data) =>
+          _extractList(data).map(FinancialStatementModel.fromJson).toList(),
+    );
+  }
+
+  @override
+  Future<void> startAccountingModule(String companyId) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/companies/$companyId/modules/ACCOUNTING/start',
+    );
+
+    result.fold(
+      (failure) => throw failure,
+      (_) => null,
     );
   }
 
@@ -115,5 +132,26 @@ class AccountingRemoteDataSourceImpl implements AccountingRemoteDataSource {
     }
 
     return const [];
+  }
+
+  List<AccountingEntryModel> _extractAccountingEntries(dynamic data) {
+    final entries = _extractList(data);
+    final rows = <AccountingEntryModel>[];
+
+    for (final entry in entries) {
+      final lines = entry['lines'];
+      if (lines is List && lines.isNotEmpty) {
+        for (final line in lines.whereType<Map>()) {
+          rows.add(AccountingEntryModel.fromEntryLine(
+            entry,
+            Map<String, dynamic>.from(line),
+          ));
+        }
+      } else {
+        rows.add(AccountingEntryModel.fromJson(entry));
+      }
+    }
+
+    return rows;
   }
 }

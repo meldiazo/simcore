@@ -36,6 +36,27 @@ class AccountingEntryModel {
     );
   }
 
+  factory AccountingEntryModel.fromEntryLine(
+    Map<String, dynamic> entry,
+    Map<String, dynamic> line,
+  ) {
+    final entryId = _readString(entry, ['id']);
+    final lineOrder = _readString(line, ['displayOrder']);
+
+    return AccountingEntryModel(
+      id: lineOrder.isEmpty ? entryId : '$entryId-$lineOrder',
+      accountName: _readString(line, ['accountName', 'account', 'name']),
+      accountCode: _readString(line, ['accountCode', 'code']),
+      debit: _readDouble(line, ['debit', 'debitAmount']),
+      credit: _readDouble(line, ['credit', 'creditAmount']),
+      description: _readString(entry, ['description', 'concept', 'detail']),
+      date: _readDate(entry, ['date', 'entryDate', 'createdAt', 'generatedAt']),
+      status: _readString(entry, ['status']) == 'OUTDATED'
+          ? AccountingStatus.outdated
+          : AccountingStatus.current,
+    );
+  }
+
   static String _readString(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
       final value = json[key];

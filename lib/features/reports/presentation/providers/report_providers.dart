@@ -33,8 +33,8 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final bytes = await _ds.exportCompanyPdf(companyId: id);
-      downloadFile(bytes, 'reporte_empresa_$id.pdf');
-      return 'PDF generado y descargado correctamente.';
+      final savedTo = await downloadFile(bytes, 'reporte_empresa_$id.pdf');
+      return 'PDF generado: $savedTo';
     });
   }
 
@@ -45,14 +45,14 @@ class ReportExportNotifier extends StateNotifier<AsyncValue<String?>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final bytes = await _ds.exportCourseCsv(courseId: id);
-      downloadFile(bytes, 'reporte_curso_$id.csv');
-      return 'CSV del curso generado y descargado correctamente.';
+      final savedTo = await downloadFile(bytes, 'reporte_curso_$id.csv');
+      return 'CSV del curso generado: $savedTo';
     });
   }
 }
 
-final reportExportNotifierProvider =
-    StateNotifierProvider.autoDispose<ReportExportNotifier, AsyncValue<String?>>(
+final reportExportNotifierProvider = StateNotifierProvider.autoDispose<
+    ReportExportNotifier, AsyncValue<String?>>(
   (ref) => ReportExportNotifier(
     ref.watch(reportsDataSourceProvider),
     ref,

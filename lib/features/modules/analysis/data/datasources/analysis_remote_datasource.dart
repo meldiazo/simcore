@@ -63,21 +63,27 @@ class AnalysisRemoteDataSource {
 
   Future<void> completeModule({required int companyId}) async {
     final result = await _apiClient.patch(
-      '/api/v1/simulation/companies/$companyId/analysis/complete',
+      '/api/v1/simulation/companies/$companyId/modules/ANALYSIS/complete',
     );
     result.fold((e) => throw e, (_) {});
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
-      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     if (data is Map) {
       final json = Map<String, dynamic>.from(data);
       for (final key in ['data', 'content', 'items', 'incoherences']) {
         final value = json[key];
         if (value is List) {
-          return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          return value
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
       }
     }

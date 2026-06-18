@@ -35,7 +35,8 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
   Future<void> _create() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTeacherId == null) {
-      setState(() => _fieldErrors = {'error': 'Por favor, selecciona un docente.'});
+      setState(
+          () => _fieldErrors = {'error': 'Por favor, selecciona un docente.'});
       return;
     }
 
@@ -93,22 +94,26 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                 FormErrorSummary(errors: _fieldErrors),
                 TextFormField(
                   controller: _codeCtrl,
-                  decoration: const InputDecoration(labelText: 'Código del curso (ej: ADM-101)'),
-                  validator: (v) => FormValidators.required(v, fieldName: 'Código del curso'),
+                  decoration: const InputDecoration(
+                      labelText: 'Código del curso (ej: ADM-101)'),
+                  validator: (v) =>
+                      FormValidators.required(v, fieldName: 'Código del curso'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre del curso'),
-                  validator: (v) =>
-                      FormValidators.minLength(v, 3, fieldName: 'Nombre del curso'),
+                  decoration:
+                      const InputDecoration(labelText: 'Nombre del curso'),
+                  validator: (v) => FormValidators.minLength(v, 3,
+                      fieldName: 'Nombre del curso'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _descCtrl,
                   decoration: const InputDecoration(labelText: 'Descripción'),
                   maxLines: 2,
-                  validator: (v) => FormValidators.required(v, fieldName: 'Descripción'),
+                  validator: (v) =>
+                      FormValidators.required(v, fieldName: 'Descripción'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -132,27 +137,36 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                   data: (users) {
                     final teachers = users.where((u) {
                       final roles = (u['roles'] as List?)
-                          ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
-                          .toList() ?? [];
+                              ?.map((r) => r
+                                  .toString()
+                                  .toUpperCase()
+                                  .replaceAll('ROLE_', ''))
+                              .toList() ??
+                          [];
                       return roles.contains('DOCENTE');
                     }).toList();
 
                     if (teachers.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 4),
-                        child: Text('No hay docentes disponibles en el sistema.',
+                        child: Text(
+                            'No hay docentes disponibles en el sistema.',
                             style: TextStyle(color: SimcoreColors.warning)),
                       );
                     }
 
                     return DropdownButtonFormField<int>(
-                      value: _selectedTeacherId,
-                      decoration: const InputDecoration(labelText: 'Selecciona Docente'),
+                      initialValue: _selectedTeacherId,
+                      decoration: const InputDecoration(
+                          labelText: 'Selecciona Docente'),
                       items: teachers.map((t) {
                         final id = t['id'] as int? ?? 0;
-                        final name = '${t['firstName'] ?? ''} ${t['lastName'] ?? ''}'.trim();
+                        final name =
+                            '${t['firstName'] ?? ''} ${t['lastName'] ?? ''}'
+                                .trim();
                         final username = t['username'] ?? '';
-                        final displayName = name.isNotEmpty ? '$name ($username)' : username;
+                        final displayName =
+                            name.isNotEmpty ? '$name ($username)' : username;
                         return DropdownMenuItem<int>(
                           value: id,
                           child: Text(displayName),
@@ -163,7 +177,8 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                           _selectedTeacherId = v;
                         });
                       },
-                      validator: (v) => v == null ? 'Selecciona un docente' : null,
+                      validator: (v) =>
+                          v == null ? 'Selecciona un docente' : null,
                     );
                   },
                 ),
@@ -172,8 +187,10 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                   onPressed: courseState.isLoading ? null : _create,
                   icon: courseState.isLoading
                       ? const SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.add_rounded),
                   label: const Text('Crear Curso'),
                 ),
@@ -195,7 +212,8 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                 });
               }
             },
-            onRemoveStudent: (id) => setState(() => _pendingStudentIds.remove(id)),
+            onRemoveStudent: (id) =>
+                setState(() => _pendingStudentIds.remove(id)),
           ),
         ],
         if (courseState.hasError)
@@ -247,11 +265,14 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
         children: [
           Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: SimcoreColors.success),
+              const Icon(Icons.check_circle_rounded,
+                  color: SimcoreColors.success),
               const SizedBox(width: 8),
-              Text(
-                'Curso #$id creado: ${widget.data['name'] ?? widget.data['title'] ?? ''}',
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  'Curso #$id creado: ${widget.data['name'] ?? widget.data['title'] ?? ''}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -272,8 +293,10 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
             data: (users) {
               final students = users.where((u) {
                 final roles = (u['roles'] as List?)
-                    ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
-                    .toList() ?? [];
+                        ?.map((r) =>
+                            r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                        .toList() ??
+                    [];
                 return roles.contains('ESTUDIANTE');
               }).toList();
 
@@ -285,43 +308,40 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
                 );
               }
 
-              return Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedStudentId,
-                      decoration: const InputDecoration(
-                          labelText: 'Selecciona Estudiante', isDense: true),
-                      items: students.map((s) {
-                        final id = s['id'] as int? ?? 0;
-                        final name = '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
-                        final username = s['username'] ?? '';
-                        final displayName = name.isNotEmpty ? '$name ($username)' : username;
-                        return DropdownMenuItem<int>(
-                          value: id,
-                          child: Text(displayName),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        setState(() {
-                          _selectedStudentId = v;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _selectedStudentId == null
-                        ? null
-                        : () {
-                            widget.onAddStudent(_selectedStudentId!);
-                            setState(() {
-                              _selectedStudentId = null;
-                            });
-                          },
-                    icon: const Icon(Icons.add_rounded),
-                  ),
-                ],
+              return _CompactActionRow(
+                field: DropdownButtonFormField<int>(
+                  initialValue: _selectedStudentId,
+                  decoration: const InputDecoration(
+                      labelText: 'Selecciona Estudiante', isDense: true),
+                  items: students.map((s) {
+                    final id = s['id'] as int? ?? 0;
+                    final name =
+                        '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
+                    final username = s['username'] ?? '';
+                    final displayName =
+                        name.isNotEmpty ? '$name ($username)' : username;
+                    return DropdownMenuItem<int>(
+                      value: id,
+                      child: Text(displayName),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedStudentId = v;
+                    });
+                  },
+                ),
+                action: IconButton.filled(
+                  onPressed: _selectedStudentId == null
+                      ? null
+                      : () {
+                          widget.onAddStudent(_selectedStudentId!);
+                          setState(() {
+                            _selectedStudentId = null;
+                          });
+                        },
+                  icon: const Icon(Icons.add_rounded),
+                ),
               );
             },
           ),
@@ -334,7 +354,9 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
                 final nameMap = {
                   for (final u in users)
                     u['id'] as int: () {
-                      final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();
+                      final name =
+                          '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'
+                              .trim();
                       final username = u['username'] ?? '';
                       return name.isNotEmpty ? '$name ($username)' : username;
                     }()
@@ -358,7 +380,8 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
             OutlinedButton.icon(
               onPressed: () => widget.onEnroll(id),
               icon: const Icon(Icons.group_add_rounded),
-              label: Text('Matricular ${widget.pendingStudents.length} estudiante(s)'),
+              label: Text(
+                  'Matricular ${widget.pendingStudents.length} estudiante(s)'),
             ),
           ],
           const SizedBox(height: 16),
@@ -370,6 +393,42 @@ class _CourseResultPanelState extends ConsumerState<_CourseResultPanel> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CompactActionRow extends StatelessWidget {
+  const _CompactActionRow({
+    required this.field,
+    required this.action,
+  });
+
+  final Widget field;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              field,
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: action),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: field),
+            const SizedBox(width: 8),
+            action,
+          ],
+        );
+      },
     );
   }
 }

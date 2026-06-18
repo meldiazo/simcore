@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/network/api_client.dart';
 import 'package:simcore_frontend/core/network/api_client_providers.dart';
@@ -38,7 +39,7 @@ class ReportsRemoteDataSource {
     );
     return result.fold(
       (e) => throw Exception(e.message),
-      (data) => List<int>.from(data as List),
+      (data) => _readBytes(data),
     );
   }
 
@@ -58,8 +59,15 @@ class ReportsRemoteDataSource {
     );
     return result.fold(
       (e) => throw Exception(e.message),
-      (data) => List<int>.from(data as List),
+      (data) => _readBytes(data),
     );
+  }
+
+  List<int> _readBytes(dynamic data) {
+    if (data is Uint8List) return data.toList();
+    if (data is List<int>) return data;
+    if (data is List) return List<int>.from(data);
+    return const [];
   }
 }
 

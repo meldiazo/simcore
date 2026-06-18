@@ -6,7 +6,9 @@ abstract class AccountingRepository {
   Future<void> generateAccountingEntries(String companyId);
   Future<List<AccountingEntryModel>> getAccountingEntries(String companyId);
   Future<void> generateFinancialStatements(String companyId);
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId);
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+      String companyId);
+  Future<void> startAccountingModule(String companyId);
   Future<void> completeAccountingModule(String companyId);
 }
 
@@ -25,7 +27,8 @@ class AccountingRepositoryImpl implements AccountingRepository {
   }
 
   @override
-  Future<List<AccountingEntryModel>> getAccountingEntries(String companyId) async {
+  Future<List<AccountingEntryModel>> getAccountingEntries(
+      String companyId) async {
     try {
       return await remoteDataSource.getAccountingEntries(companyId);
     } catch (e) {
@@ -43,11 +46,21 @@ class AccountingRepositoryImpl implements AccountingRepository {
   }
 
   @override
-  Future<List<FinancialStatementModel>> getFinancialStatements(String companyId) async {
+  Future<List<FinancialStatementModel>> getFinancialStatements(
+      String companyId) async {
     try {
       return await remoteDataSource.getFinancialStatements(companyId);
     } catch (e) {
       throw Exception('Error al obtener los reportes financieros: $e');
+    }
+  }
+
+  @override
+  Future<void> startAccountingModule(String companyId) async {
+    try {
+      await remoteDataSource.startAccountingModule(companyId);
+    } catch (e) {
+      throw Exception('Error al iniciar el módulo de contabilidad: $e');
     }
   }
 

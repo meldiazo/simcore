@@ -7,6 +7,7 @@ class FinancialStatementModel {
   final String companyId;
   final StatementType type;
   final Map<String, dynamic> data;
+  final List<Map<String, dynamic>> entries;
   final DateTime generatedAt;
 
   FinancialStatementModel({
@@ -14,6 +15,7 @@ class FinancialStatementModel {
     required this.companyId,
     required this.type,
     required this.data,
+    required this.entries,
     required this.generatedAt,
   });
 
@@ -25,6 +27,7 @@ class FinancialStatementModel {
         json['statementType']?.toString() ?? json['type']?.toString(),
       ),
       data: _parseData(json['data'] ?? json['statementData'] ?? json['values']),
+      entries: _parseEntries(json['entries']),
       generatedAt: _parseDate(json['generatedAt'] ?? json['createdAt']),
     );
   }
@@ -69,6 +72,15 @@ class FinancialStatementModel {
     return <String, dynamic>{
       'value': rawData.toString(),
     };
+  }
+
+  static List<Map<String, dynamic>> _parseEntries(dynamic rawEntries) {
+    if (rawEntries is! List) return const [];
+
+    return rawEntries
+        .whereType<Map>()
+        .map((entry) => Map<String, dynamic>.from(entry))
+        .toList();
   }
 
   static DateTime _parseDate(dynamic value) {

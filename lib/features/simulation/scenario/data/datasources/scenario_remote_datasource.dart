@@ -41,7 +41,8 @@ class ScenarioRemoteDataSource {
   }
 
   Future<Scenario> createScenario({required Map<String, dynamic> data}) async {
-    final result = await _apiClient.post('/api/v1/simulation/scenarios', data: data);
+    final result =
+        await _apiClient.post('/api/v1/simulation/scenarios', data: data);
     return result.fold(
       (e) => throw e,
       (d) => ScenarioModel.fromJson(Map<String, dynamic>.from(d as Map)),
@@ -49,7 +50,8 @@ class ScenarioRemoteDataSource {
   }
 
   Future<Scenario> activateScenario({required int id}) async {
-    final result = await _apiClient.patch('/api/v1/simulation/scenarios/$id/activate');
+    final result =
+        await _apiClient.patch('/api/v1/simulation/scenarios/$id/activate');
     return result.fold(
       (e) => throw e,
       (d) => ScenarioModel.fromJson(Map<String, dynamic>.from(d as Map)),
@@ -57,14 +59,16 @@ class ScenarioRemoteDataSource {
   }
 
   Future<Scenario> deactivateScenario({required int id}) async {
-    final result = await _apiClient.patch('/api/v1/simulation/scenarios/$id/deactivate');
+    final result =
+        await _apiClient.patch('/api/v1/simulation/scenarios/$id/deactivate');
     return result.fold(
       (e) => throw e,
       (d) => ScenarioModel.fromJson(Map<String, dynamic>.from(d as Map)),
     );
   }
 
-  Future<void> assignScenarioToGroup({required int scenarioId, required int groupId}) async {
+  Future<void> assignScenarioToGroup(
+      {required int scenarioId, required int groupId}) async {
     final result = await _apiClient.put(
       '/api/v1/simulation/scenarios/$scenarioId/assign',
       data: {'groupId': groupId},
@@ -72,16 +76,70 @@ class ScenarioRemoteDataSource {
     result.fold((e) => throw e, (_) {});
   }
 
+  Future<ScenarioVariable> updateVariable({
+    required int scenarioId,
+    required String code,
+    required num value,
+  }) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/scenarios/$scenarioId/variables/$code',
+      data: {'value': value},
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => ScenarioVariableModel.fromJson(
+          Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<Scenario> setIncoherenceConfig({
+    required int scenarioId,
+    required Map<String, bool> config,
+  }) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/scenarios/$scenarioId/incoherence-config',
+      data: config,
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => ScenarioModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<Scenario> setVisibility({
+    required int scenarioId,
+    required bool groupsCanSeeEachOther,
+  }) async {
+    final result = await _apiClient.patch(
+      '/api/v1/simulation/scenarios/$scenarioId/visibility?groupsCanSeeEachOther=$groupsCanSeeEachOther',
+    );
+    return result.fold(
+      (e) => throw e,
+      (data) => ScenarioModel.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<void> deleteScenario({required int id}) async {
+    final result = await _apiClient.delete('/api/v1/simulation/scenarios/$id');
+    result.fold((e) => throw e, (_) {});
+  }
+
   List<Map<String, dynamic>> _extractList(dynamic data) {
     if (data is List) {
-      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     if (data is Map) {
       final json = Map<String, dynamic>.from(data);
       for (final key in ['data', 'content', 'items', 'scenarios']) {
         final value = json[key];
         if (value is List) {
-          return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          return value
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
       }
     }

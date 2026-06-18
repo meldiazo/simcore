@@ -21,7 +21,7 @@ class SimulationContextState {
   bool get isReady => status == SimulationContextStatus.ready;
   bool get needsGroupId => status == SimulationContextStatus.needsGroupId;
 
-  get currentCompany => null;
+  Object? get currentCompany => null;
 
   SimulationContextState copyWith({
     SimulationContextStatus? status,
@@ -36,10 +36,8 @@ class SimulationContextState {
   }
 }
 
-class SimulationContextNotifier
-    extends StateNotifier<SimulationContextState> {
-  SimulationContextNotifier(this._ref)
-      : super(const SimulationContextState()) {
+class SimulationContextNotifier extends StateNotifier<SimulationContextState> {
+  SimulationContextNotifier(this._ref) : super(const SimulationContextState()) {
     _bootstrap();
   }
 
@@ -107,7 +105,8 @@ class SimulationContextNotifier
 
     try {
       final repo = _ref.read(simulationRepositoryProvider);
-      final context = await repo.getSimulationContextByGroupId(groupId: groupId);
+      final context =
+          await repo.getSimulationContextByGroupId(groupId: groupId);
       state = SimulationContextState(
         status: SimulationContextStatus.ready,
         context: context,
@@ -120,7 +119,9 @@ class SimulationContextNotifier
     }
   }
 
-  void reset() => state = const SimulationContextState();
+  void reset() => state = const SimulationContextState(
+        status: SimulationContextStatus.needsGroupId,
+      );
 }
 
 final simulationContextNotifierProvider =

@@ -5,6 +5,7 @@ import 'package:simcore_frontend/features/auth/presentation/providers/auth_state
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:simcore_frontend/core/error/error_utils.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -67,6 +68,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
         );
   }
 
+  Future<void> _quickLogin(String username, String password) async {
+    _usernameController.text = username;
+    _passwordController.text = password;
+    await ref.read(authNotifierProvider.notifier).login(username, password);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
@@ -105,9 +112,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 () => _obscurePassword = !_obscurePassword),
                             isLoading: isLoading,
                             errorMessage: authState.status == AuthStatus.error
-                                ? authState.errorMessage
+                                ? toUserFriendlyError(authState.errorMessage)
                                 : null,
                             onSubmit: _submit,
+                            onQuickLogin: _quickLogin,
                           ),
                         ),
                       ),
@@ -316,6 +324,7 @@ class _LoginForm extends StatelessWidget {
     required this.onToggleObscure,
     required this.isLoading,
     required this.onSubmit,
+    required this.onQuickLogin,
     this.errorMessage,
   });
 
@@ -327,6 +336,7 @@ class _LoginForm extends StatelessWidget {
   final bool isLoading;
   final String? errorMessage;
   final VoidCallback onSubmit;
+  final void Function(String, String) onQuickLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -409,6 +419,47 @@ class _LoginForm extends StatelessWidget {
 
           // Botón
           _LoginButton(isLoading: isLoading, onPressed: onSubmit),
+          const SizedBox(height: 24),
+
+          // Separador de Acceso Rápido
+          Row(
+            children: [
+              Expanded(child: Divider(color: SimcoreColors.border)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Acceso rápido demo',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: SimcoreColors.textTertiary,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: SimcoreColors.border)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _QuickLoginButton(
+                label: 'Admin',
+                color: SimcoreColors.accent,
+                onPressed: () => onQuickLogin('admin', 'Admin1234!!Dev'),
+              ),
+              _QuickLoginButton(
+                label: 'Docente',
+                color: SimcoreColors.success,
+                onPressed: () => onQuickLogin('prof.garcia', 'Docente1234!!Dev'),
+              ),
+              _QuickLoginButton(
+                label: 'Estudiante',
+                color: SimcoreColors.warning,
+                onPressed: () => onQuickLogin('ana.garcia', 'Student1234!!Dev'),
+              ),
+            ],
+          ),
           const SizedBox(height: 32),
 
           // Footer
@@ -596,6 +647,45 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickLoginButton extends StatelessWidget {
+  const _QuickLoginButton({
+    required this.label,
+    required this.color,
+    required this.onPressed,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            side: BorderSide(color: color.withValues(alpha: 0.5), width: 1.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            foregroundColor: color,
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }

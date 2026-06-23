@@ -20,6 +20,16 @@ class CompanyReportPage extends ConsumerWidget {
     final ctx = ref.watch(simulationContextNotifierProvider).context;
     final selectedScenario = ref.watch(reportScenarioTypeProvider);
 
+    ref.listen<AsyncValue<String?>>(reportExportNotifierProvider, (previous, next) {
+      if (next.hasValue && next.value != null) {
+        showSimcoreSuccessDialog(
+          context: context,
+          title: '¡Reporte Exportado!',
+          message: next.value!,
+        );
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -33,8 +43,6 @@ class CompanyReportPage extends ConsumerWidget {
         const SizedBox(height: 20),
         if (exportState.isLoading)
           const LinearProgressIndicator()
-        else if (exportState.hasValue && exportState.value != null)
-          _SuccessBanner(message: exportState.value!)
         else if (exportState.hasError)
           _ErrorBanner(message: exportState.error.toString()),
         reportAsync.when(
@@ -208,11 +216,10 @@ class _ExportPanel extends ConsumerWidget {
                       : () async {
                           await Clipboard.setData(ClipboardData(text: summary));
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Resumen copiado.'),
-                              backgroundColor: SimcoreColors.success,
-                            ),
+                          showSimcoreSuccessDialog(
+                            context: context,
+                            title: '¡Resumen Copiado!',
+                            message: 'El resumen ejecutivo se ha copiado al portapapeles exitosamente.',
                           );
                         },
                   icon: const Icon(Icons.copy_rounded),

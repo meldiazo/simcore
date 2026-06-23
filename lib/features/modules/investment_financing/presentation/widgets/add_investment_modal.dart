@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import '../../data/models/investment_item_model.dart';
 
 class AddInvestmentModal extends StatefulWidget {
@@ -35,7 +36,9 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
               const SizedBox(height: 8),
               DropdownButtonFormField<InvestmentType>(
                 value: _selectedType,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.category_rounded),
+                ),
                 items: InvestmentType.values.map((type) {
                   return DropdownMenuItem(
                     value: type,
@@ -52,8 +55,8 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
               const SizedBox(height: 8),
               TextFormField(
                 decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
                   hintText: 'Ej. Maquinaria de producción, Licencias...',
+                  prefixIcon: Icon(Icons.description_rounded),
                 ),
                 validator: (value) =>
                     value == null || value.trim().isEmpty ? 'Requerido' : null,
@@ -64,11 +67,10 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
                   style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               TextFormField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
                 decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.attach_money_rounded),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Requerido';
@@ -94,6 +96,11 @@ class _AddInvestmentModalState extends State<AddInvestmentModal> {
               _formKey.currentState!.save();
               widget.onSave(_selectedType, _description, _amount);
               Navigator.of(context).pop();
+              showSimcoreSuccessDialog(
+                context: context,
+                title: 'Requerimiento Registrado',
+                message: 'La inversión se ha registrado correctamente en tu estructura de capital.',
+              );
             }
           },
           style: FilledButton.styleFrom(backgroundColor: SimcoreColors.accent),

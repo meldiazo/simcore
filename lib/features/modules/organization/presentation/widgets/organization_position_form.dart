@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/organization_position_model.dart';
 import '../providers/organization_providers.dart';
@@ -62,13 +63,19 @@ class _OrganizationPositionFormState extends State<OrganizationPositionForm> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Título del Cargo (ej. Operario)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Título del Cargo (ej. Operario)',
+                  prefixIcon: Icon(Icons.work_outline_rounded),
+                ),
                 validator: (v) => v!.isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _respController,
-                decoration: const InputDecoration(labelText: 'Responsabilidades', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Responsabilidades',
+                  prefixIcon: Icon(Icons.assignment_rounded),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -77,17 +84,35 @@ class _OrganizationPositionFormState extends State<OrganizationPositionForm> {
                     child: TextFormField(
                       controller: _headcountController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Cantidad de Personas', border: OutlineInputBorder()),
-                      validator: (v) => v!.isEmpty ? 'Req.' : null,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad de Personas',
+                        prefixIcon: Icon(Icons.people_alt_rounded),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Req.';
+                        final val = int.tryParse(v);
+                        if (val == null || val <= 0) return 'Mín. 1';
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
                       controller: _salaryController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Salario Mensual (\$)', border: OutlineInputBorder()),
-                      validator: (v) => v!.isEmpty ? 'Req.' : null,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                      decoration: const InputDecoration(
+                        labelText: 'Salario Mensual',
+                        prefixIcon: Icon(Icons.attach_money_rounded),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Req.';
+                        final val = double.tryParse(v);
+                        if (val == null || val <= 0) return 'Mín. 0.01';
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -95,9 +120,18 @@ class _OrganizationPositionFormState extends State<OrganizationPositionForm> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _capacityController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Capacidad operativa por persona (uds/mes)', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                decoration: const InputDecoration(
+                  labelText: 'Capacidad operativa por persona (uds/mes)',
+                  prefixIcon: Icon(Icons.speed_rounded),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requerido';
+                  final val = double.tryParse(v);
+                  if (val == null || val < 0) return 'Mín. 0';
+                  return null;
+                },
               ),
             ],
           ),

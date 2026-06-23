@@ -49,7 +49,7 @@ class _OrganizationAreaFormState extends State<OrganizationAreaForm> {
           controller: _nameController,
           decoration: const InputDecoration(
             labelText: 'Nombre del Área (ej. Producción, Ventas)',
-            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.workspaces_rounded),
           ),
           validator: (v) => v!.isEmpty ? 'Requerido' : null,
         ),

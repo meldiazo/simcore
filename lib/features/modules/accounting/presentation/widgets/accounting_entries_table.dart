@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import '../../data/models/accounting_entry_model.dart';
 import '../providers/accounting_providers.dart';
 
@@ -55,34 +57,132 @@ class AccountingEntriesTable extends ConsumerWidget {
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(Colors.blueGrey.shade50),
-                    columns: const [
-                      DataColumn(label: Text('Fecha')),
-                      DataColumn(label: Text('Código')),
-                      DataColumn(label: Text('Cuenta')),
-                      DataColumn(label: Text('Descripción')),
-                      DataColumn(label: Text('Debe', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Haber', style: TextStyle(fontWeight: FontWeight.bold))),
-                    ],
-                    rows: entries.map((entry) {
-                      return DataRow(
-                        color: entry.status == AccountingStatus.outdated 
-                            ? WidgetStateProperty.all(Colors.grey.shade200) 
-                            : null,
-                        cells: [
-                          DataCell(Text('${entry.date.day}/${entry.date.month}/${entry.date.year}')),
-                          DataCell(Text(entry.accountCode)),
-                          DataCell(Text(entry.accountName)),
-                          DataCell(Text(entry.description)),
-                          DataCell(Text('\$${entry.debit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))),
-                          DataCell(Text('\$${entry.credit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red))),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                        child: DataTable(
+                          headingRowColor: WidgetStateProperty.all(Colors.blueGrey.shade50),
+                          columns: const [
+                            DataColumn(label: Text('Fecha')),
+                            DataColumn(label: Text('Código')),
+                            DataColumn(label: Text('Cuenta')),
+                            DataColumn(label: Text('Descripción')),
+                            DataColumn(label: Text('Debe', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Haber', style: TextStyle(fontWeight: FontWeight.bold))),
+                          ],
+                          rows: entries.map((entry) {
+                            return DataRow(
+                              color: entry.status == AccountingStatus.outdated 
+                                  ? WidgetStateProperty.all(Colors.grey.shade200) 
+                                  : null,
+                              cells: [
+                                DataCell(Text('${entry.date.day}/${entry.date.month}/${entry.date.year}')),
+                                DataCell(Text(entry.accountCode)),
+                                DataCell(Text(entry.accountName)),
+                                DataCell(
+                                  SizedBox(
+                                    width: 260,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Expanded(
+                                          child: Tooltip(
+                                            message: entry.description,
+                                            child: Text(
+                                              entry.description,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontSize: 13),
+                                            ),
+                                          ),
+                                        ),
+                                        if (entry.description.length > 30) ...[
+                                          const SizedBox(width: 6),
+                                          InkWell(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => Dialog(
+                                                  backgroundColor: Colors.transparent,
+                                                  child: ConstrainedBox(
+                                                    constraints: const BoxConstraints(maxWidth: 450),
+                                                    child: GlassPanel(
+                                                      padding: const EdgeInsets.all(24),
+                                                      child: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              const Icon(Icons.receipt_long_rounded, color: SimcoreColors.accent),
+                                                              const SizedBox(width: 8),
+                                                              const Text(
+                                                                'Descripción de Asiento',
+                                                                style: TextStyle(
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: SimcoreColors.textPrimary,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          const SizedBox(height: 16),
+                                                          Text(
+                                                            entry.description,
+                                                            style: const TextStyle(
+                                                              fontSize: 14,
+                                                              height: 1.5,
+                                                              color: SimcoreColors.textSecondary,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 24),
+                                                          Align(
+                                                            alignment: Alignment.centerRight,
+                                                            child: TextButton(
+                                                              onPressed: () => Navigator.of(context).pop(),
+                                                              child: const Text(
+                                                                'Cerrar',
+                                                                style: TextStyle(
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: SimcoreColors.accent,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: const Text(
+                                              'Ver más',
+                                              style: TextStyle(
+                                                color: SimcoreColors.accent,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                DataCell(Text('\$${entry.debit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))),
+                                DataCell(Text('\$${entry.credit.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red))),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

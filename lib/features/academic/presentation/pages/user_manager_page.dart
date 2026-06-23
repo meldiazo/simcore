@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/core/error/error_utils.dart';
+
 
 class UserManagerPage extends ConsumerStatefulWidget {
   const UserManagerPage({super.key});
@@ -55,7 +57,7 @@ class _UserManagerPageState extends ConsumerState<UserManagerPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              actionState.error.toString(),
+              toUserFriendlyError(actionState.error),
               style: const TextStyle(color: SimcoreColors.danger),
             ),
           ),

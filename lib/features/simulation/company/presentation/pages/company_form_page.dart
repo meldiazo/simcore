@@ -69,8 +69,10 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
 
     if (mounted) {
       setState(() => _createdCompany = activated);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Empresa activada y vinculada al grupo')),
+      showSimcoreSuccessDialog(
+        context: context,
+        title: '¡Empresa Activada!',
+        message: 'La empresa ha sido activada y vinculada al grupo exitosamente.',
       );
     }
   }

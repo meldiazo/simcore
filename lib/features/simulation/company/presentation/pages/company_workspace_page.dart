@@ -267,13 +267,7 @@ class _WorkspaceBody extends StatelessWidget {
                                     : SimcoreColors.textTertiary,
                           ),
                         )),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () => Navigator.of(context)
-                          .pushReplacementNamed(AppRouter.decisions),
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text('Centro de Decisiones'),
-                    ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),

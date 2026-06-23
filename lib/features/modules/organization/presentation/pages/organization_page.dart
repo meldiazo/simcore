@@ -1,8 +1,11 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/modules/organization/domain/entities/organization_area.dart';
 import 'package:simcore_frontend/features/modules/organization/presentation/providers/organization_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class OrganizationPage extends ConsumerWidget {
@@ -13,6 +16,14 @@ class OrganizationPage extends ConsumerWidget {
     final summaryAsync = ref.watch(organizationSummaryProvider);
     final notifierState = ref.watch(organizationNotifierProvider);
     final isLoading = notifierState is AsyncLoading;
+
+    final modulesAsync = ref.watch(global_providers.moduleProgressProvider);
+    final isCompleted = modulesAsync.maybeWhen(
+      data: (modules) => modules.any(
+        (m) => m.module == SimModule.organization && m.status == ModuleStatus.complete,
+      ),
+      orElse: () => false,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,14 +158,25 @@ class OrganizationPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              FilledButton(
-                onPressed: summary.areas.isNotEmpty && !isLoading
-                    ? () => ref
-                        .read(organizationNotifierProvider.notifier)
-                        .completeModule()
+              ModuleFinalizeCard(
+                title: 'Finalizar Estructuras Organizativas',
+                subtitle: 'Confirma la definición de áreas y cargos para habilitar el inicio de la producción.',
+                onFinalize: summary.areas.isNotEmpty && !isLoading
+                    ? () async {
+                        await ref
+                            .read(organizationNotifierProvider.notifier)
+                            .completeModule();
+                        if (context.mounted && !ref.read(organizationNotifierProvider).hasError) {
+                          showSimcoreSuccessDialog(
+                            context: context,
+                            title: '¡Módulo Completado!',
+                            message: 'El módulo de Estructuras Organizativas se ha finalizado correctamente.',
+                          );
+                        }
+                      }
                     : null,
-                style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
-                child: const Text('Completar módulo'),
+                buttonLabel: 'Completar Módulo',
+                isCompleted: isCompleted,
               ),
             ],
           ),
@@ -175,12 +197,18 @@ class OrganizationPage extends ConsumerWidget {
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Nombre'),
+              decoration: const InputDecoration(
+                labelText: 'Nombre',
+                prefixIcon: Icon(Icons.badge_rounded),
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Descripción'),
+              decoration: const InputDecoration(
+                labelText: 'Descripción',
+                prefixIcon: Icon(Icons.description_rounded),
+              ),
             ),
           ],
         ),
@@ -194,7 +222,14 @@ class OrganizationPage extends ConsumerWidget {
                 'name': nameCtrl.text.trim(),
                 'description': descCtrl.text.trim(),
               });
-              if (context.mounted) Navigator.pop(context);
+              if (context.mounted && !ref.read(organizationNotifierProvider).hasError) {
+                Navigator.pop(context);
+                showSimcoreSuccessDialog(
+                  context: context,
+                  title: 'Área Creada',
+                  message: 'El área organizativa se ha creado correctamente.',
+                );
+              }
             },
             child: const Text('Crear'),
           ),
@@ -222,38 +257,46 @@ class OrganizationPage extends ConsumerWidget {
               controller: titleCtrl,
               decoration: const InputDecoration(
                 labelText: 'Título del cargo',
+                prefixIcon: Icon(Icons.work_outline_rounded),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: responsibilitiesCtrl,
               decoration: const InputDecoration(
                 labelText: 'Responsabilidades',
+                prefixIcon: Icon(Icons.assignment_rounded),
               ),
               maxLines: 2,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: headcountCtrl,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: const InputDecoration(
                 labelText: 'Cantidad de personas',
+                prefixIcon: Icon(Icons.people_alt_rounded),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: salaryCtrl,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
               decoration: const InputDecoration(
                 labelText: 'Salario mensual',
+                prefixIcon: Icon(Icons.attach_money_rounded),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: capacityCtrl,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
               decoration: const InputDecoration(
                 labelText: 'Capacidad por persona al mes',
+                prefixIcon: Icon(Icons.speed_rounded),
                 helperText: 'Puede ser 0 si todavía no aplica.',
               ),
             ),
@@ -313,7 +356,14 @@ class OrganizationPage extends ConsumerWidget {
               'capacityPerPerson': capacityPerPerson,
             });
 
-            if (context.mounted) Navigator.pop(context);
+            if (context.mounted && !ref.read(organizationNotifierProvider).hasError) {
+              Navigator.pop(context);
+              showSimcoreSuccessDialog(
+                context: context,
+                title: 'Cargo Creado',
+                message: 'El cargo se ha registrado exitosamente en el área correspondiente.',
+              );
+            }
           },
           child: const Text('Crear'),
         ),

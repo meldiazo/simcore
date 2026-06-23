@@ -7,7 +7,6 @@ import 'package:simcore_frontend/features/simulation/scenario/domain/entities/sc
 import 'package:simcore_frontend/features/simulation/scenario/presentation/providers/scenario_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
 import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ScenarioManagerPage extends ConsumerWidget {
   const ScenarioManagerPage({super.key});
@@ -31,13 +30,41 @@ class ScenarioManagerPage extends ConsumerWidget {
         PageIntro(
           title: 'Gestión de Escenarios',
           subtitle: 'Crea, activa y asigna escenarios a los grupos del curso.',
-          trailing: FilledButton.icon(
-            onPressed: effectiveCourseId == null
-                ? null
-                : () => _showCreateDialog(context, ref, effectiveCourseId),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Nuevo escenario'),
-          ),
+          trailing: effectiveCourseId == null
+              ? null
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1D4ED8).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: FilledButton.icon(
+                    onPressed: () => _showCreateDialog(context, ref, effectiveCourseId),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
+                    label: const Text(
+                      'Nuevo Escenario',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                    ),
+                  ),
+                ),
         ),
         if (coursesAsync != null) ...[
           const SizedBox(height: 12),
@@ -158,6 +185,7 @@ class ScenarioManagerPage extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No se pudo determinar el curso actual.'),
+          backgroundColor: SimcoreColors.danger,
         ),
       );
       return;
@@ -212,7 +240,11 @@ class _ScenarioCard extends StatelessWidget {
         ),
     };
 
+    final isActive = scenario.status.toUpperCase() == 'ACTIVE';
+
     return GlassPanel(
+      borderColor: isActive ? SimcoreColors.success : null,
+      backgroundColor: isActive ? SimcoreColors.successSoft.withOpacity(0.4) : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -275,16 +307,32 @@ class _ScenarioCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              OutlinedButton.icon(
-                onPressed: onActivate,
-                icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                label: const Text('Activar'),
-              ),
-              if (scenario.status.toUpperCase() == 'ACTIVE')
+              if (isActive)
+                FilledButton.icon(
+                  onPressed: null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SimcoreColors.success,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: SimcoreColors.success,
+                    disabledForegroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                  label: const Text('Activo'),
+                )
+              else
                 OutlinedButton.icon(
+                  onPressed: onActivate,
+                  icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                  label: const Text('Activar'),
+                ),
+              if (isActive)
+                FilledButton.icon(
                   onPressed: onDeactivate,
-                  icon:
-                      const Icon(Icons.pause_circle_outline_rounded, size: 16),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SimcoreColors.danger,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.pause_circle_outline_rounded, size: 16),
                   label: const Text('Desactivar'),
                 ),
               OutlinedButton.icon(
@@ -574,12 +622,20 @@ class _AdvancedScenarioSheetState
   }
 
   void _showResult(bool success, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? message : 'No se pudo completar la acción.'),
-        backgroundColor: success ? SimcoreColors.success : SimcoreColors.danger,
-      ),
-    );
+    if (success) {
+      showSimcoreSuccessDialog(
+        context: context,
+        title: '¡Operación Exitosa!',
+        message: message,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo completar la acción.'),
+          backgroundColor: SimcoreColors.danger,
+        ),
+      );
+    }
   }
 
   @override
@@ -647,33 +703,39 @@ class _AdvancedScenarioSheetState
                         title: 'Reglas bloqueantes',
                       ),
                       const SizedBox(height: 8),
-                      _RuleSwitch(
+                       _RuleSwitch(
                         title: 'R1 - Mercado insuficiente',
+                        subtitle: 'Evita avanzar si la demanda del mercado no cubre la oferta mínima.',
                         value: _blockR1,
                         onChanged: (v) => setState(() => _blockR1 = v),
                       ),
                       _RuleSwitch(
                         title: 'R2 - Financiamiento excesivo',
+                        subtitle: 'Bloquea solicitudes de préstamos/créditos fuera de límites seguros.',
                         value: _blockR2,
                         onChanged: (v) => setState(() => _blockR2 = v),
                       ),
                       _RuleSwitch(
                         title: 'R3 - Capacidad organizativa',
+                        subtitle: 'Bloquea si las contrataciones y sueldos no son coherentes con la operación.',
                         value: _blockR3,
                         onChanged: (v) => setState(() => _blockR3 = v),
                       ),
                       _RuleSwitch(
                         title: 'R4 - Contabilidad incompleta',
+                        subtitle: 'Bloquea si el libro diario presenta descuadres o asientos incompletos.',
                         value: _blockR4,
                         onChanged: (v) => setState(() => _blockR4 = v),
                       ),
                       _RuleSwitch(
                         title: 'R5 - Indicadores críticos',
+                        subtitle: 'Bloquea el progreso si la liquidez o solvencia cae a niveles críticos.',
                         value: _blockR5,
                         onChanged: (v) => setState(() => _blockR5 = v),
                       ),
                       _RuleSwitch(
                         title: 'R6 - Coherencia global',
+                        subtitle: 'Bloquea si se detectan contradicciones de negocio o lógicas entre módulos.',
                         value: _blockR6,
                         onChanged: (v) => setState(() => _blockR6 = v),
                       ),
@@ -745,22 +807,31 @@ class _AdvancedScenarioSheetState
 class _RuleSwitch extends StatelessWidget {
   const _RuleSwitch({
     required this.title,
+    required this.subtitle,
     required this.value,
     required this.onChanged,
   });
 
   final String title;
+  final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return SwitchListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
+      dense: false,
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
       value: value,
       onChanged: onChanged,
-      title: Text(title),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(color: SimcoreColors.textSecondary, fontSize: 12),
+      ),
     );
   }
 }
@@ -885,148 +956,33 @@ class _AssignScenarioDialogState extends ConsumerState<_AssignScenarioDialog> {
                     );
                   }
 
-                  return Autocomplete<Map<String, dynamic>>(
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return const Iterable<Map<String, dynamic>>.empty();
+                  return DropdownButtonFormField<int>(
+                    value: _selectedGroup?['id'] as int?,
+                    decoration: const InputDecoration(
+                      labelText: 'Grupo',
+                      prefixIcon: Icon(Icons.group_outlined,
+                          color: SimcoreColors.textTertiary),
+                    ),
+                    items: groups.map((g) {
+                      final id = (g['id'] as num?)?.toInt() ?? 0;
+                      final name = (g['name'] ?? '').toString();
+                      return DropdownMenuItem<int>(
+                        value: id,
+                        child: Text(name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          final selected = groups.firstWhere(
+                              (g) => (g['id'] as num?)?.toInt() == value);
+                          _selectedGroup = selected;
+                          _groupIdController.text = value.toString();
+                        });
                       }
-                      return groups.where((g) {
-                        final name = g['name']?.toString().toLowerCase() ?? '';
-                        return name
-                            .contains(textEditingValue.text.toLowerCase());
-                      });
                     },
-                    displayStringForOption: (option) =>
-                        option['name']?.toString() ?? '',
-                    onSelected: (option) {
-                      setState(() {
-                        _selectedGroup = option;
-                        _groupIdController.text = option['id'].toString();
-                      });
-                    },
-                    fieldViewBuilder:
-                        (context, textController, focusNode, onFieldSubmitted) {
-                      textController.addListener(() {
-                        if (textController.text.isEmpty &&
-                            _selectedGroup != null) {
-                          setState(() {
-                            _selectedGroup = null;
-                            _groupIdController.clear();
-                          });
-                        }
-                      });
-
-                      return TextFormField(
-                        controller: textController,
-                        focusNode: focusNode,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: SimcoreColors.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Nombre del grupo',
-                          hintText: 'Escribe para buscar...',
-                          prefixIcon: const Icon(Icons.group_outlined,
-                              color: SimcoreColors.textTertiary),
-                          filled: true,
-                          fillColor: SimcoreColors.muted,
-                          labelStyle: const TextStyle(
-                              color: SimcoreColors.textSecondary),
-                          hintStyle: const TextStyle(
-                              color: SimcoreColors.textTertiary),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: SimcoreColors.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: SimcoreColors.border),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: SimcoreColors.accent, width: 1.5),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: SimcoreColors.danger),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: SimcoreColors.danger, width: 1.5),
-                          ),
-                          errorStyle:
-                              const TextStyle(color: SimcoreColors.danger),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Selecciona un grupo';
-                          }
-                          if (_selectedGroup == null ||
-                              _selectedGroup!['name'] != value) {
-                            return 'Selecciona una sugerencia de la lista';
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                    optionsViewBuilder: (context, onSelected, options) {
-                      return Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          elevation: 8,
-                          color: SimcoreColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            width: MediaQuery.sizeOf(context)
-                                .width
-                                .clamp(240.0, 320.0),
-                            constraints: const BoxConstraints(maxHeight: 180),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: SimcoreColors.border),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ListView.builder(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              itemCount: options.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                final option = options.elementAt(index);
-                                return InkWell(
-                                  onTap: () => onSelected(option),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.business_rounded,
-                                            color: SimcoreColors.accent,
-                                            size: 18),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            option['name']?.toString() ?? '',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: SimcoreColors.textPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                    validator: (value) =>
+                        value == null ? 'Selecciona un grupo' : null,
                   );
                 },
               ),
@@ -1072,12 +1028,10 @@ class _AssignScenarioDialogState extends ConsumerState<_AssignScenarioDialog> {
       ref.invalidate(activeScenarioProvider);
       ref.invalidate(scenariosByCourseProvider);
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Escenario ${widget.scenarioId} asignado correctamente al grupo ${_selectedGroup?['name'] ?? groupId}.',
-          ),
-        ),
+      showSimcoreSuccessDialog(
+        context: context,
+        title: '¡Escenario Asignado!',
+        message: 'Escenario ${widget.scenarioId} asignado correctamente al grupo ${_selectedGroup?['name'] ?? groupId}.',
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1085,6 +1039,7 @@ class _AssignScenarioDialogState extends ConsumerState<_AssignScenarioDialog> {
           content: Text(
             'No se pudo asignar el escenario. Revisa si pertenece al curso del grupo.',
           ),
+          backgroundColor: SimcoreColors.danger,
         ),
       );
     }

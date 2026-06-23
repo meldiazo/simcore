@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/features/academic/data/datasources/academic_remote_datasource.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 
 // ── Course Notifier ────────────────────────────────────────────────────────────
 
@@ -53,13 +54,34 @@ final courseNotifierProvider = StateNotifierProvider.autoDispose<CourseNotifier,
 final coursesProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final ds = ref.watch(academicDataSourceProvider);
-  return ds.listCourses();
+  final authState = ref.watch(authNotifierProvider);
+  final courses = await ds.listCourses();
+  final user = authState.user;
+  if (user != null && user.isDocente) {
+    return courses.where((c) {
+      final tId = c['teacherId'] ?? c['teacher']?['id'];
+      return tId == user.id;
+    }).toList();
+  }
+  return courses;
 });
 
 final allGroupsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final ds = ref.watch(academicDataSourceProvider);
-  return ds.listAllGroups();
+  final courses = await ref.watch(coursesProvider.future);
+  final groups = <Map<String, dynamic>>[];
+
+  for (final course in courses) {
+    final rawId = course['id'];
+    final courseId = rawId is int ? rawId : int.tryParse('$rawId');
+    if (courseId == null) continue;
+
+    final courseGroups = await ds.listGroups(courseId: courseId);
+    groups.addAll(courseGroups);
+  }
+
+  return groups;
 });
 
 final groupsByCourseProvider = FutureProvider.family

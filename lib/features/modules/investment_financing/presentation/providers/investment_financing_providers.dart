@@ -3,6 +3,7 @@ import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/repositories/company_repository.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 
 import '../../data/datasources/investment_financing_remote_datasource.dart';
 import '../../data/repositories/investment_financing_repository_impl.dart';
@@ -19,6 +20,7 @@ final investmentFinancingRepositoryProvider = Provider((ref) {
 class InvestmentFinancingState {
   final bool isLoading;
   final bool isMarketComplete;
+  final bool isInvestmentComplete;
   final List<InvestmentItemModel> investmentItems;
   final List<FinancingOptionModel> financingOptions;
   final String? errorMessage;
@@ -27,6 +29,7 @@ class InvestmentFinancingState {
   InvestmentFinancingState({
     this.isLoading = false,
     this.isMarketComplete = false,
+    this.isInvestmentComplete = false,
     this.investmentItems = const [],
     this.financingOptions = const [],
     this.errorMessage,
@@ -36,6 +39,7 @@ class InvestmentFinancingState {
   InvestmentFinancingState copyWith({
     bool? isLoading,
     bool? isMarketComplete,
+    bool? isInvestmentComplete,
     List<InvestmentItemModel>? investmentItems,
     List<FinancingOptionModel>? financingOptions,
     String? errorMessage,
@@ -46,6 +50,7 @@ class InvestmentFinancingState {
     return InvestmentFinancingState(
       isLoading: isLoading ?? this.isLoading,
       isMarketComplete: isMarketComplete ?? this.isMarketComplete,
+      isInvestmentComplete: isInvestmentComplete ?? this.isInvestmentComplete,
       investmentItems: investmentItems ?? this.investmentItems,
       financingOptions: financingOptions ?? this.financingOptions,
       errorMessage:
@@ -61,11 +66,13 @@ class InvestmentFinancingNotifier
   final InvestmentFinancingRepositoryImpl repository;
   final CompanyRepository companyRepository;
   final String companyId;
+  final Ref _ref;
 
   InvestmentFinancingNotifier(
     this.repository,
     this.companyRepository,
     this.companyId,
+    this._ref,
   ) : super(InvestmentFinancingState()) {
     _initializeModule();
   }
@@ -85,6 +92,7 @@ class InvestmentFinancingNotifier
         state = state.copyWith(
           isLoading: false,
           isMarketComplete: false,
+          isInvestmentComplete: false,
           investmentItems: const [],
           financingOptions: const [],
           errorMessage:
@@ -103,12 +111,19 @@ class InvestmentFinancingNotifier
             module.status == ModuleStatus.complete,
       );
 
+      final isInvestmentComplete = moduleProgress.any(
+        (module) =>
+            module.module == SimModule.investment &&
+            module.status == ModuleStatus.complete,
+      );
+
       if (!mounted) return;
 
       if (!marketReady) {
         state = state.copyWith(
           isLoading: false,
           isMarketComplete: false,
+          isInvestmentComplete: false,
           investmentItems: const [],
           financingOptions: const [],
           errorMessage: null,
@@ -124,6 +139,7 @@ class InvestmentFinancingNotifier
       state = state.copyWith(
         isLoading: false,
         isMarketComplete: true,
+        isInvestmentComplete: isInvestmentComplete,
         investmentItems: investments,
         financingOptions: financings,
         errorMessage: null,
@@ -134,6 +150,7 @@ class InvestmentFinancingNotifier
       state = state.copyWith(
         isLoading: false,
         isMarketComplete: false,
+        isInvestmentComplete: false,
         investmentItems: const [],
         financingOptions: const [],
         errorMessage: e.toString(),
@@ -273,8 +290,12 @@ class InvestmentFinancingNotifier
       );
       await repository.completeFinancing(companyId);
 
+      _ref.invalidate(companyModuleProgressProvider);
+      _ref.invalidate(global_providers.moduleProgressProvider);
+
       state = state.copyWith(
         isLoading: false,
+        isInvestmentComplete: true,
         successMessage: '¡Estructuración financiera completada exitosamente!',
         clearErrorMessage: true,
       );
@@ -298,5 +319,6 @@ final investmentFinancingProvider = StateNotifierProvider.autoDispose
     repository,
     companyRepository,
     companyId,
+    ref,
   );
 });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simcore_frontend/core/error/error_utils.dart';
 
 class FormErrorSummary extends StatelessWidget {
   const FormErrorSummary({super.key, required this.errors});
@@ -23,7 +24,9 @@ class FormErrorSummary extends StatelessWidget {
             .map((e) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Text(
-                    '• ${e.key}: ${e.value}',
+                    e.key == 'error'
+                        ? '• ${toUserFriendlyError(e.value)}'
+                        : '• ${e.key}: ${toUserFriendlyError(e.value)}',
                     style: const TextStyle(
                         color: Color(0xFFEF4444), fontSize: 13),
                   ),

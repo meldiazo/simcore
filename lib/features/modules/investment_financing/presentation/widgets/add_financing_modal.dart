@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import '../../data/models/financing_option_model.dart';
 
 class AddFinancingModal extends StatefulWidget {
@@ -33,7 +35,9 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
               const SizedBox(height: 8),
               DropdownButtonFormField<FinancingType>(
                 value: _selectedType,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.account_balance_rounded),
+                ),
                 items: FinancingType.values.map((type) {
                   return DropdownMenuItem(value: type, child: Text(type.displayName));
                 }).toList(),
@@ -46,8 +50,9 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
               const SizedBox(height: 8),
               TextFormField(
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.attach_money)),
-                validator: (value) => (value == null || double.tryParse(value) == null || double.parse(value) <= 0) ? 'Monto inválido' : null,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                decoration: const InputDecoration(prefixIcon: Icon(Icons.attach_money_rounded)),
+                validator: (value) => (value == null || value.isEmpty || double.tryParse(value) == null || double.parse(value) <= 0) ? 'Monto inválido' : null,
                 onSaved: (value) => _amount = double.parse(value!),
               ),
               const SizedBox(height: 16),
@@ -60,19 +65,20 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
                         const Text('Costo (TEA %):', style: TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         TextFormField(
-  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-  decoration: const InputDecoration(
-    border: OutlineInputBorder(),
-    suffixIcon: Icon(Icons.percent, size: 18),
-  ),
-  validator: (value) {
-    final rate = double.tryParse(value ?? '');
-    if (rate == null) return 'Inválido';
-    if (rate < 0 || rate > 100) return 'Debe estar entre 0 y 100';
-    return null;
-  },
-  onSaved: (value) => _interestRate = double.parse(value!),
-),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                          decoration: const InputDecoration(
+                            suffixIcon: Icon(Icons.percent_rounded, size: 18),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Requerido';
+                            final rate = double.tryParse(value);
+                            if (rate == null) return 'Inválido';
+                            if (rate < 0 || rate > 100) return 'Entre 0 y 100';
+                            return null;
+                          },
+                          onSaved: (value) => _interestRate = double.parse(value!),
+                        ),
                       ],
                     ),
                   ),
@@ -85,8 +91,9 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
                         const SizedBox(height: 8),
                         TextFormField(
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(border: OutlineInputBorder(), suffixIcon: Icon(Icons.calendar_month, size: 18)),
-                          validator: (value) => (value == null || int.tryParse(value) == null || int.parse(value) <= 0) ? 'Inválido' : null,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: const InputDecoration(suffixIcon: Icon(Icons.calendar_month_rounded, size: 18)),
+                          validator: (value) => (value == null || value.isEmpty || int.tryParse(value) == null || int.parse(value) <= 0) ? 'Inválido' : null,
                           onSaved: (value) => _termInMonths = int.parse(value!),
                         ),
                       ],
@@ -109,6 +116,11 @@ class _AddFinancingModalState extends State<AddFinancingModal> {
               _formKey.currentState!.save();
               widget.onSave(_selectedType, _amount, _interestRate, _termInMonths);
               Navigator.of(context).pop();
+              showSimcoreSuccessDialog(
+                context: context,
+                title: 'Financiamiento Registrado',
+                message: 'La opción de fondeo se ha agregado correctamente a tu estructura de financiamiento.',
+              );
             }
           },
           style: FilledButton.styleFrom(backgroundColor: SimcoreColors.accent),

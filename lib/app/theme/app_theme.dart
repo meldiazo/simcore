@@ -35,6 +35,56 @@ ThemeData buildSimcoreTheme() {
       primary: SimcoreColors.accent,
       surface: SimcoreColors.surface,
     ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: SimcoreColors.muted,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      labelStyle: const TextStyle(
+        fontSize: 14,
+        color: SimcoreColors.textSecondary,
+        fontWeight: FontWeight.w500,
+      ),
+      floatingLabelStyle: const TextStyle(
+        fontSize: 14,
+        color: SimcoreColors.accent,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: const TextStyle(
+        fontSize: 14,
+        color: SimcoreColors.textTertiary,
+      ),
+      prefixIconColor: WidgetStateColor.resolveWith((states) {
+        if (states.contains(WidgetState.focused)) {
+          return SimcoreColors.accent;
+        }
+        return SimcoreColors.textTertiary;
+      }),
+      suffixIconColor: SimcoreColors.textTertiary,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.accent, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.danger, width: 2),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SimcoreColors.border),
+      ),
+    ),
     textTheme: baseTextTheme.copyWith(
       displaySmall: baseTextTheme.displaySmall?.copyWith(
         color: SimcoreColors.textPrimary,

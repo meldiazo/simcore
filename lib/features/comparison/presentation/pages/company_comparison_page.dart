@@ -5,23 +5,21 @@ import 'package:simcore_frontend/features/comparison/presentation/providers/comp
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/simulation/scenario/presentation/providers/scenario_providers.dart';
 
 class CompanyComparisonPage extends ConsumerWidget {
   const CompanyComparisonPage({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final comparisonAsync = ref.watch(courseComparisonProvider);
-    final selectedScenario = ref.watch(selectedScenarioTypeProvider);
-
+  Widget _buildComparisonContent(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<Map<String, dynamic>> comparisonAsync,
+    String selectedScenario,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const PageIntro(
-          title: 'Comparación Académica',
-          subtitle: 'Métricas financieras comparadas entre empresas del curso.',
-        ),
-        const SizedBox(height: 20),
         _ScenarioSelector(selected: selectedScenario),
         const SizedBox(height: 20),
         comparisonAsync.when(
@@ -41,6 +39,69 @@ class CompanyComparisonPage extends ConsumerWidget {
             return _ComparisonTable(companies: companies);
           },
         ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final comparisonAsync = ref.watch(courseComparisonProvider);
+    final selectedScenario = ref.watch(selectedScenarioTypeProvider);
+    final user = ref.watch(authNotifierProvider).user;
+
+    Widget body;
+    if (user != null && user.isEstudiante) {
+      final activeScenarioAsync = ref.watch(activeScenarioProvider);
+      body = activeScenarioAsync.when(
+        loading: () => const LoadingState(message: 'Verificando visibilidad...'),
+        error: (e, _) => ApiErrorState(
+          title: 'Error de verificación',
+          message: e.toString(),
+          onRetry: () => ref.invalidate(activeScenarioProvider),
+        ),
+        data: (activeScenario) {
+          if (activeScenario == null || !activeScenario.groupsCanSeeEachOther) {
+            return GlassPanel(
+              child: const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.visibility_off_rounded, size: 48, color: SimcoreColors.textSecondary),
+                      SizedBox(height: 16),
+                      Text(
+                        'Comparación de Grupos Desactivada',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: SimcoreColors.textPrimary),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'El docente ha configurado este escenario para no permitir la comparación de resultados entre grupos.',
+                        style: TextStyle(color: SimcoreColors.textSecondary, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return _buildComparisonContent(context, ref, comparisonAsync, selectedScenario);
+        },
+      );
+    } else {
+      body = _buildComparisonContent(context, ref, comparisonAsync, selectedScenario);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const PageIntro(
+          title: 'Comparación Académica',
+          subtitle: 'Métricas financieras comparadas entre empresas del curso.',
+        ),
+        const SizedBox(height: 20),
+        body,
       ],
     );
   }

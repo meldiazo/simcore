@@ -23,7 +23,18 @@ class _InvestmentFinancingPageState extends ConsumerState<InvestmentFinancingPag
   
   @override
   Widget build(BuildContext context) {
-  
+    ref.listen<InvestmentFinancingState>(
+        investmentFinancingProvider(widget.companyId), (prev, next) {
+      if (next.successMessage != null &&
+          next.successMessage != prev?.successMessage) {
+        showSimcoreSuccessDialog(
+          context: context,
+          title: '¡Operación Exitosa!',
+          message: next.successMessage!,
+        );
+      }
+    });
+
     final state = ref.watch(investmentFinancingProvider(widget.companyId));
     final notifier = ref.read(investmentFinancingProvider(widget.companyId).notifier);
 
@@ -179,13 +190,12 @@ if (state.successMessage != null)
               const SizedBox(height: 32),
               
               
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: () => notifier.completeModule(),
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Completar Estructuración Financiera'),
-                ),
+              ModuleFinalizeCard(
+                title: 'Finalizar Estructuración Financiera',
+                subtitle: 'Asegura que tu requerimiento de inversión esté completamente respaldado por opciones de fondeo.',
+                onFinalize: () => notifier.completeModule(),
+                buttonLabel: 'Completar Estructuración',
+                isCompleted: state.isInvestmentComplete,
               ),
               const SizedBox(height: 40),
             ],

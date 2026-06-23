@@ -7,6 +7,9 @@ import 'package:simcore_frontend/features/teacher/data/models/teacher_dashboard_
 import 'package:simcore_frontend/features/teacher/presentation/providers/evaluation_providers.dart';
 import 'package:simcore_frontend/features/teacher/presentation/providers/intervention_providers.dart';
 import 'package:simcore_frontend/features/teacher/presentation/providers/teacher_dashboard_providers.dart';
+import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
+import 'package:simcore_frontend/core/error/error_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +19,318 @@ class TeacherDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(teacherDashboardProvider);
+    final currentUser = ref.watch(authNotifierProvider).user;
+    final isAdmin = currentUser?.isAdmin == true;
+
+    if (isAdmin) {
+      final coursesAsync = ref.watch(coursesProvider);
+      final groupsAsync = ref.watch(allGroupsProvider);
+      final usersAsync = ref.watch(usersProvider);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const PageIntro(
+            title: 'Panel de Control General',
+            subtitle: 'Resumen global de cursos, grupos, docentes y estudiantes registrados.',
+          ),
+          const SizedBox(height: 24),
+          coursesAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => GlassPanel(
+              child: Center(
+                child: Text('Error al cargar cursos: ${toUserFriendlyError(err)}',
+                    style: const TextStyle(color: SimcoreColors.danger)),
+              ),
+            ),
+            data: (courses) => groupsAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GlassPanel(
+                child: Center(
+                  child: Text('Error al cargar grupos: ${toUserFriendlyError(err)}',
+                      style: const TextStyle(color: SimcoreColors.danger)),
+                ),
+              ),
+              data: (groups) => usersAsync.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (err, _) => GlassPanel(
+                  child: Center(
+                    child: Text('Error al cargar usuarios: ${toUserFriendlyError(err)}',
+                        style: const TextStyle(color: SimcoreColors.danger)),
+                  ),
+                ),
+                data: (users) {
+                  final teachersCount = users.where((u) {
+                    final roles = (u['roles'] as List?)
+                            ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                            .toList() ??
+                        [];
+                    return roles.contains('DOCENTE');
+                  }).length;
+
+                  final studentsCount = users.where((u) {
+                    final roles = (u['roles'] as List?)
+                            ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
+                            .toList() ??
+                        [];
+                    return roles.contains('ESTUDIANTE');
+                  }).length;
+
+                  final recentCourses = courses.take(4).toList();
+                  final recentGroups = groups.take(4).toList();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: [
+                          _AdminStatTile(
+                            label: 'Cursos Registrados',
+                            value: '${courses.length}',
+                            icon: Icons.school_rounded,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            iconColor: const Color(0xFF93C5FD),
+                          ),
+                          _AdminStatTile(
+                            label: 'Grupos Creados',
+                            value: '${groups.length}',
+                            icon: Icons.group_work_rounded,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF047857)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            iconColor: const Color(0xFF6EE7B7),
+                          ),
+                          _AdminStatTile(
+                            label: 'Docentes Activos',
+                            value: '$teachersCount',
+                            icon: Icons.person_rounded,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF4338CA)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            iconColor: const Color(0xFFA5B4FC),
+                          ),
+                          _AdminStatTile(
+                            label: 'Estudiantes Matriculados',
+                            value: '$studentsCount',
+                            icon: Icons.people_rounded,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF59E0B), Color(0xFFB45309)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            iconColor: const Color(0xFFFDE68A),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isWide = constraints.maxWidth > 800;
+                          final List<Widget> listWidget = [
+                            Expanded(
+                              flex: isWide ? 1 : 0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Cursos Recientes',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: SimcoreColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (recentCourses.isEmpty)
+                                    const GlassPanel(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Text(
+                                          'No hay cursos registrados.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: SimcoreColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ...recentCourses.map((c) {
+                                      final cName = c['name'] ?? c['title'] ?? '';
+                                      final cCode = c['code'] ?? '';
+                                      final cPeriod = c['academicPeriod'] ?? '';
+                                      final tName = c['teacherName'] ?? 'No asignado';
+                                      return Card(
+                                        elevation: 0,
+                                        margin: const EdgeInsets.only(bottom: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          side: const BorderSide(color: SimcoreColors.border),
+                                        ),
+                                        color: Colors.white.withValues(alpha: 0.5),
+                                        child: ListTile(
+                                          title: Text(
+                                            cName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            'Docente: $tName • Periodo: $cPeriod',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: SimcoreColors.textSecondary,
+                                            ),
+                                          ),
+                                          trailing: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: SimcoreColors.accentSoft,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              cCode,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: SimcoreColors.accent,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                ],
+                              ),
+                            ),
+                            if (isWide) const SizedBox(width: 24),
+                            if (!isWide) const SizedBox(height: 24),
+                            Expanded(
+                              flex: isWide ? 1 : 0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Grupos Recientes',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: SimcoreColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (recentGroups.isEmpty)
+                                    const GlassPanel(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Text(
+                                          'No hay grupos creados.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: SimcoreColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ...recentGroups.map((g) {
+                                      final gName = g['name'] ?? '';
+                                      final cId = g['courseId'] as int? ?? 0;
+                                      final memberCount = g['memberCount'] as int? ?? 0;
+                                      
+                                      final course = courses.where((c) => c['id'] == cId).firstOrNull;
+                                      final courseCode = course != null ? (course['code'] ?? '') : '';
+
+                                      return Card(
+                                        elevation: 0,
+                                        margin: const EdgeInsets.only(bottom: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          side: const BorderSide(color: SimcoreColors.border),
+                                        ),
+                                        color: Colors.white.withValues(alpha: 0.5),
+                                        child: ListTile(
+                                          title: Text(
+                                            gName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            'Código Curso: $courseCode • Integrantes: $memberCount',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: SimcoreColors.textSecondary,
+                                            ),
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.group_work_outlined,
+                                            color: SimcoreColors.accent,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                ],
+                              ),
+                            ),
+                          ];
+
+                          if (isWide) {
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: listWidget,
+                            );
+                          } else {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                listWidget[0],
+                                const SizedBox(height: 24),
+                                listWidget[2],
+                              ],
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +349,6 @@ class TeacherDashboardPage extends ConsumerWidget {
           data: (dashboard) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Summary KPIs
               Wrap(
                 spacing: 16,
                 runSpacing: 12,
@@ -49,7 +363,6 @@ class TeacherDashboardPage extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              // Groups list
               if (dashboard.groups.isEmpty)
                 const GlassPanel(
                   child: Center(
@@ -985,6 +1298,94 @@ class _Chip extends StatelessWidget {
           Text(label,
               style: TextStyle(
                   fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminStatTile extends StatelessWidget {
+  const _AdminStatTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.gradient,
+    required this.iconColor,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Gradient gradient;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: iconColor.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -10,
+            bottom: -10,
+            child: Icon(
+              icon,
+              size: 72,
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: iconColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

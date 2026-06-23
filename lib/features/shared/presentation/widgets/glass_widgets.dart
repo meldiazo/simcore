@@ -782,3 +782,278 @@ class MetricBar extends StatelessWidget {
     );
   }
 }
+
+class HoverAnimatedButton extends StatefulWidget {
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final Widget label;
+  final Color color;
+
+  const HoverAnimatedButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    this.color = SimcoreColors.success,
+  });
+
+  @override
+  State<HoverAnimatedButton> createState() => _HoverAnimatedButtonState();
+}
+
+class _HoverAnimatedButtonState extends State<HoverAnimatedButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = widget.onPressed != null;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        transform: _isHovered && isEnabled
+            ? (Matrix4.identity()..translate(0, -2)..scale(1.03))
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: _isHovered && isEnabled
+              ? [
+                  BoxShadow(
+                    color: widget.color.withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: FilledButton.icon(
+          onPressed: widget.onPressed,
+          icon: widget.icon,
+          label: widget.label,
+          style: FilledButton.styleFrom(
+            backgroundColor: widget.color,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: SimcoreColors.textTertiary.withOpacity(0.2),
+            disabledForegroundColor: SimcoreColors.textTertiary,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ModuleFinalizeCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onFinalize;
+  final String buttonLabel;
+  final bool isCompleted;
+
+  const ModuleFinalizeCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.onFinalize,
+    this.buttonLabel = 'Completar Módulo',
+    this.isCompleted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      borderColor: isCompleted 
+          ? SimcoreColors.success.withOpacity(0.4) 
+          : SimcoreColors.accent.withOpacity(0.2),
+      backgroundColor: isCompleted
+          ? SimcoreColors.successSoft.withOpacity(0.15)
+          : null,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 620;
+
+        final content = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isCompleted 
+                    ? SimcoreColors.successSoft 
+                    : SimcoreColors.accentSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isCompleted 
+                    ? Icons.check_circle_rounded 
+                    : Icons.lock_open_rounded,
+                color: isCompleted 
+                    ? SimcoreColors.success 
+                    : SimcoreColors.accent,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.w800,
+                      color: isCompleted 
+                          ? SimcoreColors.success 
+                          : SimcoreColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      height: 1.4,
+                      fontSize: 14,
+                      color: SimcoreColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        final actionButton = HoverAnimatedButton(
+          onPressed: isCompleted ? null : onFinalize,
+          color: isCompleted ? SimcoreColors.success : SimcoreColors.accent,
+          icon: Icon(
+            isCompleted 
+                ? Icons.check_circle_outline_rounded 
+                : Icons.check_circle_rounded,
+            size: 20,
+          ),
+          label: Text(
+            isCompleted ? 'Módulo Completado' : buttonLabel,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+        );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              content,
+              const SizedBox(height: 20),
+              actionButton,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: 24),
+            actionButton,
+          ],
+        );
+      }),
+    );
+  }
+}
+
+Future<void> showSimcoreSuccessDialog({
+  required BuildContext context,
+  required String title,
+  required String message,
+  String buttonLabel = 'Entendido',
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: GlassPanel(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: SimcoreColors.successSoft,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: SimcoreColors.success.withOpacity(0.2),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: SimcoreColors.success,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: SimcoreColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: SimcoreColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: HoverAnimatedButton(
+                    color: SimcoreColors.accent,
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: Text(
+                      buttonLabel,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}

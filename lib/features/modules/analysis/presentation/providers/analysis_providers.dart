@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/core/network/api_client_providers.dart';
 import 'package:simcore_frontend/features/modules/analysis/data/datasources/analysis_remote_datasource.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 
 final analysisRemoteDataSourceProvider = Provider<AnalysisRemoteDataSource>((ref) {
   return AnalysisRemoteDataSource(ref.watch(simulationApiClientProvider));
@@ -44,9 +46,14 @@ class AnalysisNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _ds.completeModule(companyId: _companyId);
+      
+      _ref.invalidate(companyModuleProgressProvider);
+      _ref.invalidate(global_providers.moduleProgressProvider);
+      
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 }

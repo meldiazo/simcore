@@ -151,12 +151,9 @@ class CompanyRemoteDataSource {
     );
     return result.fold(
       (e) => throw e,
-      (data) {
-        if (data is! List) return [];
-        return data
-            .map((item) => CompanyModel.fromJson(Map<String, dynamic>.from(item as Map)))
-            .toList();
-      },
+      (data) => _extractList(data)
+          .map(CompanyModel.fromJson)
+          .toList(),
     );
   }
 

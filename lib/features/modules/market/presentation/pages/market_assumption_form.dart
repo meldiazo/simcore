@@ -99,13 +99,19 @@ class _MarketAssumptionFormState extends ConsumerState<MarketAssumptionForm> {
           const SizedBox(height: 20),
           TextFormField(
             controller: _targetSegmentController,
-            decoration: const InputDecoration(labelText: 'Segmento Objetivo', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Segmento Objetivo',
+              prefixIcon: Icon(Icons.track_changes_rounded),
+            ),
             validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _competitionController,
-            decoration: const InputDecoration(labelText: 'Descripción de la Competencia', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Descripción de la Competencia',
+              prefixIcon: Icon(Icons.store_rounded),
+            ),
             maxLines: 2,
             validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
           ),
@@ -114,21 +120,30 @@ class _MarketAssumptionFormState extends ConsumerState<MarketAssumptionForm> {
             children: [
               TextFormField(
                 controller: _marketSizeController,
-                decoration: const InputDecoration(labelText: 'Tamaño de Mercado (USD)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Tamaño de Mercado (USD)',
+                  prefixIcon: Icon(Icons.monetization_on_rounded),
+                ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
               TextFormField(
                 controller: _demandUnitsController,
-                decoration: const InputDecoration(labelText: 'Demanda (Unidades/Mes)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Demanda (Unidades/Mes)',
+                  prefixIcon: Icon(Icons.analytics_rounded),
+                ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
               TextFormField(
                 controller: _unitPriceController,
-                decoration: const InputDecoration(labelText: 'Precio Unitario Estimado (USD)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Precio Unitario (USD)',
+                  prefixIcon: Icon(Icons.sell_rounded),
+                ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
@@ -138,7 +153,10 @@ class _MarketAssumptionFormState extends ConsumerState<MarketAssumptionForm> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _justificationController,
-            decoration: const InputDecoration(labelText: 'Justificación Comercial', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Justificación Comercial',
+              prefixIcon: Icon(Icons.description_rounded),
+            ),
             maxLines: 3,
             validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
           ),

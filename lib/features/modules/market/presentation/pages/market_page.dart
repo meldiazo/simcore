@@ -40,10 +40,10 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         .updateAssumption(assumption);
 
     if (mounted && success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Supuestos de mercado guardados.'),
-            backgroundColor: SimcoreColors.success),
+      showSimcoreSuccessDialog(
+        context: context,
+        title: '¡Supuestos Guardados!',
+        message: 'Los supuestos de mercado se han guardado exitosamente.',
       );
 
       final decision = DecisionModel(
@@ -68,10 +68,10 @@ class _MarketPageState extends ConsumerState<MarketPage> {
     final success =
         await ref.read(marketNotifierProvider.notifier).generateProjection();
     if (mounted && success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Proyección de ventas generada.'),
-            backgroundColor: SimcoreColors.accent),
+      showSimcoreSuccessDialog(
+        context: context,
+        title: 'Proyección Generada',
+        message: 'La proyección de ventas se ha calculado correctamente basada en los supuestos ingresados.',
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,11 +115,10 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         ref.invalidate(global_providers.moduleProgressProvider);
         ref.invalidate(investmentFinancingProvider(companyId));
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Módulo completado con éxito.'),
-            backgroundColor: SimcoreColors.success,
-          ),
+        showSimcoreSuccessDialog(
+          context: context,
+          title: '¡Módulo Completado!',
+          message: 'El módulo de mercado se ha finalizado con éxito para este ciclo.',
         );
       }
     } catch (e) {
@@ -154,6 +153,14 @@ class _MarketPageState extends ConsumerState<MarketPage> {
     final projectionAsync = ref.watch(salesProjectionProvider);
     final marketValidationAiAsync = ref.watch(marketValidationAiProvider);
     final marketNotifierState = ref.watch(marketNotifierProvider);
+
+    final modulesAsync = ref.watch(global_providers.moduleProgressProvider);
+    final isCompleted = modulesAsync.maybeWhen(
+      data: (modules) => modules.any(
+        (m) => m.module == SimModule.market && m.status == ModuleStatus.complete,
+      ),
+      orElse: () => false,
+    );
 
     final canComplete = assumptionAsync.hasValue &&
         assumptionAsync.value != null &&
@@ -224,19 +231,12 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
         ),
         const SizedBox(height: 24),
-        GlassPanel(
-          child: ResponsiveHeaderAction(
-            title: 'Finalizar Módulo de Mercado',
-            subtitle:
-                'Al completar, tus supuestos y proyecciones se considerarán finales para este ciclo.',
-            action: FilledButton.icon(
-              onPressed: canComplete ? _completeModule : null,
-              icon: const Icon(Icons.check_circle_outline_rounded),
-              label: const Text('Completar Módulo'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: SimcoreColors.success),
-            ),
-          ),
+        ModuleFinalizeCard(
+          title: 'Finalizar Módulo de Mercado',
+          subtitle: 'Al completar, tus supuestos y proyecciones se considerarán finales para este ciclo.',
+          onFinalize: canComplete ? _completeModule : null,
+          buttonLabel: 'Completar Módulo',
+          isCompleted: isCompleted,
         ),
       ],
     );

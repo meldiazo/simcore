@@ -1,17 +1,44 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
+import 'package:simcore_frontend/core/network/api_exception.dart';
 import 'package:simcore_frontend/features/ai/presentation/providers/ai_providers.dart';
 import 'package:simcore_frontend/features/ai/presentation/widgets/ai_suggestion_card.dart';
 import 'package:simcore_frontend/features/modules/analysis/presentation/providers/analysis_providers.dart';
 import 'package:simcore_frontend/features/simulation/decisions/presentation/providers/decision_providers.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/simulation/module_progress/presentation/providers/module_progress_providers.dart' as module_actions;
+import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart' as company_providers;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AnalysisPage extends ConsumerWidget {
+class AnalysisPage extends ConsumerStatefulWidget {
   const AnalysisPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AnalysisPage> createState() => _AnalysisPageState();
+}
+
+class _AnalysisPageState extends ConsumerState<AnalysisPage> {
+  bool _hasStarted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ctxState = ref.watch(simulationContextNotifierProvider);
+    if (!ctxState.isReady || ctxState.context == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_hasStarted) {
+      _hasStarted = true;
+      Future.microtask(() {
+        ref.read(module_actions.moduleProgressProvider.notifier).start(
+              ctxState.context!.companyId.toString(),
+              SimModule.analysis.toApi(),
+            );
+      });
+    }
+
     final indicatorsAsync = ref.watch(financialIndicatorsProvider);
     final incoherencesAsync = ref.watch(analysisIncoherencesProvider);
     final reportAsync = ref.watch(narrativeReportProvider);
@@ -20,6 +47,14 @@ class AnalysisPage extends ConsumerWidget {
     final narrativeAiAsync = ref.watch(narrativeAiProvider);
     final notifierState = ref.watch(analysisNotifierProvider);
     final isLoading = notifierState is AsyncLoading;
+
+    final modulesAsync = ref.watch(global_providers.moduleProgressProvider);
+    final isCompleted = modulesAsync.maybeWhen(
+      data: (modules) => modules.any(
+        (m) => m.module == SimModule.analysis && m.status == ModuleStatus.complete,
+      ),
+      orElse: () => false,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,13 +301,72 @@ class AnalysisPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: !isLoading
-              ? () =>
-                  ref.read(analysisNotifierProvider.notifier).completeModule()
+        ModuleFinalizeCard(
+          title: 'Finalizar Módulo de Análisis General',
+          subtitle: 'Al completar, se guardará la narrativa y los indicadores del plan para este ciclo de simulación.',
+          onFinalize: !isLoading && !isCompleted
+              ? () async {
+                  final companyId = ref.read(currentCompanyIdProvider).toString();
+                  try {
+                    // 1. Force start the module explicitly
+                    await ref.read(module_actions.moduleProgressProvider.notifier).start(
+                          companyId,
+                          SimModule.analysis.toApi(),
+                        );
+
+                    // Wait 300ms for server processing
+                    await Future.delayed(const Duration(milliseconds: 300));
+
+                    // 2. Complete module via analysis notifier
+                    await ref.read(analysisNotifierProvider.notifier).completeModule();
+                    
+                    final finalState = ref.read(analysisNotifierProvider);
+                    if (finalState.hasError) {
+                      final error = finalState.error;
+                      final cleanMessage = error is ApiException ? error.message : error.toString();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error al completar el módulo de análisis: $cleanMessage'),
+                            backgroundColor: SimcoreColors.danger,
+                          ),
+                        );
+                      }
+                    } else {
+                      // 3. Mark module progress as complete globally
+                      await ref.read(module_actions.moduleProgressProvider.notifier).complete(
+                            companyId,
+                            SimModule.analysis.toApi(),
+                          );
+
+                      if (context.mounted) {
+                        // Invalidate providers to refresh UI and sidebar
+                        ref.invalidate(company_providers.companyModuleProgressProvider);
+                        ref.invalidate(company_providers.companyWorkspaceProvider);
+                        ref.invalidate(global_providers.moduleProgressProvider);
+
+                        showSimcoreSuccessDialog(
+                          context: context,
+                          title: '¡Módulo Completado!',
+                          message: 'El módulo de Análisis General se ha finalizado correctamente para este ciclo.',
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    final cleanMessage = e is ApiException ? e.message : e.toString();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al completar el módulo de análisis: $cleanMessage'),
+                          backgroundColor: SimcoreColors.danger,
+                        ),
+                      );
+                    }
+                  }
+                }
               : null,
-          style: FilledButton.styleFrom(backgroundColor: SimcoreColors.success),
-          child: const Text('Completar módulo Análisis'),
+          buttonLabel: 'Completar Módulo',
+          isCompleted: isCompleted,
         ),
       ],
     );

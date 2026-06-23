@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/modules/accounting/presentation/providers/accounting_providers.dart';
 import 'package:simcore_frontend/features/modules/accounting/presentation/widgets/accounting_entries_table.dart';
 import 'package:simcore_frontend/features/modules/accounting/presentation/widgets/financial_statement_viewer.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_providers.dart' as global_providers;
 
 class AccountingPage extends ConsumerWidget {
   const AccountingPage({super.key});
@@ -13,6 +15,14 @@ class AccountingPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final companyId = ref.watch(currentCompanyIdProvider).toString();
+
+    final modulesAsync = ref.watch(global_providers.moduleProgressProvider);
+    final isCompleted = modulesAsync.maybeWhen(
+      data: (modules) => modules.any(
+        (m) => m.module == SimModule.accounting && m.status == ModuleStatus.complete,
+      ),
+      orElse: () => false,
+    );
 
     return DefaultTabController(
       length: 2,
@@ -57,42 +67,33 @@ class AccountingPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: SimcoreColors.success,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 16,
-                ),
-              ),
-              icon: const Icon(Icons.check_circle_outline_rounded),
-              label: const Text('Finalizar Revisión Contable'),
-              onPressed: () async {
-                try {
-                  await ref.read(accountingActionsProvider).completeModule(companyId);
+          ModuleFinalizeCard(
+            title: 'Finalizar Revisión Contable',
+            subtitle: 'Confirma que has revisado los asientos contables y estados financieros generados.',
+            onFinalize: () async {
+              try {
+                await ref.read(accountingActionsProvider).completeModule(companyId);
 
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Módulo de Contabilidad completado.'),
-                        backgroundColor: SimcoreColors.success,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al completar contabilidad: $e'),
-                        backgroundColor: SimcoreColors.danger,
-                      ),
-                    );
-                  }
+                if (context.mounted) {
+                  showSimcoreSuccessDialog(
+                    context: context,
+                    title: '¡Módulo Completado!',
+                    message: 'El módulo de contabilidad ha sido completado y cerrado con éxito.',
+                  );
                 }
-              },
-            ),
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al completar contabilidad: $e'),
+                      backgroundColor: SimcoreColors.danger,
+                    ),
+                  );
+                }
+              }
+            },
+            buttonLabel: 'Finalizar Revisión',
+            isCompleted: isCompleted,
           ),
         ],
       ),
@@ -120,11 +121,10 @@ class _EntriesTab extends ConsumerWidget {
                 await ref.read(accountingActionsProvider).generateEntries(companyId);
 
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Asientos generados correctamente.'),
-                      backgroundColor: SimcoreColors.success,
-                    ),
+                  showSimcoreSuccessDialog(
+                    context: context,
+                    title: 'Asientos Generados',
+                    message: 'Los asientos del libro diario han sido generados automáticamente de forma correcta.',
                   );
                 }
               } catch (e) {
@@ -169,11 +169,10 @@ class _StatementsTab extends ConsumerWidget {
                 await ref.read(accountingActionsProvider).generateStatements(companyId);
 
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Estados financieros generados correctamente.'),
-                      backgroundColor: SimcoreColors.success,
-                    ),
+                  showSimcoreSuccessDialog(
+                    context: context,
+                    title: 'Estados Financieros Listos',
+                    message: 'Los reportes y estados financieros han sido generados exitosamente.',
                   );
                 }
               } catch (e) {

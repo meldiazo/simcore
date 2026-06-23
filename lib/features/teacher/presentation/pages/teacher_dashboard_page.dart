@@ -1,6 +1,8 @@
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
+import 'package:simcore_frontend/features/ai/presentation/providers/ai_providers.dart';
+import 'package:simcore_frontend/features/comparison/presentation/providers/comparison_providers.dart';
 import 'package:simcore_frontend/features/teacher/data/models/evaluation_model.dart';
 import 'package:simcore_frontend/features/teacher/data/models/intervention_model.dart';
 import 'package:simcore_frontend/features/teacher/data/models/teacher_dashboard_model.dart';
@@ -91,8 +93,34 @@ class TeacherDashboardPage extends ConsumerWidget {
                     return roles.contains('ESTUDIANTE');
                   }).length;
 
+                  final activeCoursesCount = courses.where((c) => c['status'] == 'ACTIVE').length;
+                  final closedCoursesCount = courses.where((c) => c['status'] == 'CLOSED').length;
+
                   final recentCourses = courses.take(4).toList();
                   final recentGroups = groups.take(4).toList();
+
+                  Widget buildCourseStatusChip(String status) {
+                    final (label, bg, fg) = switch (status.toUpperCase()) {
+                      'ACTIVE' => ('Activo', SimcoreColors.successSoft, SimcoreColors.success),
+                      'CLOSED' => ('Cerrado', SimcoreColors.dangerSoft, SimcoreColors.danger),
+                      _ => ('Borrador', SimcoreColors.muted, SimcoreColors.textSecondary),
+                    };
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: fg,
+                        ),
+                      ),
+                    );
+                  }
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,8 +130,8 @@ class TeacherDashboardPage extends ConsumerWidget {
                         runSpacing: 16,
                         children: [
                           _AdminStatTile(
-                            label: 'Cursos Registrados',
-                            value: '${courses.length}',
+                            label: 'Cursos Activos / Cerrados',
+                            value: '$activeCoursesCount / $closedCoursesCount',
                             icon: Icons.school_rounded,
                             gradient: const LinearGradient(
                               colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
@@ -185,6 +213,7 @@ class TeacherDashboardPage extends ConsumerWidget {
                                       final cCode = c['code'] ?? '';
                                       final cPeriod = c['academicPeriod'] ?? '';
                                       final tName = c['teacherName'] ?? 'No asignado';
+                                      final status = c['status'] ?? 'DRAFT';
                                       return Card(
                                         elevation: 0,
                                         margin: const EdgeInsets.only(bottom: 8),
@@ -208,21 +237,29 @@ class TeacherDashboardPage extends ConsumerWidget {
                                               color: SimcoreColors.textSecondary,
                                             ),
                                           ),
-                                          trailing: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: SimcoreColors.accentSoft,
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              cCode,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                                color: SimcoreColors.accent,
+                                          trailing: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: SimcoreColors.accentSoft,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  cCode,
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: SimcoreColors.accent,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
+                                              const SizedBox(height: 4),
+                                              buildCourseStatusChip(status),
+                                            ],
                                           ),
                                         ),
                                       );
@@ -354,10 +391,15 @@ class TeacherDashboardPage extends ConsumerWidget {
                 runSpacing: 12,
                 children: [
                   _StatTile(
-                      label: 'Total grupos', value: '${dashboard.totalGroups}'),
+                    label: 'Total grupos',
+                    value: '${dashboard.totalGroups}',
+                    icon: Icons.groups_rounded,
+                    color: SimcoreColors.accent,
+                  ),
                   _StatTile(
                     label: 'Empresas activas',
                     value: '${dashboard.activeCompanies}',
+                    icon: Icons.business_center_rounded,
                     color: SimcoreColors.success,
                   ),
                 ],
@@ -556,48 +598,118 @@ class _GroupCardState extends ConsumerState<_GroupCard> {
               ],
             ),
           ),
-          if (_expanded && group.moduleProgress.isNotEmpty) ...[
-            const Divider(height: 20),
-            const Text(
-              'Detalle de módulos',
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: SimcoreColors.textSecondary),
-            ),
-            const SizedBox(height: 10),
-            ...group.moduleProgress.map((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: _expanded
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.circle,
-                          size: 8, color: SimcoreColors.textTertiary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Text(
-                        m['module']?.toString() ?? '',
-                        style: const TextStyle(fontSize: 13),
-                      )),
-                      Text(
-                        m['status'] != null
-                            ? ModuleStatus.fromApi(m['status'].toString()).label
-                            : '',
-                        style: const TextStyle(
-                            fontSize: 12, color: SimcoreColors.textSecondary),
-                      ),
+                      if (group.moduleProgress.isNotEmpty) ...[
+                        const Divider(height: 24),
+                        const Text(
+                          'Avance de Módulos',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: SimcoreColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: group.moduleProgress.map((m) {
+                            final moduleName = m['module']?.toString() ?? '';
+                            final statusStr = m['status']?.toString() ?? '';
+                            final status = statusStr.isNotEmpty ? ModuleStatus.fromApi(statusStr) : ModuleStatus.pending;
+
+                            final Color badgeColor;
+                            final Color badgeBg;
+                            switch (status) {
+                              case ModuleStatus.complete:
+                              case ModuleStatus.locked:
+                                badgeColor = SimcoreColors.success;
+                                badgeBg = SimcoreColors.successSoft;
+                                break;
+                              case ModuleStatus.inProgress:
+                                badgeColor = SimcoreColors.accent;
+                                badgeBg = SimcoreColors.accentSoft;
+                                break;
+                              case ModuleStatus.requiresRevision:
+                              case ModuleStatus.outdated:
+                                badgeColor = SimcoreColors.warning;
+                                badgeBg = SimcoreColors.warningSoft;
+                                break;
+                              case ModuleStatus.pending:
+                                badgeColor = SimcoreColors.textTertiary;
+                                badgeBg = SimcoreColors.muted;
+                                break;
+                            }
+
+                            return Container(
+                              width: 170,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: SimcoreColors.border.withValues(alpha: 0.6)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    moduleName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: SimcoreColors.textPrimary),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: badgeBg,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      status.label,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: badgeColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                      if (interventionsAsync != null) ...[
+                        const SizedBox(height: 12),
+                        interventionsAsync.when(
+                          loading: () => const LinearProgressIndicator(minHeight: 2),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (interventions) => interventions.isEmpty
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: _InterventionHistory(interventions: interventions),
+                                ),
+                        ),
+                      ],
                     ],
-                  ),
-                )),
-            if (interventionsAsync != null) ...[
-              const SizedBox(height: 12),
-              interventionsAsync.when(
-                loading: () => const LinearProgressIndicator(minHeight: 2),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (interventions) => interventions.isEmpty
-                    ? const SizedBox.shrink()
-                    : _InterventionHistory(interventions: interventions),
-              ),
-            ],
-          ],
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -992,6 +1104,7 @@ class _EvaluationSheetState extends ConsumerState<_EvaluationSheet> {
   late double _oralScore;
   late double _coherenceScore;
   late final TextEditingController _notesController;
+  bool _showAiDefense = false;
 
   @override
   void initState() {
@@ -1026,6 +1139,87 @@ class _EvaluationSheetState extends ConsumerState<_EvaluationSheet> {
     return values.reduce((a, b) => a + b) / values.length;
   }
 
+  void _autoCalculateScores() {
+    final progress = widget.group.moduleProgress;
+    double getModuleScore(String partialKey) {
+      final item = progress.firstWhere(
+        (m) => (m['module']?.toString() ?? '').toUpperCase().contains(partialKey.toUpperCase()),
+        orElse: () => <String, dynamic>{},
+      );
+      if (item.isEmpty) return 0;
+      final status = item['status']?.toString() ?? '';
+      final moduleStatus = ModuleStatus.fromApi(status);
+      if (moduleStatus == ModuleStatus.complete || moduleStatus == ModuleStatus.locked) {
+        return 100;
+      } else if (moduleStatus == ModuleStatus.inProgress) {
+        return 50;
+      }
+      return 0;
+    }
+
+    final market = getModuleScore('MARKET');
+    final invest = getModuleScore('INVEST');
+    final org = getModuleScore('ORG');
+
+    double account = 50;
+    double analysis = 50;
+    if (widget.group.companyId != null) {
+      final comparisonState = ref.read(courseComparisonProvider).valueOrNull;
+      if (comparisonState != null) {
+        final companies = (comparisonState['companies'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        final match = companies.firstWhere(
+          (c) => c['companyId'] == widget.group.companyId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (match.isNotEmpty) {
+          final isViable = match['viable'] == true;
+          final van = match['van'] as num? ?? 0;
+          final netMargin = match['netMarginPct'] as num? ?? 0;
+          final roi = match['roiPct'] as num? ?? 0;
+
+          if (isViable && van > 0) {
+            account = 90;
+            analysis = 90;
+            if (netMargin > 0.15 && roi > 0.1) {
+              account = 100;
+              analysis = 100;
+            }
+          } else {
+            account = 40;
+            analysis = 40;
+          }
+        }
+      }
+    }
+
+    final incoherenceTotal = widget.group.incoherences['total'] as int? ?? 0;
+    final incoherenceHigh = widget.group.incoherences['high'] as int? ?? 0;
+    final incoherenceMed = widget.group.incoherences['medium'] as int? ?? 0;
+
+    double coherence = 100.0 - (incoherenceHigh * 20) - (incoherenceMed * 8) - (incoherenceTotal * 2);
+    coherence = coherence.clamp(0.0, 100.0);
+
+    setState(() {
+      _marketScore = market;
+      _investScore = invest;
+      _orgScore = org;
+      _accountScore = account;
+      _analysisScore = analysis;
+      _coherenceScore = coherence;
+      _oralScore = 85.0;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Valores auto-calculados en base al progreso e incoherencias del grupo.'),
+        backgroundColor: SimcoreColors.success,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _save() async {
     final success = await ref.read(evaluationNotifierProvider.notifier).save(
           groupId: widget.group.groupId,
@@ -1055,6 +1249,105 @@ class _EvaluationSheetState extends ConsumerState<_EvaluationSheet> {
       ),
     );
     if (success) Navigator.of(context).pop();
+  }
+
+  Widget _buildAiDefenseSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SimcoreColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.psychology_outlined, color: SimcoreColors.accent),
+            title: const Text(
+              'Asistencia de IA: Preguntas de Defensa Oral',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            trailing: Icon(
+              _showAiDefense ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+              color: SimcoreColors.textTertiary,
+            ),
+            onTap: () => setState(() => _showAiDefense = !_showAiDefense),
+          ),
+          if (_showAiDefense) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final aiAsync = ref.watch(defenseQuestionsByCompanyIdProvider(widget.group.companyId!));
+                  return aiAsync.when(
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (err, _) => Text(
+                      'No se pudieron cargar preguntas de IA: ${err.toString()}',
+                      style: const TextStyle(color: SimcoreColors.danger, fontSize: 13),
+                    ),
+                    data: (suggestion) {
+                      if (suggestion == null || suggestion.content.isEmpty) {
+                        return const Text(
+                          'No hay sugerencias de defensa disponibles para esta empresa.',
+                          style: TextStyle(color: SimcoreColors.textSecondary, fontSize: 13),
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Preguntas recomendadas para la interrogación final:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: SimcoreColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: SimcoreColors.muted,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: SelectableText(
+                              suggestion.content,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: SimcoreColors.textPrimary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Row(
+                            children: [
+                              Icon(Icons.auto_awesome, size: 12, color: SimcoreColors.accent),
+                              SizedBox(width: 4),
+                              Text(
+                                'Generado en base a vulnerabilidades detectadas.',
+                                style: TextStyle(fontSize: 11, color: SimcoreColors.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -1121,6 +1414,62 @@ class _EvaluationSheetState extends ConsumerState<_EvaluationSheet> {
                     ),
                   ),
                 ),
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE0F2FE), Color(0xFFF0F9FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: Color(0xFF0369A1), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Fórmula de Rúbrica 50 / 35 / 15',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF0369A1),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '• Avance de Módulos (50%): Mercado, Inversión, Organización. (Basado en el progreso del sistema).\n'
+                        '• Desempeño Financiero (35%): Contabilidad, Análisis. (Basado en VAN viable, ROI y Margen Neto).\n'
+                        '• Coherencia y Defensa (15%): Defensa Oral, Coherencia Global. (Reducciones automáticas por incoherencias del sistema).',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF075985), height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _autoCalculateScores,
+                          icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF0284C7)),
+                          label: const Text(
+                            'Auto-Calcular Nota Basada en Rúbrica',
+                            style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF38BDF8)),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 18),
                 _ScoreSlider(
                   label: 'Mercado',
@@ -1158,6 +1507,10 @@ class _EvaluationSheetState extends ConsumerState<_EvaluationSheet> {
                   onChanged: (value) => setState(() => _coherenceScore = value),
                 ),
                 const SizedBox(height: 12),
+                if (widget.group.companyId != null) ...[
+                  _buildAiDefenseSection(),
+                  const SizedBox(height: 16),
+                ],
                 TextField(
                   controller: _notesController,
                   minLines: 3,
@@ -1246,29 +1599,71 @@ class _ScoreSlider extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile(
-      {required this.label,
-      required this.value,
-      this.color = SimcoreColors.accent});
+  const _StatTile({
+    required this.label,
+    required this.value,
+    this.color = SimcoreColors.accent,
+    this.icon = Icons.assessment_rounded,
+  });
 
   final String label;
   final String value;
   final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, color: SimcoreColors.textTertiary)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 28, fontWeight: FontWeight.w700, color: color)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: SimcoreColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

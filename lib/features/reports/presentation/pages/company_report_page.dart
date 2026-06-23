@@ -8,6 +8,7 @@ import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/loading_state.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/comparison/presentation/providers/comparison_providers.dart';
 
 class CompanyReportPage extends ConsumerWidget {
   const CompanyReportPage({super.key});
@@ -115,6 +116,8 @@ class _ReportBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final comparisonAsync = ref.watch(courseComparisonProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -152,6 +155,31 @@ class _ReportBody extends ConsumerWidget {
           const SectionLabel('Decisiones Clave'),
           const SizedBox(height: 12),
           _KeyDecisionsPanel(items: report['keyDecisions'] as List),
+          const SizedBox(height: 24),
+        ],
+
+        // ── Cierre de Simulación (Debriefing) ────────────────────────────────
+        if (isTeacher) ...[
+          const SectionLabel('Cierre de Simulación (Debriefing)'),
+          const SizedBox(height: 12),
+          comparisonAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => Text(
+              'Error al cargar cierre de simulación: $err',
+              style: const TextStyle(color: SimcoreColors.danger),
+            ),
+            data: (data) {
+              final companies = (data['companies'] as List? ?? [])
+                  .map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList();
+              return _DebriefingPanel(companies: companies);
+            },
+          ),
           const SizedBox(height: 24),
         ],
 
@@ -451,32 +479,7 @@ class _KeyDecisionsPanel extends StatelessWidget {
   }
 }
 
-class _SuccessBanner extends StatelessWidget {
-  const _SuccessBanner({required this.message});
 
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: SimcoreColors.successSoft,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: SimcoreColors.success.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle_rounded,
-              color: SimcoreColors.success, size: 18),
-          const SizedBox(width: 8),
-          Text(message, style: const TextStyle(color: SimcoreColors.success)),
-        ],
-      ),
-    );
-  }
-}
 
 class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({required this.message});
@@ -494,6 +497,366 @@ class _ErrorBanner extends StatelessWidget {
         border: Border.all(color: SimcoreColors.danger.withValues(alpha: 0.4)),
       ),
       child: Text(message, style: const TextStyle(color: SimcoreColors.danger)),
+    );
+  }
+}
+
+class _DebriefingPanel extends StatelessWidget {
+  const _DebriefingPanel({required this.companies});
+
+  final List<Map<String, dynamic>> companies;
+
+  @override
+  Widget build(BuildContext context) {
+    if (companies.isEmpty) {
+      return GlassPanel(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: SimcoreColors.muted,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.forum_outlined,
+                    size: 40,
+                    color: SimcoreColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Cierre de Simulación no Disponible',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: SimcoreColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Aún no hay suficientes datos en el curso para generar el cierre de simulación y las métricas de cohorte.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: SimcoreColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final vList = companies.map((c) => (c['van'] as num?)?.toDouble() ?? 0.0).toList();
+    final avgVan = vList.isEmpty ? 0.0 : vList.reduce((a, b) => a + b) / vList.length;
+    
+    final sortedByVan = List<Map<String, dynamic>>.from(companies)
+      ..sort((a, b) {
+        final vanA = (a['van'] as num?)?.toDouble() ?? 0.0;
+        final vanB = (b['van'] as num?)?.toDouble() ?? 0.0;
+        return vanB.compareTo(vanA);
+      });
+
+    final bestPerformers = sortedByVan.where((c) => c['viable'] == true).take(2).toList();
+    final top2 = bestPerformers.length >= 2 ? bestPerformers : sortedByVan.take(2).toList();
+
+    final sortedByErrors = List<Map<String, dynamic>>.from(companies)
+      ..sort((a, b) {
+        final incA = (a['incoherencesHigh'] as num?)?.toInt() ?? 0;
+        final incB = (b['incoherencesHigh'] as num?)?.toInt() ?? 0;
+        if (incB != incA) return incB.compareTo(incA);
+        final vanA = (a['van'] as num?)?.toDouble() ?? 0.0;
+        final vanB = (b['van'] as num?)?.toDouble() ?? 0.0;
+        return vanA.compareTo(vanB);
+      });
+
+    final commonErrors = sortedByErrors.take(2).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _MetricSummaryCard(
+                title: 'VAN Promedio Cohorte',
+                value: '\$${avgVan.toStringAsFixed(0)}',
+                icon: Icons.analytics_rounded,
+                color: const Color(0xFF0284C7),
+                bgGradient: const LinearGradient(
+                  colors: [Color(0xFFE0F2FE), Color(0xFFF0F9FF)],
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _MetricSummaryCard(
+                title: 'Mejor VAN Registrado',
+                value: sortedByVan.isNotEmpty
+                    ? '\$${((sortedByVan[0]['van'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(0)}'
+                    : '-',
+                icon: Icons.emoji_events_rounded,
+                color: const Color(0xFFD97706),
+                bgGradient: const LinearGradient(
+                  colors: [Color(0xFFFEF3C7), Color(0xFFFFFBEB)],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 600;
+            final cardWidgets = [
+              _buildDebriefGroupCard(
+                title: 'Mejores Prácticas (Top Rendimiento)',
+                icon: Icons.star_rounded,
+                accentColor: SimcoreColors.success,
+                items: top2,
+                isErrorType: false,
+              ),
+              _buildDebriefGroupCard(
+                title: 'Patrones Comunes de Error o Riesgo',
+                icon: Icons.warning_rounded,
+                accentColor: SimcoreColors.danger,
+                items: commonErrors,
+                isErrorType: true,
+              ),
+            ];
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: cardWidgets[0]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cardWidgets[1]),
+                ],
+              );
+            } else {
+              return Column(
+                children: [
+                  cardWidgets[0],
+                  const SizedBox(height: 16),
+                  cardWidgets[1],
+                ],
+              );
+            }
+          },
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: SimcoreColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.forum_rounded, color: SimcoreColors.accent),
+                  SizedBox(width: 10),
+                  Text(
+                    'Preguntas Guiadas de Cierre (Debriefing)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: SimcoreColors.textPrimary),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              _buildDiscussionQuestion(1, '¿Cómo impactó la estructura de inversión inicial en la viabilidad a largo plazo de los proyectos con peor rendimiento?'),
+              _buildDiscussionQuestion(2, '¿Por qué algunos grupos obtuvieron un VAN negativo a pesar de reportar altos ingresos? (Analizar márgenes operativos vs. costos fijos).'),
+              _buildDiscussionQuestion(3, '¿Qué inconsistencias de mercado fueron determinantes en la degradación de la coherencia global?'),
+              _buildDiscussionQuestion(4, 'Si pudieran reiniciar el ciclo de decisiones, ¿qué variables de financiamiento modificarían para elevar el ROI?'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiscussionQuestion(int number, String question) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: SimcoreColors.accentSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$number',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: SimcoreColors.accent),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              question,
+              style: const TextStyle(fontSize: 13, color: SimcoreColors.textPrimary, height: 1.45),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebriefGroupCard({
+    required String title,
+    required IconData icon,
+    required Color accentColor,
+    required List<Map<String, dynamic>> items,
+    required bool isErrorType,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SimcoreColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: accentColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+          if (items.isEmpty)
+            const Text('Sin datos disponibles.', style: TextStyle(fontSize: 12, color: SimcoreColors.textSecondary))
+          else
+            ...items.map((item) {
+              final van = item['van'] as num?;
+              final margin = item['netMarginPct'] as num?;
+              final incoherences = item['incoherencesHigh'] as num? ?? 0;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            (item['companyName'] ?? '-').toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          Text(
+                            (item['groupName'] ?? '-').toString(),
+                            style: const TextStyle(fontSize: 11, color: SimcoreColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          van != null ? 'VAN: \$${van.toStringAsFixed(0)}' : 'VAN: -',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: isErrorType && (van ?? 0) < 0 ? SimcoreColors.danger : SimcoreColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          isErrorType
+                              ? '$incoherences incoherencias altas'
+                              : 'Margen: ${margin != null ? (margin * 100).toStringAsFixed(1) : "-"}%',
+                          style: const TextStyle(fontSize: 10, color: SimcoreColors.textTertiary),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricSummaryCard extends StatelessWidget {
+  const _MetricSummaryCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.bgGradient,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final Gradient bgGradient;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: bgGradient,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: color),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: color),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

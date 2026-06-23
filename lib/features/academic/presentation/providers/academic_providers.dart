@@ -36,6 +36,34 @@ class CourseNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
     state = await AsyncValue.guard(() => _ds.closeCourse(id));
   }
 
+  Future<void> updateCourse({
+    required int id,
+    required String title,
+    required String description,
+    int? teacherId,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _ds.updateCourse(
+          id: id,
+          title: title,
+          description: description,
+          teacherId: teacherId,
+        ));
+  }
+
+  Future<void> activateCourse(int id) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _ds.activateCourse(id));
+  }
+
+  Future<void> deleteCourse(int id) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _ds.deleteCourse(id);
+      return null;
+    });
+  }
+
   Future<void> enrollStudents({
     required int courseId,
     required List<int> studentIds,
@@ -177,6 +205,39 @@ class UserAdminNotifier extends StateNotifier<AsyncValue<void>> {
   }) async {
     return _run(
         () => enabled ? _ds.enableUser(userId) : _ds.disableUser(userId));
+  }
+
+  Future<bool> createUser({
+    required String username,
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required int tenantId,
+  }) async {
+    return _run(() => _ds.createUser(
+          username: username,
+          email: email,
+          password: password,
+          firstName: firstName,
+          lastName: lastName,
+          tenantId: tenantId,
+        ));
+  }
+
+  Future<bool> deleteUser(int id) async {
+    state = const AsyncValue.loading();
+    try {
+      await _ds.deleteUser(id);
+      if (!mounted) return false;
+      state = const AsyncValue.data(null);
+      _ref.invalidate(usersProvider);
+      return true;
+    } catch (e, st) {
+      if (!mounted) return false;
+      state = AsyncValue.error(e, st);
+      return false;
+    }
   }
 
   Future<bool> _run(Future<Map<String, dynamic>> Function() action) async {

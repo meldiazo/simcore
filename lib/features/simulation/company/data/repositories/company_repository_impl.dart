@@ -2,6 +2,7 @@ import 'package:simcore_frontend/features/simulation/company/data/datasources/co
 import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/repositories/company_repository.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 class CompanyRepositoryImpl implements CompanyRepository {
   CompanyRepositoryImpl(this._dataSource);
@@ -51,6 +52,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
     required String description,
     required String mission,
     required String vision,
+    required SimulationType simulationType,
   }) =>
       _dataSource.createCompany(
         groupId: groupId,
@@ -60,6 +62,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
         description: description,
         mission: mission,
         vision: vision,
+        simulationType: simulationType,
       );
 
   @override

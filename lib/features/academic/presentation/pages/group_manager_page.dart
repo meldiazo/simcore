@@ -4,7 +4,6 @@ import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/validation/form_validators.dart';
 import 'package:simcore_frontend/features/academic/presentation/providers/academic_providers.dart';
-import 'package:simcore_frontend/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/form_error_summary.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/glass_widgets.dart';
 import 'package:simcore_frontend/core/error/error_utils.dart';
@@ -55,13 +54,10 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
     final groupState = ref.read(groupNotifierProvider);
     if (groupState.hasError) {
       setState(() {
-        final errorMsg = groupState.error.toString();
-        final cleanMsg = errorMsg.startsWith('Exception: ')
-            ? errorMsg.substring(11)
-            : errorMsg;
-        _fieldErrors = {'error': cleanMsg};
+        _fieldErrors = {'error': toUserFriendlyError(groupState.error)};
       });
     } else {
+      ref.invalidate(allGroupsProvider);
       showSimcoreSuccessDialog(
         context: context,
         title: '¡Grupo Creado!',
@@ -91,11 +87,12 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
     if (groupState.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al agregar miembros: ${groupState.error}'),
+          content: Text(toUserFriendlyError(groupState.error)),
           backgroundColor: SimcoreColors.danger,
         ),
       );
     } else {
+      ref.invalidate(allGroupsProvider);
       showSimcoreSuccessDialog(
         context: context,
         title: '¡Miembros Agregados!',
@@ -116,11 +113,12 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
     if (groupState.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al vincular empresa: ${groupState.error}'),
+          content: Text(toUserFriendlyError(groupState.error)),
           backgroundColor: SimcoreColors.danger,
         ),
       );
     } else {
+      ref.invalidate(allGroupsProvider);
       showSimcoreSuccessDialog(
         context: context,
         title: '¡Empresa Vinculada!',
@@ -135,118 +133,17 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
     final contextState = ref.watch(simulationContextNotifierProvider);
     final activeCourseId = contextState.context?.courseId;
     final usersAsync = ref.watch(usersProvider);
-    final currentUser = ref.watch(authNotifierProvider).user;
-    final isAdmin = currentUser?.isAdmin == true;
 
     final coursesAsync =
         activeCourseId == null ? ref.watch(coursesProvider) : null;
-
-    if (isAdmin) {
-      final groupsAsync = ref.watch(allGroupsProvider);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const PageIntro(
-            title: 'Gestión de Grupos',
-            subtitle: 'Lista de todos los grupos registrados con sus respectivos integrantes y empresas.',
-          ),
-          const SizedBox(height: 24),
-          groupsAsync.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (err, _) => GlassPanel(
-              child: Center(
-                child: Text(
-                  'Error al cargar grupos: ${toUserFriendlyError(err)}',
-                  style: const TextStyle(color: SimcoreColors.danger),
-                ),
-              ),
-            ),
-            data: (groups) {
-              if (groups.isEmpty) {
-                return const GlassPanel(
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No hay grupos registrados en el sistema.',
-                        style: TextStyle(color: SimcoreColors.textSecondary),
-                      ),
-                    ),
-                  ),
-                );
-              }
-              final allCoursesAsync = ref.watch(coursesProvider);
-              return allCoursesAsync.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (err, _) => GlassPanel(
-                  child: Center(
-                    child: Text(
-                      'Error al cargar cursos: ${toUserFriendlyError(err)}',
-                      style: const TextStyle(color: SimcoreColors.danger),
-                    ),
-                  ),
-                ),
-                data: (courses) {
-                  return usersAsync.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    error: (err, _) => GlassPanel(
-                      child: Center(
-                        child: Text(
-                          'Error al cargar usuarios: ${toUserFriendlyError(err)}',
-                          style: const TextStyle(color: SimcoreColors.danger),
-                        ),
-                      ),
-                    ),
-                    data: (users) {
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: groups.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final group = groups[index];
-                          final courseId = (group['courseId'] as num?)?.toInt() ?? 0;
-                          final course = courses.where((c) => c['id'] == courseId).firstOrNull;
-
-                          return _GroupAdminCard(
-                            group: group,
-                            course: course,
-                            users: users,
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 28),
-        ],
-      );
-    }
+    final groupsAsync = ref.watch(allGroupsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PageIntro(
           title: 'Gestión de Grupos',
-          subtitle: 'Crear y administrar grupos dentro de un curso.',
+          subtitle: 'Crea y administra grupos de alumnos y vincúlalos con empresas.',
         ),
         const SizedBox(height: 24),
         GlassPanel(
@@ -276,7 +173,7 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
                     ),
                     error: (err, _) => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text('Error al cargar cursos: $err',
+                      child: Text('Error al cargar cursos: ${toUserFriendlyError(err)}',
                           style: const TextStyle(color: SimcoreColors.danger)),
                     ),
                     data: (courses) {
@@ -342,6 +239,97 @@ class _GroupManagerPageState extends ConsumerState<GroupManagerPage> {
             onLinkCompany: _linkCompany,
           ),
         ],
+        const SizedBox(height: 32),
+        const Text(
+          'Grupos Registrados',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 16),
+        groupsAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (err, _) => GlassPanel(
+            child: Center(
+              child: Text(
+                'Error al cargar grupos: ${toUserFriendlyError(err)}',
+                style: const TextStyle(color: SimcoreColors.danger),
+              ),
+            ),
+          ),
+          data: (groups) {
+            if (groups.isEmpty) {
+              return const GlassPanel(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'No hay grupos registrados en el sistema.',
+                      style: TextStyle(color: SimcoreColors.textSecondary),
+                    ),
+                  ),
+                ),
+              );
+            }
+            final allCoursesAsync = ref.watch(coursesProvider);
+            return allCoursesAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GlassPanel(
+                child: Center(
+                  child: Text(
+                    'Error al cargar cursos: ${toUserFriendlyError(err)}',
+                    style: const TextStyle(color: SimcoreColors.danger),
+                  ),
+                ),
+              ),
+              data: (courses) {
+                return usersAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => GlassPanel(
+                    child: Center(
+                      child: Text(
+                        'Error al cargar usuarios: ${toUserFriendlyError(err)}',
+                        style: const TextStyle(color: SimcoreColors.danger),
+                      ),
+                    ),
+                  ),
+                  data: (users) {
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: groups.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final group = groups[index];
+                        final courseId = (group['courseId'] as num?)?.toInt() ?? 0;
+                        final course = courses.where((c) => c['id'] == courseId).firstOrNull;
+
+                        return _GroupAdminCard(
+                          group: group,
+                          course: course,
+                          users: users,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
         const SizedBox(height: 28),
       ],
     );
@@ -636,6 +624,7 @@ class _GroupAdminCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final groupId = group['id'] as int? ?? 0;
     final name = group['name'] ?? '';
     final courseId = (group['courseId'] as num?)?.toInt() ?? 0;
     final companyId = (group['companyId'] as num?)?.toInt();
@@ -831,6 +820,49 @@ class _GroupAdminCard extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           color: SimcoreColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('¿Eliminar del grupo?'),
+                              content: Text('¿Deseas eliminar a $displayName de este grupo?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('Cancelar'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  style: TextButton.styleFrom(foregroundColor: SimcoreColors.danger),
+                                  child: const Text('Eliminar'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            final studentId = m['id'] as int? ?? 0;
+                            await ref.read(groupNotifierProvider.notifier).removeMember(
+                              groupId: groupId,
+                              studentId: studentId,
+                            );
+                            ref.invalidate(allGroupsProvider);
+                            if (context.mounted) {
+                              showSimcoreSuccessDialog(
+                                context: context,
+                                title: '¡Miembro Eliminado!',
+                                message: '$displayName ha sido eliminado del grupo correctamente.',
+                              );
+                            }
+                          }
+                        },
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 14,
+                          color: Colors.red[700],
                         ),
                       ),
                     ],

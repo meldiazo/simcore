@@ -1,4 +1,5 @@
 import 'package:simcore_frontend/core/network/api_client.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/simulation/company/data/models/company_model.dart';
 import 'package:simcore_frontend/features/simulation/company/data/models/module_progress_model.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
@@ -96,6 +97,7 @@ class CompanyRemoteDataSource {
     required String description,
     required String mission,
     required String vision,
+    required SimulationType simulationType,
   }) async {
     final result = await _apiClient.post(
       '/api/v1/simulation/companies',
@@ -107,6 +109,7 @@ class CompanyRemoteDataSource {
         'description': description,
         'mission': mission,
         'vision': vision,
+        'simulationType': simulationType.toApi(),
       },
     );
     return result.fold(

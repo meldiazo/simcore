@@ -24,6 +24,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   final _missionCtrl = TextEditingController();
   final _visionCtrl = TextEditingController();
   CompanySector _sector = CompanySector.services;
+  SimulationType _simulationType = SimulationType.startup;
   Company? _createdCompany;
 
   @override
@@ -47,6 +48,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       description: _descriptionCtrl.text.trim(),
       mission: _missionCtrl.text.trim(),
       vision: _visionCtrl.text.trim(),
+      simulationType: _simulationType,
     );
     if (company != null && mounted) {
       setState(() => _createdCompany = company);
@@ -130,6 +132,8 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
                       const SizedBox(height: 16),
                     ],
                     _buildField('Nombre de empresa', _nameCtrl, required: true),
+                    const SizedBox(height: 16),
+                    _buildSimulationTypeSelector(),
                     const SizedBox(height: 16),
                     _buildSectorDropdown(),
                     const SizedBox(height: 16),
@@ -282,6 +286,153 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       onChanged: (value) {
         if (value != null) setState(() => _sector = value);
       },
+    );
+  }
+
+  Widget _buildSimulationTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Modalidad de Simulación',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: SimcoreColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 400;
+            return isWide
+                ? Row(
+                    children: SimulationType.values
+                        .map((type) => Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                child: _buildTypeCard(type),
+                              ),
+                            ))
+                        .toList(),
+                  )
+                : Column(
+                    children: SimulationType.values
+                        .map((type) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildTypeCard(type),
+                            ))
+                        .toList(),
+                  );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypeCard(SimulationType type) {
+    final isSelected = _simulationType == type;
+
+    final IconData icon;
+    final String title;
+    final String description;
+    final List<Color> gradientColors;
+
+    switch (type) {
+      case SimulationType.startup:
+        icon = Icons.rocket_launch_rounded;
+        title = 'Startup';
+        description = 'Creación y consolidación de una nueva empresa.';
+        gradientColors = [const Color(0xFF6366F1), const Color(0xFF4F46E5)];
+        break;
+      case SimulationType.productLaunch:
+        icon = Icons.new_releases_rounded;
+        title = 'Lanzamiento';
+        description = 'Introducción de un nuevo producto.';
+        gradientColors = [const Color(0xFFEC4899), const Color(0xFFD946EF)];
+        break;
+      case SimulationType.competition:
+        icon = Icons.leaderboard_rounded;
+        title = 'Competencia';
+        description = 'Batalla directa por cuota de mercado.';
+        gradientColors = [const Color(0xFFF59E0B), const Color(0xFFD97706)];
+        break;
+    }
+
+    return InkWell(
+      onTap: () {
+        setState(() => _simulationType = type);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? gradientColors[0] : SimcoreColors.border,
+            width: isSelected ? 2.0 : 1.0,
+          ),
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: gradientColors.map((c) => c.withOpacity(0.12)).toList(),
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: gradientColors[0].withOpacity(0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isSelected ? gradientColors[0] : SimcoreColors.border.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: isSelected ? Colors.white : SimcoreColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? gradientColors[0] : SimcoreColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected ? SimcoreColors.textPrimary : SimcoreColors.textSecondary,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

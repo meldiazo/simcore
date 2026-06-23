@@ -268,3 +268,25 @@ enum CommentVisibility {
     };
   }
 }
+
+enum SimulationType {
+  startup('STARTUP', 'Startup (Nueva Empresa)'),
+  productLaunch('PRODUCT_LAUNCH', 'Lanzamiento de Producto'),
+  competition('COMPETITION', 'Competencia de Mercado');
+
+  const SimulationType(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+
+  String toApi() => apiValue;
+
+  static SimulationType fromApi(String value) {
+    return switch (_normalizeApiEnum(value)) {
+      'STARTUP' => SimulationType.startup,
+      'PRODUCT_LAUNCH' || 'PRODUCTLAUNCH' => SimulationType.productLaunch,
+      'COMPETITION' => SimulationType.competition,
+      _ => SimulationType.startup, // Default fallback
+    };
+  }
+}

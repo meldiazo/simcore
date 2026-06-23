@@ -1,5 +1,6 @@
 import 'package:simcore_frontend/features/simulation/company/domain/entities/company.dart';
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
+import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 
 abstract class CompanyRepository {
   Future<List<Company>> getCompaniesByGroup({required int groupId});
@@ -29,6 +30,7 @@ abstract class CompanyRepository {
     required String description,
     required String mission,
     required String vision,
+    required SimulationType simulationType,
   });
 
   Future<Company> activateCompany({required int companyId});

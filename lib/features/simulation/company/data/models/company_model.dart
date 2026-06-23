@@ -7,6 +7,12 @@ class CompanyModel extends Company {
     required super.name,
     required super.groupId,
     required super.status,
+    super.sector = '',
+    super.industry = '',
+    super.description = '',
+    super.mission = '',
+    super.vision = '',
+    super.simulationType = SimulationType.startup,
   });
 
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +22,14 @@ class CompanyModel extends Company {
       groupId: _parseInt(json, ['groupId', 'group_id']),
       status: CompanyStatus.fromApi(
         (json['status'] ?? 'IN_SIMULATION').toString(),
+      ),
+      sector: (json['sector'] ?? '').toString(),
+      industry: (json['industry'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      mission: (json['mission'] ?? '').toString(),
+      vision: (json['vision'] ?? '').toString(),
+      simulationType: SimulationType.fromApi(
+        (json['simulationType'] ?? json['simulation_type'] ?? 'STARTUP').toString(),
       ),
     );
   }

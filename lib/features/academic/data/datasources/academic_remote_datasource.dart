@@ -65,14 +65,30 @@ class AcademicRemoteDataSource {
     required int id,
     required String title,
     required String description,
+    int? teacherId,
   }) async {
+    final payload = <String, dynamic>{
+      'title': title,
+      'description': description,
+    };
+    if (teacherId != null) {
+      payload['teacherId'] = teacherId;
+    }
     final result = await _client.put(
       '/api/v1/iam/courses/$id',
-      data: {'title': title, 'description': description},
+      data: payload,
     );
     return result.fold(
       (e) => throw Exception(e.message),
       (data) => Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  Future<Map<String, dynamic>> activateCourse(int id) async {
+    final result = await _client.patch('/api/v1/iam/courses/$id/activate');
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) => Map<String, dynamic>.from(data as Map? ?? {}),
     );
   }
 
@@ -81,6 +97,14 @@ class AcademicRemoteDataSource {
     return result.fold(
       (e) => throw Exception(e.message),
       (data) => Map<String, dynamic>.from(data as Map? ?? {}),
+    );
+  }
+
+  Future<void> deleteCourse(int id) async {
+    final result = await _client.delete('/api/v1/iam/courses/$id');
+    result.fold(
+      (e) => throw Exception(e.message),
+      (_) => null,
     );
   }
 
@@ -231,6 +255,39 @@ class AcademicRemoteDataSource {
     return result.fold(
       (e) => throw Exception(e.message),
       (data) => Map<String, dynamic>.from(data as Map? ?? {}),
+    );
+  }
+
+  Future<Map<String, dynamic>> createUser({
+    required String username,
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required int tenantId,
+  }) async {
+    final result = await _client.post(
+      '/api/v1/iam/users',
+      data: {
+        'username': username,
+        'email': email,
+        'password': password,
+        'firstName': firstName,
+        'lastName': lastName,
+        'tenantId': tenantId,
+      },
+    );
+    return result.fold(
+      (e) => throw Exception(e.message),
+      (data) => Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  Future<void> deleteUser(int id) async {
+    final result = await _client.delete('/api/v1/iam/users/$id');
+    result.fold(
+      (e) => throw Exception(e.message),
+      (_) => null,
     );
   }
 

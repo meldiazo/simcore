@@ -39,3 +39,21 @@ final narrativeAiProvider = FutureProvider<AiSuggestionModel?>((ref) {
       .watch(aiRemoteDataSourceProvider)
       .narrative(companyId: ctx.companyId);
 });
+
+final defenseQuestionsByCompanyIdProvider = FutureProvider.family<AiSuggestionModel?, int>((ref, companyId) {
+  return ref
+      .watch(aiRemoteDataSourceProvider)
+      .defenseQuestions(companyId: companyId);
+});
+
+final ratioExplanationByCompanyIdProvider = FutureProvider.family<AiSuggestionModel?, int>((ref, companyId) {
+  return ref
+      .watch(aiRemoteDataSourceProvider)
+      .explainRatios(companyId: companyId);
+});
+
+final narrativeByCompanyIdProvider = FutureProvider.family<AiSuggestionModel?, int>((ref, companyId) {
+  return ref
+      .watch(aiRemoteDataSourceProvider)
+      .narrative(companyId: companyId);
+});

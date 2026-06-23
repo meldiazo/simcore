@@ -127,6 +127,7 @@ class CompanyFormNotifier extends StateNotifier<AsyncValue<Company?>> {
     required String description,
     required String mission,
     required String vision,
+    required SimulationType simulationType,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -138,6 +139,7 @@ class CompanyFormNotifier extends StateNotifier<AsyncValue<Company?>> {
         description: description,
         mission: mission,
         vision: vision,
+        simulationType: simulationType,
       );
       state = AsyncValue.data(company);
       return company;
@@ -183,6 +185,18 @@ class _NoCompany implements Company {
   int get groupId => 0;
   @override
   CompanyStatus get status => CompanyStatus.inSimulation;
+  @override
+  String get sector => '';
+  @override
+  String get industry => '';
+  @override
+  String get description => '';
+  @override
+  String get mission => '';
+  @override
+  String get vision => '';
+  @override
+  SimulationType get simulationType => SimulationType.startup;
 
   @override
   List<Object?> get props => [];

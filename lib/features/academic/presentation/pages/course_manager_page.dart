@@ -117,11 +117,10 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
       );
       setState(() => _pendingStudentIds.clear());
     }
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
     final courseState = ref.watch(courseNotifierProvider);
+    final coursesAsync = ref.watch(coursesProvider);
     final usersAsync = ref.watch(usersProvider);
     final currentUser = ref.watch(authNotifierProvider).user;
     final isTeacher = currentUser?.isDocente == true;
@@ -131,89 +130,14 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
       _selectedTeacherId = currentUser!.id;
     }
 
-    if (isAdmin) {
-      final coursesAsync = ref.watch(coursesProvider);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const PageIntro(
-            title: 'Gestión de Cursos',
-            subtitle: 'Lista de todos los cursos, docentes, alumnos y grupos registrados.',
-          ),
-          const SizedBox(height: 24),
-          coursesAsync.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (err, _) => GlassPanel(
-              child: Center(
-                child: Text(
-                  'Error al cargar cursos: ${toUserFriendlyError(err)}',
-                  style: const TextStyle(color: SimcoreColors.danger),
-                ),
-              ),
-            ),
-            data: (courses) {
-              if (courses.isEmpty) {
-                return const GlassPanel(
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No hay cursos registrados en el sistema.',
-                        style: TextStyle(color: SimcoreColors.textSecondary),
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return usersAsync.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (err, _) => GlassPanel(
-                  child: Center(
-                    child: Text(
-                      'Error al cargar estudiantes: ${toUserFriendlyError(err)}',
-                      style: const TextStyle(color: SimcoreColors.danger),
-                    ),
-                  ),
-                ),
-                data: (users) {
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: courses.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final course = courses[index];
-                      return _CourseAdminCard(
-                        course: course,
-                        users: users,
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 28),
-        ],
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const PageIntro(
+        PageIntro(
           title: 'Gestión de Cursos',
-          subtitle: 'Crear y administrar cursos académicos.',
+          subtitle: isAdmin
+              ? 'Crea, reasigna y administra los cursos del sistema.'
+              : 'Crear y administrar cursos académicos.',
         ),
         const SizedBox(height: 24),
         GlassPanel(
@@ -277,7 +201,7 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                                     .toString()
                                     .toUpperCase()
                                     .replaceAll('ROLE_', ''))
-                                .toList() ??
+                                    .toList() ??
                             [];
                         return roles.contains('DOCENTE');
                       }).toList();
@@ -353,6 +277,74 @@ class _CourseManagerPageState extends ConsumerState<CourseManagerPage> {
                 setState(() => _pendingStudentIds.remove(id)),
           ),
         ],
+        const SizedBox(height: 32),
+        const Text(
+          'Cursos Registrados',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 16),
+        coursesAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (err, _) => GlassPanel(
+            child: Center(
+              child: Text(
+                'Error al cargar cursos: ${toUserFriendlyError(err)}',
+                style: const TextStyle(color: SimcoreColors.danger),
+              ),
+            ),
+          ),
+          data: (courses) {
+            if (courses.isEmpty) {
+              return const GlassPanel(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'No hay cursos registrados en el sistema.',
+                      style: TextStyle(color: SimcoreColors.textSecondary),
+                    ),
+                  ),
+                ),
+              );
+            }
+            return usersAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GlassPanel(
+                child: Center(
+                  child: Text(
+                    'Error al cargar estudiantes: ${toUserFriendlyError(err)}',
+                    style: const TextStyle(color: SimcoreColors.danger),
+                  ),
+                ),
+              ),
+              data: (users) {
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: courses.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final course = courses[index];
+                    return _CourseAdminCard(
+                      course: course,
+                      users: users,
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
         const SizedBox(height: 28),
       ],
     );
@@ -579,7 +571,8 @@ class _CourseAdminCard extends ConsumerWidget {
     final desc = course['description'] ?? '';
     final period = course['academicPeriod'] ?? '';
     final teacherName = course['teacherName'] ?? 'No asignado';
-    final status = course['status'] ?? 'ACTIVE';
+    final status = course['status'] ?? 'DRAFT';
+    final courseTeacherId = (course['teacherId'] as num?)?.toInt();
 
     final rawStudentIds = course['studentIds'];
     final Set<int> studentIds = {};
@@ -593,6 +586,20 @@ class _CourseAdminCard extends ConsumerWidget {
     }).toList();
 
     final groupsAsync = ref.watch(groupsByCourseProvider(courseId));
+    final currentUser = ref.watch(authNotifierProvider).user;
+    final teachers = users.where((u) {
+      final roles = (u['roles'] as List?)
+              ?.map((r) => r.toString().toUpperCase().replaceAll('ROLE_', ''))
+              .toList() ??
+          [];
+      return roles.contains('DOCENTE');
+    }).toList();
+
+    final (statusLabel, statusBg, statusFg) = switch (status.toString().toUpperCase()) {
+      'ACTIVE' => ('Activo', SimcoreColors.successSoft, SimcoreColors.success),
+      'CLOSED' => ('Cerrado', SimcoreColors.dangerSoft, SimcoreColors.danger),
+      _ => ('Borrador', SimcoreColors.muted, SimcoreColors.textSecondary),
+    };
 
     return GlassPanel(
       padding: const EdgeInsets.all(20),
@@ -660,19 +667,15 @@ class _CourseAdminCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: status == 'ACTIVE'
-                      ? SimcoreColors.successSoft
-                      : SimcoreColors.dangerSoft,
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  status == 'ACTIVE' ? 'Activo' : 'Cerrado',
+                  statusLabel,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: status == 'ACTIVE'
-                        ? SimcoreColors.success
-                        : SimcoreColors.danger,
+                    color: statusFg,
                   ),
                 ),
               ),
@@ -703,18 +706,78 @@ class _CourseAdminCard extends ConsumerWidget {
                   color: SimcoreColors.textPrimary,
                 ),
               ),
-              Text(
-                teacherName,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: SimcoreColors.textSecondary,
+              if (currentUser?.isAdmin == true) ...[
+                Expanded(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: courseTeacherId,
+                      isDense: true,
+                      items: [
+                        ...teachers.map((t) {
+                          final id = (t['id'] as num?)?.toInt() ?? 0;
+                          final name =
+                              '${t['firstName'] ?? ''} ${t['lastName'] ?? ''}'
+                                  .trim();
+                          final username = t['username'] ?? '';
+                          final displayName =
+                              name.isNotEmpty ? '$name ($username)' : username;
+                          return DropdownMenuItem<int>(
+                            value: id,
+                            child: Text(displayName,
+                                style: const TextStyle(fontSize: 14)),
+                          );
+                        }),
+                        if (courseTeacherId != null &&
+                            !teachers.any((t) => (t['id'] as num?)?.toInt() == courseTeacherId))
+                          DropdownMenuItem<int>(
+                            value: courseTeacherId,
+                            child: Text(
+                              '$teacherName (ID: $courseTeacherId)',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: SimcoreColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                      ],
+                      onChanged: (v) async {
+                        if (v != null && v != courseTeacherId) {
+                          await ref
+                              .read(courseNotifierProvider.notifier)
+                              .updateCourse(
+                                id: courseId,
+                                title: name,
+                                description: desc,
+                                teacherId: v,
+                              );
+                          ref.invalidate(coursesProvider);
+                          if (context.mounted) {
+                            showSimcoreSuccessDialog(
+                              context: context,
+                              title: '¡Docente Reasignado!',
+                              message: 'Se ha asignado el nuevo docente al curso correctamente.',
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
                 ),
-              ),
+              ] else ...[
+                Text(
+                  teacherName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: SimcoreColors.textSecondary,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            'Alumnos Matricados (${enrolledStudents.length})',
+            'Alumnos Matriculados (${enrolledStudents.length})',
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 14,
@@ -883,6 +946,122 @@ class _CourseAdminCard extends ConsumerWidget {
               );
             },
           ),
+          if (currentUser?.isAdmin == true) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (status == 'DRAFT') ...[
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await ref.read(courseNotifierProvider.notifier).activateCourse(courseId);
+                      ref.invalidate(coursesProvider);
+                      if (context.mounted) {
+                        showSimcoreSuccessDialog(
+                          context: context,
+                          title: '¡Curso Activado!',
+                          message: 'El curso ahora está Activo y en simulación.',
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Activar Curso'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: SimcoreColors.success,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (status == 'ACTIVE') ...[
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('¿Cerrar curso?'),
+                          content: const Text('Esta acción finalizará el curso y no se podrán realizar más simulaciones. ¿Deseas continuar?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: TextButton.styleFrom(foregroundColor: SimcoreColors.danger),
+                              child: const Text('Cerrar Curso'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await ref.read(courseNotifierProvider.notifier).closeCourse(courseId);
+                        ref.invalidate(coursesProvider);
+                        if (context.mounted) {
+                          showSimcoreSuccessDialog(
+                            context: context,
+                            title: '¡Curso Cerrado!',
+                            message: 'El curso ha sido cerrado y archivado exitosamente.',
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                    label: const Text('Cerrar Curso'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: SimcoreColors.danger,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+                if (status == 'DRAFT' || status == 'CLOSED') ...[
+                  IconButton.filled(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('¿Eliminar curso?'),
+                          content: const Text('Esta acción eliminará el curso de forma permanente del sistema. ¿Deseas continuar?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: TextButton.styleFrom(foregroundColor: SimcoreColors.danger),
+                              child: const Text('Eliminar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await ref.read(courseNotifierProvider.notifier).deleteCourse(courseId);
+                        ref.invalidate(coursesProvider);
+                        if (context.mounted) {
+                          showSimcoreSuccessDialog(
+                            context: context,
+                            title: '¡Curso Eliminado!',
+                            message: 'El curso ha sido eliminado permanentemente.',
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    style: IconButton.styleFrom(
+                      backgroundColor: SimcoreColors.dangerSoft,
+                      foregroundColor: SimcoreColors.danger,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );

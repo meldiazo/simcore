@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:simcore_frontend/app/router/app_router.dart';
 import 'package:simcore_frontend/app/theme/app_theme.dart';
 import 'package:simcore_frontend/core/domain/simcore_enums.dart';
 import 'package:simcore_frontend/features/shared/presentation/widgets/api_error_state.dart';
@@ -11,6 +10,7 @@ import 'package:simcore_frontend/features/shared/presentation/widgets/module_flo
 import 'package:simcore_frontend/features/simulation/company/domain/entities/module_progress.dart';
 import 'package:simcore_frontend/features/simulation/company/presentation/providers/company_providers.dart';
 import 'package:simcore_frontend/features/simulation/shared/presentation/providers/simulation_context_notifier.dart';
+import 'package:simcore_frontend/features/modules/analysis/presentation/providers/analysis_providers.dart';
 
 class WorkspacePage extends ConsumerWidget {
   const WorkspacePage({super.key});
@@ -49,13 +49,13 @@ class WorkspacePage extends ConsumerWidget {
 
 // ── Body ──────────────────────────────────────────────────────────────────────
 
-class _WorkspaceBody extends StatelessWidget {
+class _WorkspaceBody extends ConsumerWidget {
   const _WorkspaceBody({required this.workspace});
 
   final CompanyWorkspaceData workspace;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scenario = workspace.activeScenario;
     final scenarioName = scenario?['name']?.toString() ??
         scenario?['type']?.toString() ??
@@ -63,6 +63,271 @@ class _WorkspaceBody extends StatelessWidget {
     final cycleLabel = scenario?['cycle']?.toString() ??
         scenario?['period']?.toString() ??
         'Ciclo actual';
+
+    final indicatorsAsync = ref.watch(financialIndicatorsProvider);
+
+    int getProgress(SimModule mod) {
+      final match = workspace.modules.where((m) => m.module == mod).firstOrNull;
+      return match?.progress ?? 0;
+    }
+
+    final marketP = getProgress(SimModule.market);
+    final investP = getProgress(SimModule.investment);
+    final orgP = getProgress(SimModule.organization);
+    final accP = getProgress(SimModule.accounting);
+    final analP = getProgress(SimModule.analysis);
+
+    final stage1Progress = ((marketP + investP) / 2).round();
+    final stage2Progress = ((orgP + accP) / 2).round();
+    final stage3Progress = analP;
+
+    Widget buildKpiCards() {
+      return indicatorsAsync.maybeWhen(
+        data: (indicators) {
+          if (indicators == null || indicators.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          final van = indicators['van'] as num?;
+          final tir = indicators['tir'] as num?;
+          final breakEven = indicators['breakEvenMonthlyRevenue'] as num?;
+          final cashFlows = indicators['cashFlows'] as List?;
+
+          double totalRevenue = 0.0;
+          if (cashFlows != null) {
+            for (final flow in cashFlows) {
+              if (flow is Map) {
+                totalRevenue += (flow['revenue'] as num? ?? 0.0).toDouble();
+              }
+            }
+          }
+
+          final vanText = van != null ? '\$${van.toStringAsFixed(0)}' : '-';
+          final revenueText = totalRevenue > 0 ? '\$${totalRevenue.toStringAsFixed(0)}' : '-';
+          final tirText = tir != null ? '${(tir * 100).toStringAsFixed(1)}%' : '-';
+          final breakEvenText = breakEven != null ? '\$${breakEven.toStringAsFixed(0)}/mes' : '-';
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _KpiTile(
+                  label: 'VAN Probable',
+                  value: vanText,
+                  icon: Icons.analytics_rounded,
+                  color: SimcoreColors.accent,
+                ),
+                _KpiTile(
+                  label: 'Ingresos Proyectados',
+                  value: revenueText,
+                  icon: Icons.trending_up_rounded,
+                  color: SimcoreColors.success,
+                ),
+                _KpiTile(
+                  label: 'TIR',
+                  value: tirText,
+                  icon: Icons.percent_rounded,
+                  color: SimcoreColors.warning,
+                ),
+                _KpiTile(
+                  label: 'Punto de Equilibrio',
+                  value: breakEvenText,
+                  icon: Icons.calculate_rounded,
+                  color: Colors.blueGrey,
+                ),
+              ],
+            ),
+          );
+        },
+        orElse: () => const SizedBox.shrink(),
+      );
+    }
+
+    Widget buildStageProgressBar() {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: GlassPanel(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.route_rounded, color: SimcoreColors.accent),
+                  SizedBox(width: 8),
+                  Text(
+                    'Avance por Etapa',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 650;
+                  final stageWidgets = [
+                    _StageItem(
+                      title: 'Mercado e Inversión',
+                      progress: stage1Progress,
+                      color: SimcoreColors.accent,
+                      icon: Icons.storefront_rounded,
+                    ),
+                    _StageItem(
+                      title: 'Estructura Operativa',
+                      progress: stage2Progress,
+                      color: SimcoreColors.success,
+                      icon: Icons.corporate_fare_rounded,
+                    ),
+                    _StageItem(
+                      title: 'Defensa Financiera',
+                      progress: stage3Progress,
+                      color: SimcoreColors.warning,
+                      icon: Icons.shield_rounded,
+                    ),
+                  ];
+
+                  if (isWide) {
+                    return Row(
+                      children: [
+                        Expanded(child: stageWidgets[0]),
+                        Container(
+                          width: 24,
+                          height: 2,
+                          color: SimcoreColors.border,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        Expanded(child: stageWidgets[1]),
+                        Container(
+                          width: 24,
+                          height: 2,
+                          color: SimcoreColors.border,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        Expanded(child: stageWidgets[2]),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      children: [
+                        stageWidgets[0],
+                        const SizedBox(height: 12),
+                        stageWidgets[1],
+                        const SizedBox(height: 12),
+                        stageWidgets[2],
+                      ],
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget buildSalesChart() {
+      return indicatorsAsync.maybeWhen(
+        data: (indicators) {
+          if (indicators == null || indicators.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          final cashFlows = indicators['cashFlows'] as List?;
+          if (cashFlows == null || cashFlows.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          double maxRevenue = 0.0;
+          for (final flow in cashFlows) {
+            if (flow is Map) {
+              final rev = (flow['revenue'] as num? ?? 0.0).toDouble();
+              if (rev > maxRevenue) maxRevenue = rev;
+            }
+          }
+          if (maxRevenue == 0.0) maxRevenue = 1.0;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: GlassPanel(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.bar_chart_rounded, color: SimcoreColors.success),
+                      SizedBox(width: 8),
+                      Text(
+                        'Proyección de Ventas (Mensual)',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 180,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: cashFlows.map((flow) {
+                        if (flow is! Map) return const SizedBox.shrink();
+                        final month = (flow['period'] ?? flow['month'] ?? 0) as int;
+                        final revenue = (flow['revenue'] as num? ?? 0.0).toDouble();
+                        final ratio = (revenue / maxRevenue).clamp(0.02, 1.0);
+
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Tooltip(
+                                  message: 'Mes $month: \$${revenue.toStringAsFixed(0)}',
+                                  child: Container(
+                                    height: 130 * ratio,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [SimcoreColors.accent, SimcoreColors.success],
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: SimcoreColors.accent.withValues(alpha: 0.15),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'M$month',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: SimcoreColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        orElse: () => const SizedBox.shrink(),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,6 +337,9 @@ class _WorkspaceBody extends StatelessWidget {
           subtitle: 'Panel de control — ${workspace.company.name}',
         ),
         const SizedBox(height: 28),
+        buildKpiCards(),
+        buildStageProgressBar(),
+        buildSalesChart(),
 
         // ── Hero banner ──────────────────────────────────────────────────────
         GlassPanel(
@@ -388,6 +656,30 @@ class _ModuleCard extends StatelessWidget {
               ),
             ),
           ],
+          if (module.status == ModuleStatus.outdated) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF9C3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFEAB308).withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFEAB308)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Este módulo ha quedado desactualizado debido a cambios en decisiones previas. Por favor ingresa y actualiza los datos.',
+                      style: TextStyle(fontSize: 13, color: Color(0xFFCA8A04)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           MetricBar(
             label: 'Progreso',
@@ -579,4 +871,149 @@ IconData _statusIcon(ModuleStatus status) {
     ModuleStatus.locked => Icons.lock_outline_rounded,
     ModuleStatus.pending => Icons.radio_button_unchecked_rounded,
   };
+}
+
+class _KpiTile extends StatelessWidget {
+  const _KpiTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: SimcoreColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: SimcoreColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StageItem extends StatelessWidget {
+  const _StageItem({
+    required this.title,
+    required this.progress,
+    required this.color,
+    required this.icon,
+  });
+
+  final String title;
+  final int progress;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: SimcoreColors.border.withValues(alpha: 0.8)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: SimcoreColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: progress / 100,
+                    minHeight: 6,
+                    backgroundColor: SimcoreColors.muted,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '$progress%',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
